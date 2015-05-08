@@ -1,7 +1,11 @@
 #ifndef MAPMODE_H
 #define MAPMODE_H
 
+#include <stdint.h>
+
 #define MAX_ENTITIES 128
+#define MAP_WIDTH 80
+#define MAP_HEIGHT 20
 
 enum maptypes {
 
@@ -20,6 +24,7 @@ enum mapflags {
 
 enum terraintypes {
 	TT_OUTSIDE,
+	TT_CORRIDOR,
 	TT_SPACE,
 	TT_RESTRICTED_SPACE,
 	TT_SPECIAL_SPACE,
@@ -64,7 +69,7 @@ struct t_map_entity {
 };
 
 struct t_map {
-	struct t_square sq[80*20];
+	struct t_square sq[MAP_WIDTH*MAP_HEIGHT];
 	
 	uint8_t width;
 	uint8_t height;

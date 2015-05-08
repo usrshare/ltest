@@ -15,6 +15,7 @@ add_executable (ltest
                 src/main.c
 		src/mapgen.c
 		src/mapmode.c
+		src/random.c
 		src/ui_windows.c
 		src/utf8.c
 	       )
