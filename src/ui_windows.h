@@ -3,6 +3,7 @@
 #define UI_WINDOWS_H
 
 #include <curses.h>
+#include <stdint.h>
 
 enum msgboxclass {
     msg_info, //blue borders

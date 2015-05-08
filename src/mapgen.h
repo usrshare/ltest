@@ -2,13 +2,14 @@
 #define MAPGEN_H
 
 enum directions {
-	D_NORTH,
+	D_NORTH = 0,
 	D_EAST,
 	D_SOUTH,
 	D_WEST};
 
 enum generate_modes {
-	
+
+	GM_LIBERAL, //"Liberal Crime Squad" algorithm	
 	GM_RANDOM,
 	GM_SINGLE,
 	GM_LSHAPED,

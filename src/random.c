@@ -1,8 +1,15 @@
 #include "random.h"
 
 int randval(int max) {
+
 	int n = rand();	
 	return n % max;
+}
+
+int randbetween(int min, int max) {
+
+	int n = rand();
+	return min + (n % (max - min + 1));
 }
 
 int xdx(int dice, int sides) {
