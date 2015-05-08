@@ -24,6 +24,7 @@ enum mapflags {
 
 enum terraintypes {
 	TT_OUTSIDE,
+	TT_GRASS,
 	TT_CORRIDOR,
 	TT_SPACE,
 	TT_RESTRICTED_SPACE,
@@ -38,8 +39,19 @@ enum terraintypes {
 	TT_ELEMENT_COUNT
 };
 
+enum terrainflags {
+
+	TF_SOLID = 1,
+	TF_BLOCKS_VISION = 2,
+	TF_BLOCKS_SOUND = 4,
+	TF_BLOCKS_ATTACKS = 8,
+	TF_DODGE = 16,
+	TF_NOSPAWN = 32,
+	TF_OUTSIDE = 64,
+};
+
 enum entitytypes {
-	ET_NONE,
+	ET_NONE = 0,
 	ET_PLAYER,
 };
 
@@ -58,14 +70,19 @@ struct t_square {
 };
 
 struct t_map;
+struct t_map_entity;
+
+typedef uint16_t (*turnFunc)(struct t_map* map, struct t_map_entity* me);
+typedef uint16_t (*useFunc)(struct t_map* map, struct t_map_entity* me, struct t_map_entity* user);
+
 
 struct t_map_entity {
 	enum entitytypes type;
 	uint16_t x;
 	uint16_t y;
 	uint16_t twait; ///< turns left to wait
-	uint16_t (*turnFunc)(struct t_map* map, struct t_map_entity* me);
-	uint16_t (*use)(struct t_map* map, struct t_map_entity* me, struct t_map_entity* user);
+	turnFunc turn;
+	useFunc use;
 };
 
 struct t_map {
