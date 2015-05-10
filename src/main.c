@@ -9,6 +9,8 @@ int main(int argc, char** argv) {
 	cbreak();
 	noecho();
 
+	refresh();
+
 	mapmode();
 
 	endwin();

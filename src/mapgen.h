@@ -29,4 +29,19 @@ enum generate_modes {
 	GM_ELEMENT_COUNT
 };
 
+enum recurse_behavior {
+	RB_RANDOM,
+	RB_ALWAYS,
+	RB_RANDOMLY,
+	RB_RANDOMLY_SAME,
+	RB_ELEMENT_COUNT,
+};
+
+struct rect {
+	int x;
+	int y;
+	int w;
+	int h;
+};
+
 #endif
