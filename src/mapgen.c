@@ -301,7 +301,11 @@ int find_next_area(struct t_map* map, int* x, int* y, int w, int h, enum directi
 
 }
 
-int recurse_grow(struct t_map* map, int x, int y, int w, int h, enum directions growdir) {
+int recurse_grow(struct t_map* map, int x, int y, int w, int h, enum directions growdir, enum recurse_behavior recbeh) {
+
+	if ((w <= 0) || (h <= 0)) return 1;
+	if ((x <= 0) || (y <= 0)) return 1;
+	if (((x + w) >= (MAP_WIDTH-1)) || ((y + h) >= (MAP_HEIGHT-1))) return 1;
 
 	int x_ccw = x, x_cw = x, x_f = x;
 	int y_ccw = y, y_cw = y, y_f = y;
@@ -309,15 +313,36 @@ int recurse_grow(struct t_map* map, int x, int y, int w, int h, enum directions 
 	find_next_area(map,&x_f,&y_f,w,h,growdir);
 	find_next_area(map,&x_ccw,&y_ccw,w,h,ccwDir(growdir));
 	find_next_area(map,&x_cw,&y_cw,w,h,cwDir(growdir));
-					
-	grow_room( map, x_f, y_f, growdir, dirFlag(opDir(growdir)), 1);
-					
-	grow_room( map, x_ccw, y_ccw, ccwDir(growdir), dirFlag(cwDir(growdir)), 1);
-					
-	grow_room( map, x_cw, y_cw, cwDir(growdir), dirFlag(ccwDir(growdir)), 1);
+
+	struct rect o_f, o_ccw, o_cw;
+
+	int grow_f, grow_ccw, grow_cw;
+
+	if (recbeh == RB_RANDOM) recbeh = randbetween(RB_RANDOM+1, RB_ELEMENT_COUNT-1);
+
+	switch (recbeh) {
+
+		case RB_ALWAYS:
+		grow_f = 1; grow_ccw = 1; grow_cw = 1; break;
+		case RB_RANDOMLY:
+		grow_ccw = randval(3); grow_cw = randval(3); grow_f = (grow_ccw + grow_cw) ? randval(3) : 1; break; // always build at least one!
+		case RB_RANDOMLY_SAME:
+		grow_f = 1; grow_cw = randval(3); grow_ccw = grow_cw; break;
+		default:
+		return 1;
+	}
+
+	if (grow_f) grow_room( map, x_f, y_f, growdir, dirFlag(opDir(growdir)), 0, &o_f);
+	if (grow_ccw) grow_room( map, x_ccw, y_ccw, ccwDir(growdir), dirFlag(cwDir(growdir)), 0, &o_ccw);
+	if (grow_cw) grow_room( map, x_cw, y_cw, cwDir(growdir), dirFlag(ccwDir(growdir)), 0,&o_cw);
+
+	if (grow_f) recurse_grow(map,o_f.x,o_f.y,o_f.w,o_f.h,growdir,recbeh);
+	if (grow_ccw) recurse_grow(map,o_ccw.x,o_ccw.y,o_ccw.w,o_ccw.h,ccwDir(growdir),recbeh);
+	if (grow_cw) recurse_grow(map,o_cw.x,o_cw.y,o_cw.w,o_cw.h,cwDir(growdir),recbeh);
+
 }
 
-int grow_room(struct t_map* map, int x, int y, enum directions growdir, enum dirflags join_to, int recurse) {
+int grow_room(struct t_map* map, int x, int y, enum directions growdir, enum dirflags join_to, int recurse, struct rect* outrect) {
 
 	int nx=x, ny=y, nw=1, nh=1;
 
@@ -374,7 +399,7 @@ int grow_room(struct t_map* map, int x, int y, enum directions growdir, enum dir
 				break; }	
 		}
 
-	if (randval(256) < (nw * nh)) { growing=0;}
+	if (randval(64) < (nw * nh)) { growing=0;}
 	}
 
 	mindoors = 1;
@@ -386,10 +411,15 @@ int grow_room(struct t_map* map, int x, int y, enum directions growdir, enum dir
 
 	//if (randval(nw * nh) > 4) iterate_rooms(map,nx,ny,nw,nh);
 					
-	draw_map(map);
-	getch();
+	if (outrect) {
+		outrect->x = nx;
+		outrect->y = ny;
+		outrect->w = nw;
+		outrect->h = nh;
+	}
 
-	if (recurse) recurse_grow(map,nx,ny,nw,nh, growdir);
+
+	if (recurse) recurse_grow(map,nx,ny,nw,nh, growdir, RB_RANDOM);
 
 }
 
@@ -606,21 +636,15 @@ int generate_buildings(struct t_map* map, enum generate_modes gm) {
 					int outw = 3 + 2 * randval(5);
 					int outh = 3 + 2 * randval(2);
 					fill_rect(map,(MAP_WIDTH-outw)/2,MAP_HEIGHT-1-outh,outw,outh,TT_OUTSIDE);
-					draw_map(map);
-					getch();
 					int lobbyw = outw + (2 * randval(2));
 					int lobbyh = 2 + randval(2);
 
 					fill_rect(map,(MAP_WIDTH-lobbyw)/2,MAP_HEIGHT-1-outh-lobbyh,lobbyw,lobbyh,TT_SPACE);
-					draw_map(map);
-					getch();
 					surround_with_walls(map,MAP_WIDTH/2,MAP_HEIGHT-1-outh-(lobbyh/2));
 
 					map->sq[ (MAP_HEIGHT - 1 - outh) * MAP_WIDTH + (MAP_WIDTH/2) - 1 ].type = TT_DOOR;
 
-						recurse_grow(map,(MAP_WIDTH-lobbyw)/2,MAP_HEIGHT-1-outh-lobbyh,lobbyw,lobbyh,D_NORTH);
-						draw_map(map);
-						getch();
+						recurse_grow(map,(MAP_WIDTH-lobbyw)/2,MAP_HEIGHT-1-outh-lobbyh,lobbyw,lobbyh,D_NORTH,RB_RANDOM);
 
 					break; }
 
@@ -628,9 +652,7 @@ int generate_buildings(struct t_map* map, enum generate_modes gm) {
 		case GM_COMPLEX: {
 					 fill_rect(map,2,2,MAP_WIDTH-4,MAP_HEIGHT-4,TT_UNKNOWN);
 					 while (count_terrain_left(map,2,2,MAP_WIDTH-4,MAP_HEIGHT-4,TT_UNKNOWN)) {
-						 grow_room(map,2,2,-1,15,1);
-						 draw_map(map);
-						 getch();
+						 grow_room(map,2,2,-1,15,1,NULL);
 					 }
 
 					 break; }

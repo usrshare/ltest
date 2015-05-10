@@ -91,11 +91,71 @@ int draw_map(struct t_map* map) {
 	wrefresh(mapwindow);
 }
 
+int trymove(struct t_map* map, struct t_map_entity* whom, int8_t dx, int8_t dy) {
+
+	if ((dx < -1) || (dx > 1)) return 1;
+	if ((dy < -1) || (dy > 1)) return 1; //this is only for simple movements.
+
+	int time = (abs(dx) + abs(dy)) == 2 ? 6 : 4;
+	
+	int rx = whom->x + dx;
+	int ry = whom->y + dy;
+	
+	if (tflags[map->sq[ry*MAP_WIDTH+rx].type] & TF_SOLID) return -1; //solid
+
+	whom->x = rx;
+	whom->y = ry;
+
+	return time;
+}
+
 uint16_t player_turnFunc(struct t_map* map, struct t_map_entity* me) {
 
-	int pch = getch();
+	int m = wmove(statwindow_b,LINES-21,COLS-1);
+	if (m == ERR) beep();
 
-	return 1;
+	int pch = getch();
+	int r = 0;
+
+	switch (pch) {
+
+		case 'h':
+		r = trymove(map,me,-1,0); //left
+		break;
+		
+		case 'j':
+		r = trymove(map,me,0,1); //up
+		break;
+		
+		case 'k':
+		r = trymove(map,me,0,-1); //down
+		break;
+		
+		case 'l':
+		r = trymove(map,me,1,0); //right
+		break;
+		
+		case 'y':
+		r = trymove(map,me,-1,-1); //northwest
+		break;
+		
+		case 'u':
+		r = trymove(map,me,1,-1); //northeast
+		break;
+		
+		case 'b':
+		r = trymove(map,me,-1,1); //southwest
+		break;
+		
+		case 'n':
+		r = trymove(map,me,1,1); //southeast
+		break;
+
+		case 'w': //wait
+		return 1;
+	}
+
+	if (r < 0) { beep(); return 0;} else return r;
 }
 
 int make_turn(struct t_map* map) {
@@ -184,6 +244,8 @@ int mapmode() {
 
 	memset(&(map1.sq), 0, sizeof(struct t_square) * MAP_WIDTH * MAP_HEIGHT); 
 	memset(&(map1.ent), 0, sizeof(struct t_map_entity) * MAX_ENTITIES); 
+
+	int cs = curs_set(0);	
 	
 	mapwindow = newwin(20,COLS,LINES-20,0);
 
@@ -192,23 +254,35 @@ int mapmode() {
 	spawn_entity(&map1,ET_PLAYER,SF_RANDOM,player_turnFunc,NULL);
 
 	statwindow_b = newwin(LINES-20,COLS,0,0);
-	statwindow = derwin(statwindow_b,LINES-19,COLS,0,0);
+	wmove(statwindow_b,LINES-21,0);
+	whline(statwindow_b,ACS_HLINE,COLS);
+	wrefresh(statwindow_b);
 
-	wmove(statwindow_b,LINES-19,0);
-	for (int i=0; i < COLS; i++) waddch(statwindow_b,ACS_HLINE);
+	statwindow = subwin(statwindow_b,LINES-21,COLS,0,0);
+	if (statwindow == 0) exit(2);
+	scrollok(statwindow,1);
 
+	keypad(statwindow,1);
+
+	draw_map(&map1);
 
 	int loop = 1;
 
+	int turn_n = 0;
+
 	while (loop) {
 		make_turn(&map1);
+		turn_n++;
 		loop = check_conditions(&map1);
+		wrefresh(statwindow);
 		draw_map(&map1);
 	}
 
 	delwin(mapwindow);
 	delwin(statwindow);
 	delwin(statwindow_b);
+
+	curs_set(cs);
 
 	return 0;
 }
