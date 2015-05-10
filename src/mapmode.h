@@ -36,6 +36,7 @@ enum terraintypes {
 	TT_TABLE,
 	TT_CUSTOM,
 	TT_STAIRS,
+	TT_UNKNOWN,
 	TT_ELEMENT_COUNT
 };
 
@@ -93,5 +94,7 @@ struct t_map {
 
 	struct t_map_entity ent[MAX_ENTITIES];
 };
+
+int draw_map(struct t_map* map);
 
 #endif
