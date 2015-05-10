@@ -28,17 +28,90 @@
 // function from sitemode/sitemap.cpp of "Liberal Crime Squad"
 // (http://sourceforge.net/p/lcsgame)
 
+// --- directions and dirflags manipulation
+
+int goDir(int* x, int* y, enum directions d) {
+
+	switch (d) {
+		case D_NORTH: (*y)--; return 0;
+		case D_EAST: (*x)++; return 0;
+		case D_SOUTH: (*y)++; return 0;
+		case D_WEST: (*x)--; return 0;
+		default: return 1;
+	}
+}
+
+enum directions cwDir(enum directions d) {
+	switch (d) {
+		case D_NORTH: return D_EAST;
+		case D_EAST: return D_SOUTH;
+		case D_SOUTH: return D_WEST;
+		case D_WEST: return D_NORTH;
+		default: return D_NONE;
+	}
+}
+
+enum directions ccwDir(enum directions d) {
+	switch (d) {
+		case D_NORTH: return D_WEST;
+		case D_EAST: return D_NORTH;
+		case D_SOUTH: return D_EAST;
+		case D_WEST: return D_SOUTH;
+		default: return D_NONE;
+	}
+}
+
+enum directions opDir(enum directions d) {
+	switch (d) {
+		case D_NORTH: return D_SOUTH;
+		case D_EAST: return D_WEST;
+		case D_SOUTH: return D_NORTH;
+		case D_WEST: return D_EAST;
+		default: return D_NONE;
+	}
+}
+
+enum dirflags dirFlag(enum directions d) {
+	switch (d) {
+		case D_NORTH: return DF_NORTH;
+		case D_EAST: return DF_EAST;
+		case D_SOUTH: return DF_SOUTH;
+		case D_WEST: return DF_WEST;
+		default: return DF_NONE;
+	}
+}
+
+// ---
+
+
 int wall_border(struct t_map* map, int x, int y, int w, int h) {
 
 	for (int ix=x; ix < (x+w); ix++) {
 		map->sq[y*MAP_WIDTH+ix].type = TT_WALL;
 		map->sq[(y+h-1)*MAP_WIDTH+ix].type = TT_WALL;
 	}
-	
+
 	for (int iy=y; iy < (y+h); iy++) {
 		map->sq[iy*MAP_WIDTH+x].type = TT_WALL;
 		map->sq[iy*MAP_WIDTH+(x+w-1)].type = TT_WALL;
 	}
+}
+
+int wall_border_2(struct t_map* map, int x, int y, int w, int h) { //doesn't replace doors!
+
+	int doors = 0;
+
+	for (int ix=x; ix < (x+w); ix++) {
+		if (map->sq[y*MAP_WIDTH+ix].type != TT_DOOR) map->sq[y*MAP_WIDTH+ix].type = TT_WALL; else doors++;
+		if (map->sq[(y+h-1)*MAP_WIDTH+ix].type != TT_DOOR) map->sq[(y+h-1)*MAP_WIDTH+ix].type = TT_WALL; else doors++;
+	}
+
+	for (int iy=y; iy < (y+h); iy++) {
+		if (map->sq[iy*MAP_WIDTH+x].type != TT_DOOR) map->sq[iy*MAP_WIDTH+x].type = TT_WALL; else doors++;
+		if (map->sq[iy*MAP_WIDTH+(x+w-1)].type != TT_DOOR) map->sq[iy*MAP_WIDTH+(x+w-1)].type = TT_WALL; else doors++;
+	}
+
+	return doors;
 }
 
 int largest_room(struct t_map* map, int mx, int my, int vertical_lookup, int* w, int* h) {
@@ -46,48 +119,313 @@ int largest_room(struct t_map* map, int mx, int my, int vertical_lookup, int* w,
 
 }
 
-int create_room(struct t_map* map, int x, int y, int w, int h) {
+int okay_door (struct t_map* map, int x, int y, int l, enum directions dir, enum terraintypes tt1, enum terraintypes tt2, int* out_posarray) {
 
-/*
-	wall_border(map,x,y,w,h);
+	int okaydoors = 0;
 
-	int dir = randval(4); //random direction
+	enum terraintypes t1, t2;
 
-	int mx = x + (w/2);
-	int my = y + (h/2);
+	switch (dir) {
 
-	int dist = randbetween(3,6);
+		case D_NORTH:
+		case D_SOUTH: 
 
-	int nx = mx, ny = my;
+			for (int ix=x; ix < (x+l); ix++) {
 
-	switch(dir) {
-		case D_NORTH: ny -= dist;
-		case D_SOUTH: ny += dist;
-		case D_WEST: nx -= dist;
-		case D_EAST: nx += dist;
+				t1 = map->sq[ (y-1) * MAP_WIDTH + ix].type;
+				t2 = map->sq[ (y+1) * MAP_WIDTH + ix].type;
+
+				if (((t1 == tt1) && (t2 == tt2)) || ((t1 == tt2) && (t2 == tt1))) {
+
+					if (out_posarray) out_posarray[okaydoors] = ix;
+					okaydoors++;
+				}
+
+			}
+
+			break;
+
+		case D_EAST:
+		case D_WEST:
+
+			for (int iy=y; iy < (y+l); iy++) {
+
+				t1 = map->sq[ iy * MAP_WIDTH + (x-1) ].type;
+				t2 = map->sq[ iy * MAP_WIDTH + (x+1) ].type;
+
+				if (((t1 == tt1) && (t2 == tt2)) || ((t1 == tt2) && (t2 == tt1))) {
+
+					if (out_posarray) out_posarray[okaydoors] = iy;
+					okaydoors++;
+				}
+
+			}
+
+			break;
+		case D_NONE:
+		return 0;
+
 	}
 
-	if (nx < 0) { int d = -nx; nx += d; nw -= d; }
-	if (ny < 0) { int d = -ny; ny += d; nh -= d; }
+	return okaydoors;
+}
+
+int build_doors(struct t_map* map, int x, int y, int w, int h, enum dirflags df, enum terraintypes tt1, enum terraintypes tt2, int min) {
+
+	int doorcount = 0;
+
+	int od_n[w], od_s[w], od_w[h], od_e[h];
+	int odc_n, odc_s, odc_w, odc_e;
+
+	enum dirflags adf = df;
+
+	if ( (odc_n = okay_door(map, x, y, w, D_NORTH, tt1, tt2, od_n))     == 0 ) adf &= ~DF_NORTH;
+	if ( (odc_s = okay_door(map, x, y+h-1, w, D_SOUTH, tt1, tt2, od_s)) == 0 ) adf &= ~DF_SOUTH;
+	if ( (odc_w = okay_door(map, x, y, h, D_WEST, tt1, tt2, od_w))      == 0 ) adf &= ~DF_WEST;
+	if ( (odc_e = okay_door(map, x+w-1, y, h, D_EAST, tt1, tt2, od_e )) == 0 ) adf &= ~DF_EAST;
+
+	if (adf == 0) return 1;
+
+	do {
+
+		int direction = -1;
+
+		do {
+
+			direction =randval(4);
+
+			if ( (direction == D_NORTH) && ((adf & DF_NORTH) == 0) ) direction = -1;
+			if ( (direction == D_SOUTH) && ((adf & DF_SOUTH) == 0) ) direction = -1;
+			if ( (direction == D_EAST) && ((adf & DF_EAST) == 0) ) direction = -1;
+			if ( (direction == D_WEST) && ((adf & DF_WEST) == 0) ) direction = -1;
+
+		} while (direction == -1);
+
+		int dy = y, dx = 0;
+		enum terraintypes t1, t2;
+
+		switch (direction) {
+
+			case D_NORTH: {
+					      dy = y;
+
+					      int dx = od_n[randval(odc_n)];
+					      map->sq[dy * MAP_WIDTH + dx].type = TT_DOOR;
+					      doorcount++;
+					      adf &= ~DF_NORTH;
+
+					      break; }
+			case D_SOUTH: {
+
+					      dy = y + h - 1;
+
+					      int dx = od_s[randval(odc_s)];
+					      map->sq[dy * MAP_WIDTH + dx].type = TT_DOOR;
+					      doorcount++;
+					      adf &= ~DF_SOUTH;
+
+					      break; }
+			case D_EAST: {
+					     dx = x + w -1;
+
+					     int dy = od_e[randval(odc_e)];
+					     map->sq[dy * MAP_WIDTH + dx].type = TT_DOOR;
+					     doorcount++;
+					     adf &= ~DF_EAST;
+
+					     break; }
+			case D_WEST: {
+					     dx = x;
+
+					     int dy = od_w[randval(odc_w)];
+					     map->sq[dy * MAP_WIDTH + dx].type = TT_DOOR;
+					     doorcount++;
+					     adf &= ~DF_WEST;
+
+					     break; }
+
+		}
+
+	} while ((doorcount < min) && (adf != 0));
+}
+
+enum terraintypes check_collision(struct t_map* map, int x, int y, int w, int h, enum terraintypes normaltype) {
+
+	for (int iy = y; iy < (y+h); iy++)
+		for (int ix = x; ix < (x+w); ix++)
+			if (map->sq[iy*MAP_WIDTH+ix].type != normaltype) return map->sq[iy*MAP_WIDTH+ix].type;
+
+	return normaltype;
+}
+
+int count_terrain_left(struct t_map* map, int x, int y, int w, int h, enum terraintypes tt) {
+
+	int n = 0;
+
+	for (int iy = y; iy < (y+h); iy++)
+		for (int ix = x; ix < (x+w); ix++)
+			if (map->sq[iy*MAP_WIDTH+ix].type == tt) n++;
+
+	return n;
+}
+
+int pop(unsigned x)
+{
+	x = x - ((x >> 1) & 0x55555555);
+	x = (x & 0x33333333) + ((x >> 2) & 0x33333333);
+	x = (x + (x >> 4)) & 0x0F0F0F0F;
+	x = x + (x >> 8);
+	x = x + (x >> 16);
+	return x & 0x0000003F;
+}
+
+int find_next_area(struct t_map* map, int* x, int* y, int w, int h, enum directions growdir) {
+
+	switch (growdir) {
+
+		case D_NORTH: {
+			*x = (*x) + randval(w); *y = (*y) - 2;
+		break; }
+		case D_EAST: {
+			*x = (*x) + w + 1; *y = (*y) + randval(h);
+		break; }
+		case D_SOUTH: {
+			*x = (*x) + randval(w); *y = (*y) + h + 1;
+		break; }
+		case D_WEST: {
+			*x = (*x) - 2; *y = (*y) + randval(h);
+		break; }
+		default:
+		return -1;
+	}
+
+}
+
+int recurse_grow(struct t_map* map, int x, int y, int w, int h, enum directions growdir) {
+
+	int x_ccw = x, x_cw = x, x_f = x;
+	int y_ccw = y, y_cw = y, y_f = y;
+
+	find_next_area(map,&x_f,&y_f,w,h,growdir);
+	find_next_area(map,&x_ccw,&y_ccw,w,h,ccwDir(growdir));
+	find_next_area(map,&x_cw,&y_cw,w,h,cwDir(growdir));
+					
+	grow_room( map, x_f, y_f, growdir, dirFlag(opDir(growdir)), 1);
+					
+	grow_room( map, x_ccw, y_ccw, ccwDir(growdir), dirFlag(cwDir(growdir)), 1);
+					
+	grow_room( map, x_cw, y_cw, cwDir(growdir), dirFlag(ccwDir(growdir)), 1);
+}
+
+int grow_room(struct t_map* map, int x, int y, enum directions growdir, enum dirflags join_to, int recurse) {
+
+	int nx=x, ny=y, nw=1, nh=1;
+
+	int direction = D_NONE;
+
+	if ( check_collision(map, nx, ny, nw, nh, TT_UNKNOWN) != TT_UNKNOWN) return 1;
+
+	enum dirflags doors = join_to;
+
+	int growing = 3;
+	int mindoors = 1;
+
+	int outsides = 0;
+
+	while (growing) {
+
+		int randdir = D_NONE;
 		
-	if ((nx + nw) > MAP_WIDTH) { int d = (nx+nw) - MAP_WIDTH; nw -= d; }
-	if ((ny + nh) > MAP_HEIGHT) { int d = (ny+nh) - MAP_HEIGHT; nh -= d; }
+		do { randdir =randval(4); } while (randdir == opDir(growdir));
 
-	if ((nw <= 2) || (nh <= 2)) return 0;
+		enum terraintypes ct;
 
-	if ( map->sq[ny*MAP_WIDTH+nx].type != TT_OUTSIDE) return 0;
+		switch (randdir) {
+			case D_NORTH: {
 
-	create_room(map,nx,ny,nw,nh);
-*/
+				ct = check_collision(map, nx, ny-1, nw, nh+1, TT_UNKNOWN);
+				if (ct == TT_UNKNOWN) { ny--; nh++; doors |= DF_NORTH; }
+				else if (ct == TT_WALL) growing--;
+				else if (ct == TT_OUTSIDE) { outsides++; }
+				break; }	
+				
+			case D_SOUTH: {
+
+				ct = check_collision(map, nx, ny, nw, nh+1, TT_UNKNOWN);
+				if (ct == TT_UNKNOWN) { nh++; doors |= DF_SOUTH; }
+				else if (ct == TT_WALL) growing--;
+				else if (ct == TT_OUTSIDE) { outsides++; }
+				break; }	
+			case D_EAST: {
+
+				ct = check_collision(map, nx, ny, nw+1, nh, TT_UNKNOWN);
+				if (ct == TT_UNKNOWN) { nw++; doors |= DF_EAST; }
+				else if (ct == TT_WALL) growing--;
+				else if (ct == TT_OUTSIDE) { outsides++; }
+				break; }	
+				
+			case D_WEST: {
+
+				ct = check_collision(map, nx-1, ny, nw+1, nh, TT_UNKNOWN);
+				if (ct == TT_UNKNOWN) { nx--; nw++; doors |= DF_WEST; }
+				else growing--;
+					
+				if (ct == TT_OUTSIDE) { outsides++; }
+				break; }	
+		}
+
+	if (randval(256) < (nw * nh)) { growing=0;}
+	}
+
+	mindoors = 1;
+
+	fill_rect(map,nx,ny,nw,nh,TT_SPACE);
+	wall_border_2(map,nx-1,ny-1,nw+2,nh+2);
+	if (mindoors < 0) mindoors = 0;
+	build_doors(map,nx-1,ny-1,nw+2,nh+2,doors,TT_SPACE,TT_SPACE,mindoors);	
+
+	//if (randval(nw * nh) > 4) iterate_rooms(map,nx,ny,nw,nh);
+					
+	draw_map(map);
+	getch();
+
+	if (recurse) recurse_grow(map,nx,ny,nw,nh, growdir);
+
+}
+
+int connect_rooms(struct t_map* map, int x, int y, int w, int h) {
+
+	//this function finds unconnected areas and builds doors to connect them.
+
+	int done_array  [MAP_WIDTH * MAP_HEIGHT];
+	int building_id [MAP_WIDTH * MAP_HEIGHT];
+
+	int done_count = 0;
+
+	memset(done_array , 0, sizeof(int) * MAP_HEIGHT * MAP_WIDTH);
+	memset(building_id, 0, sizeof(int) * MAP_HEIGHT * MAP_WIDTH);
+
+
+
+	int rx = x + randval(w);
+	int rw = y + randval(y);
+
+}
+
+
+int create_room(struct t_map* map, int x, int y, int w, int h) {
+
+
+
 }
 
 int iterate_rooms_2(struct t_map* map, int x, int y, int w, int h) {
 
 	if ((w <= 2) || (h <= 2)) return 0;	
 	int width = randbetween(1,5);
-	
+
 	if ( (randval(3) == 0) && ((width < w) && (width < h)) ) {
-		
+
 		// do a corridor
 
 		if (randval(w + h) > w) {
@@ -102,13 +440,14 @@ int iterate_rooms_2(struct t_map* map, int x, int y, int w, int h) {
 
 			}
 
+
 			iterate_rooms_2(map,x,y,w,cor_y - 1- y);
 			iterate_rooms_2(map,x,cor_y+width+1,w,y + h - cor_y - width - 1);
 
 			//horizontal
 
 		} else {
-			
+
 			int cor_x = randbetween(x, x + w - width);
 
 			for (int iy=y; iy < (y+h); iy++) {
@@ -117,42 +456,42 @@ int iterate_rooms_2(struct t_map* map, int x, int y, int w, int h) {
 				map->sq[iy*MAP_WIDTH+(cor_x + width)].type = TT_WALL;
 
 			}
-		
+
 			iterate_rooms_2(map,x,y,cor_x - 1 - x,h);
 			iterate_rooms_2(map,cor_x+width+1,y,x + w - cor_x - width - 1,h);
 
 			// vertical
 		}
-		
-		
-	} else {
-	
-	if (((w * h) <= 12) && (randval(2) == 0)) return 0;
-	if ((w <= 2) || (h <= 2)) return 0;
 
-	if ( ( (randval(w + h) < w) || h <= 3) && w > 2) {
 
-		int div_x = x + randval(w - 2) + 1;
-		for (int iy=y; iy < (y+h); iy++) {
-			map->sq[iy*MAP_WIDTH+div_x].type = TT_WALL;
-		}
-		if (w > 1) {
-			int door_y = y + randval(h);
-			map->sq[door_y*MAP_WIDTH+div_x].type = TT_DOOR; }
-		iterate_rooms_2(map,x,y,div_x - x,h);
-		iterate_rooms_2(map,div_x+1,y,x + w - div_x - 1,h);
 	} else {
-		int div_y = y + randval(h - 2) + 1;
-		for (int ix=x; ix < (x+w); ix++) {
-			map->sq[div_y*MAP_WIDTH+ix].type = TT_WALL;
+
+		if (((w * h) <= 12) && (randval(2) == 0)) return 0;
+		if ((w <= 2) || (h <= 2)) return 0;
+
+		if ( ( (randval(w + h) < w) || h <= 3) && w > 2) {
+
+			int div_x = x + randval(w - 2) + 1;
+			for (int iy=y; iy < (y+h); iy++) {
+				map->sq[iy*MAP_WIDTH+div_x].type = TT_WALL;
+			}
+			if (w > 1) {
+				int door_y = y + randval(h);
+				map->sq[door_y*MAP_WIDTH+div_x].type = TT_DOOR; }
+			iterate_rooms_2(map,x,y,div_x - x,h);
+			iterate_rooms_2(map,div_x+1,y,x + w - div_x - 1,h);
+		} else {
+			int div_y = y + randval(h - 2) + 1;
+			for (int ix=x; ix < (x+w); ix++) {
+				map->sq[div_y*MAP_WIDTH+ix].type = TT_WALL;
+			}
+			if (h > 1) {
+				int door_x = x + randval(w);
+				map->sq[div_y*MAP_WIDTH+door_x].type = TT_DOOR; }
+			iterate_rooms_2(map,x,y,w,div_y - y);
+			iterate_rooms_2(map,x,div_y+1,w,y + h - div_y - 1);
 		}
-		if (h > 1) {
-			int door_x = x + randval(w);
-			map->sq[div_y*MAP_WIDTH+door_x].type = TT_DOOR; }
-		iterate_rooms_2(map,x,y,w,div_y - y);
-		iterate_rooms_2(map,x,div_y+1,w,y + h - div_y - 1);
-	}
-	return 0;
+		return 0;
 
 	}
 
@@ -176,8 +515,9 @@ int iterate_rooms(struct t_map* map, int x, int y, int w, int h) {
 		for (int iy=y; iy < (y+h); iy++) {
 			map->sq[iy*MAP_WIDTH+div_x].type = TT_WALL;
 		}
+		if (w > 1) {
 			int door_y = y + randval(h);
-			map->sq[door_y*MAP_WIDTH+div_x].type = TT_DOOR;
+			map->sq[door_y*MAP_WIDTH+div_x].type = TT_DOOR; }
 		iterate_rooms(map,x,y,div_x - x,h);
 		iterate_rooms(map,div_x+1,y,x + w - div_x - 1,h);
 	} else {
@@ -185,55 +525,13 @@ int iterate_rooms(struct t_map* map, int x, int y, int w, int h) {
 		for (int ix=x; ix < (x+w); ix++) {
 			map->sq[div_y*MAP_WIDTH+ix].type = TT_WALL;
 		}
+		if (h > 1) {
 			int door_x = x + randval(w);
-			map->sq[div_y*MAP_WIDTH+door_x].type = TT_DOOR; 
+			map->sq[div_y*MAP_WIDTH+door_x].type = TT_DOOR; }
 		iterate_rooms(map,x,y,w,div_y - y);
 		iterate_rooms(map,x,div_y+1,w,y + h - div_y - 1);
 	}
 	return 0;
-}
-
-// ---------------------------------------------------------------
-
-int goDir(int* x, int* y, enum directions d) {
-
-	switch (d) {
-		case D_NORTH: (*y)--; return 0;
-		case D_EAST: (*x)++; return 0;
-		case D_SOUTH: (*y)++; return 0;
-		case D_WEST: (*x)--; return 0;
-		default: return 1;
-	}
-}
-
-enum directions cwDir(enum directions d) {
-	switch (d) {
-		case D_NORTH: return D_EAST;
-		case D_EAST: return D_SOUTH;
-		case D_SOUTH: return D_WEST;
-		case D_WEST: return D_NORTH;
-		default: return D_NORTH;
-	}
-}
-
-enum directions ccwDir(enum directions d) {
-	switch (d) {
-		case D_NORTH: return D_WEST;
-		case D_EAST: return D_NORTH;
-		case D_SOUTH: return D_EAST;
-		case D_WEST: return D_SOUTH;
-		default: return D_NORTH;
-	}
-}
-
-enum directions opDir(enum directions d) {
-	switch (d) {
-		case D_NORTH: return D_SOUTH;
-		case D_EAST: return D_WEST;
-		case D_SOUTH: return D_NORTH;
-		case D_WEST: return D_EAST;
-		default: return D_NORTH;
-	}
 }
 
 
@@ -290,7 +588,6 @@ int fill_rect(struct t_map* map, int x, int y, int w, int h, enum terraintypes t
 
 	return 0;
 }	
-
 int generate_buildings(struct t_map* map, enum generate_modes gm) {
 
 	if (gm == GM_RANDOM) gm = randbetween (GM_SINGLE, GM_ELEMENT_COUNT-1);
@@ -304,14 +601,39 @@ int generate_buildings(struct t_map* map, enum generate_modes gm) {
 					 iterate_rooms(map,1,1,MAP_WIDTH-2,MAP_HEIGHT-2);
 					 break; }
 		case GM_SINGLE: {
-					 //fill_rect(map,0,0,MAP_WIDTH-1,MAP_HEIGHT-1,TT_OUTSIDE);
-					 //create_room(map,35,5,10,10);	
-					 fill_rect(map,1,1,MAP_WIDTH-2,MAP_HEIGHT-2,TT_SPACE);
-					 surround_with_walls(map,MAP_WIDTH/2,MAP_HEIGHT/2);
-					 iterate_rooms_2(map,1,1,MAP_WIDTH-2,MAP_HEIGHT-2);
-					
-			
+
+					fill_rect(map,2,2,MAP_WIDTH-4,MAP_HEIGHT-4,TT_UNKNOWN);
+					int outw = 3 + 2 * randval(5);
+					int outh = 3 + 2 * randval(2);
+					fill_rect(map,(MAP_WIDTH-outw)/2,MAP_HEIGHT-1-outh,outw,outh,TT_OUTSIDE);
+					draw_map(map);
+					getch();
+					int lobbyw = outw + (2 * randval(2));
+					int lobbyh = 2 + randval(2);
+
+					fill_rect(map,(MAP_WIDTH-lobbyw)/2,MAP_HEIGHT-1-outh-lobbyh,lobbyw,lobbyh,TT_SPACE);
+					draw_map(map);
+					getch();
+					surround_with_walls(map,MAP_WIDTH/2,MAP_HEIGHT-1-outh-(lobbyh/2));
+
+					map->sq[ (MAP_HEIGHT - 1 - outh) * MAP_WIDTH + (MAP_WIDTH/2) - 1 ].type = TT_DOOR;
+
+						recurse_grow(map,(MAP_WIDTH-lobbyw)/2,MAP_HEIGHT-1-outh-lobbyh,lobbyw,lobbyh,D_NORTH);
+						draw_map(map);
+						getch();
+
 					break; }
+
+
+		case GM_COMPLEX: {
+					 fill_rect(map,2,2,MAP_WIDTH-4,MAP_HEIGHT-4,TT_UNKNOWN);
+					 while (count_terrain_left(map,2,2,MAP_WIDTH-4,MAP_HEIGHT-4,TT_UNKNOWN)) {
+						 grow_room(map,2,2,-1,15,1);
+						 draw_map(map);
+						 getch();
+					 }
+
+					 break; }
 		default: {
 				 break; }
 

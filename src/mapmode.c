@@ -25,6 +25,7 @@ enum terrainflags tflags[TT_ELEMENT_COUNT] = {
 	TF_SOLID | TF_DODGE | TF_NOSPAWN, //table,
 	TF_NOSPAWN, //custom
 	TF_NOSPAWN, //stairs
+	TF_SOLID | TF_BLOCKS_VISION | TF_BLOCKS_SOUND | TF_BLOCKS_ATTACKS | TF_NOSPAWN, //unknown
 };
 
 int generate_map(struct t_map* map, enum maptypes mt, int flags) {
@@ -183,8 +184,10 @@ int mapmode() {
 
 	memset(&(map1.sq), 0, sizeof(struct t_square) * MAP_WIDTH * MAP_HEIGHT); 
 	memset(&(map1.ent), 0, sizeof(struct t_map_entity) * MAX_ENTITIES); 
+	
+	mapwindow = newwin(20,COLS,LINES-20,0);
 
-	generate_buildings(&map1,GM_LIBERAL);
+	generate_buildings(&map1,GM_SINGLE);
 	
 	spawn_entity(&map1,ET_PLAYER,SF_RANDOM,player_turnFunc,NULL);
 
@@ -194,7 +197,6 @@ int mapmode() {
 	wmove(statwindow_b,LINES-19,0);
 	for (int i=0; i < COLS; i++) waddch(statwindow_b,ACS_HLINE);
 
-	mapwindow = newwin(20,COLS,LINES-20,0);
 
 	int loop = 1;
 

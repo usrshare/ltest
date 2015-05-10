@@ -2,10 +2,20 @@
 #define MAPGEN_H
 
 enum directions {
+	D_NONE = -1,
 	D_NORTH = 0,
 	D_EAST,
 	D_SOUTH,
 	D_WEST};
+
+enum dirflags {
+	DF_NONE = 0,
+	DF_NORTH = 1,
+	DF_EAST = 2,
+	DF_SOUTH = 4,
+	DF_WEST = 8,
+	DF_ALL = 15,
+};
 
 enum generate_modes {
 
