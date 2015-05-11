@@ -19,6 +19,7 @@ enum dirflags {
 
 enum generate_modes {
 
+	GM_EMPTY,
 	GM_LIBERAL, //"Liberal Crime Squad" algorithm	
 	GM_RANDOM,
 	GM_SINGLE,

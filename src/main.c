@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <curses.h>
+#include <unistd.h>
 
 #include "cpairs.h"
 #include "mapmode.h"

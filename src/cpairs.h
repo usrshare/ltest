@@ -8,4 +8,6 @@
 #define CP_PURPLE COLOR_PAIR(5)
 #define CP_RED COLOR_PAIR(6)
 
+int init_pairs();
+
 #endif
