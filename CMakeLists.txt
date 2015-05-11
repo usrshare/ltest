@@ -16,6 +16,7 @@ add_executable (ltest
 		src/entity.c
 		src/main.c
 		src/map_ai.c
+		src/map_fov.c
 		src/mapgen.c
 		src/mapmode.c
 		src/random.c

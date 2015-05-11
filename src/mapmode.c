@@ -84,11 +84,16 @@ chtype entchar(struct t_map_entity* e) {
 	switch (e->type) {
 		case ET_NONE: return 0;
 		case ET_PLAYER: return ('@' | A_REVERSE);
+		case ET_CPU: return '@';
+		case ET_STATIC: return '!';
 		default: return 'X';
 	}
 }
 
 int draw_map(struct t_map* map, struct t_map_entity* persp) {
+
+	int x,y;
+	getparyx(statwindow,y,x);
 
 	wmove(mapwindow,0,0);
 
@@ -117,6 +122,8 @@ int draw_map(struct t_map* map, struct t_map_entity* persp) {
 	}
 
 	wrefresh(mapwindow);
+
+	wmove(statwindow,y,x);
 }
 
 int make_turn(struct t_map* map) {
@@ -147,7 +154,26 @@ int check_conditions(struct t_map* map) {
 	return 1;
 }
 
-struct t_map_entity* spawn_entity(struct t_map* map, enum entitytypes type, enum spawnpos position, turnFunc tf, useFunc uf ) {
+struct t_map_entity* find_entity(struct t_map* map, uint8_t x, uint8_t y) {
+
+	for (int i=0; i < MAX_ENTITIES; i++) {
+		struct t_map_entity* e = &map->ent[i];
+		if ((e->x == x) && (e->y == y)) return e;
+	}
+	return NULL;
+}
+
+int space_taken(struct t_map* map, uint8_t x, uint8_t y) {
+
+	for (int i=0; i < MAX_ENTITIES; i++) {
+		struct t_map_entity* e = &map->ent[i];
+		if ((e->x == x) && (e->y == y)) return 1;
+	}
+
+	return 0;
+}
+
+struct t_map_entity* spawn_entity(struct t_map* map, enum entitytypes type, enum spawnpos position, turnFunc tf, useFunc uf, hearFunc hf, seeFunc sf ) {
 
 	struct t_map_entity* newent = next_empty_entity(map);
 	if (newent == NULL) return NULL;
@@ -175,7 +201,7 @@ struct t_map_entity* spawn_entity(struct t_map* map, enum entitytypes type, enum
 
 			do {
 				x = randval(MAP_WIDTH); y = randval(MAP_HEIGHT);
-			} while ((tflags[map->sq[y*MAP_WIDTH+x].type] & TF_NOSPAWN) != 0);
+			} while ( ( tflags[map->sq[y*MAP_WIDTH+x].type] & TF_NOSPAWN ) || space_taken(map,x,y) );
 			break;
 
 		case SF_RANDOM_INSIDE: {
@@ -184,19 +210,19 @@ struct t_map_entity* spawn_entity(struct t_map* map, enum entitytypes type, enum
 					       do {
 						       x = randval(MAP_WIDTH); y = randval(MAP_HEIGHT);
 						       tf = tflags[map->sq[y*MAP_WIDTH+x].type];
-					       } while ( ((tf & TF_OUTSIDE) == 0) | ((tf & TF_NOSPAWN) != 0) );
+					       } while ( (tf & TF_OUTSIDE) || (tf & TF_NOSPAWN) || space_taken(map,x,y) );
 					       break; }
 		case SF_RANDOM_RESTRICTED:
 
 				       do {
 					       x = randval(MAP_WIDTH); y = randval(MAP_HEIGHT);
-				       } while (map->sq[y*MAP_WIDTH+x].type != TT_RESTRICTED_SPACE);
+				       } while ( (map->sq[y*MAP_WIDTH+x].type != TT_RESTRICTED_SPACE) || space_taken(map,x,y) );
 				       break;
 		case SF_RANDOM_SPECIAL:
 
 				       do {
 					       x = randval(MAP_WIDTH); y = randval(MAP_HEIGHT);
-				       } while (map->sq[y*MAP_WIDTH+x].type != TT_SPECIAL_SPACE);
+				       } while ( (map->sq[y*MAP_WIDTH+x].type != TT_SPECIAL_SPACE) || space_taken(map,x,y) );
 				       break;
 
 
@@ -206,7 +232,8 @@ struct t_map_entity* spawn_entity(struct t_map* map, enum entitytypes type, enum
 	newent->y = y;
 	newent->turn = tf;
 	newent->use = uf;
-
+	newent->sound_cb = hf;
+	newent->vision_cb = sf;
 	return newent;
 }
 
@@ -224,9 +251,15 @@ int mapmode() {
 
 	generate_buildings(&map1,GM_SINGLE);
 
-	struct t_map_entity* player_ent = spawn_entity(&map1,ET_PLAYER,SF_RANDOM,player_turnFunc,NULL);
+	struct t_map_entity* player_ent = spawn_entity(&map1,ET_PLAYER,SF_RANDOM,player_turnFunc,NULL,NULL,NULL);
 
-	player_ent->wideview = 1;
+	struct t_map_entity* enemies[10];
+
+	for (int i=0; i < 10; i++) {
+		enemies[i] = spawn_entity(&map1,ET_CPU,SF_RANDOM_INSIDE,enemy_turnFunc,NULL,NULL,NULL);
+	}
+
+	player_ent->aidata->wideview = 1;
 
 	statwindow_b = newwin(LINES-20,COLS,0,0);
 	wmove(statwindow_b,LINES-21,0);
