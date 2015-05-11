@@ -3,6 +3,7 @@
 #include <time.h>
 #include <curses.h>
 
+#include "cpairs.h"
 #include "mapmode.h"
 
 int main(int argc, char** argv) {
@@ -33,6 +34,8 @@ int main(int argc, char** argv) {
 	noecho();
 
 	refresh();
+
+	init_pairs();
 
 	mapmode();
 
