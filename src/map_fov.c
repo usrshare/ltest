@@ -1,5 +1,6 @@
 #include "map_fov.h"
 #include "map_ai.h"
+#include "mapmode.h"
 
 #include <math.h>
 #include <stdlib.h>
@@ -40,7 +41,7 @@ static int octants[MD_COUNT][4] = {
 
 void cast_light(struct t_map* map, uint x, uint y, uint radius, uint row,
 		float start_slope, float end_slope, uint xx, uint xy, uint yx,
-		uint yy, uint8_t* mem_array) {
+		uint yy, uint8_t* mem_array, bool* flag_updated) {
 	if (start_slope < end_slope) {
 		return;
 	}
@@ -70,6 +71,12 @@ void cast_light(struct t_map* map, uint x, uint y, uint radius, uint row,
 
 			uint radius2 = radius * radius;
 			if ((uint)(dx * dx + dy * dy) < radius2) {
+				
+				if (flag_updated) {
+
+				int ov = mem_array[ay * MAP_WIDTH + ax];
+				if (ov == 0) (*flag_updated) = 1; }
+
 				mem_array[ay * MAP_WIDTH + ax] = 2;
 
 				struct t_map_entity* ent = find_entity(map,ax,ay);
@@ -88,7 +95,7 @@ void cast_light(struct t_map* map, uint x, uint y, uint radius, uint row,
 				blocked = true;
 				next_start_slope = r_slope;
 				cast_light(map, x, y, radius, i + 1, start_slope, l_slope, xx,
-						xy, yx, yy,mem_array);
+						xy, yx, yy,mem_array, flag_updated);
 			}
 		}
 		if (blocked) {
@@ -103,6 +110,8 @@ void do_fov(struct t_map* map, struct t_map_entity* e, uint8_t* mem_array) {
 	if (e == NULL) return;
 	if (e->aidata == NULL) return;
 	if (mem_array == NULL) return;
+
+	int flag_updated = 0;
 
 	/* un-see everything */
 	//1 means "remembered", 2 means "seen".
@@ -120,13 +129,15 @@ void do_fov(struct t_map* map, struct t_map_entity* e, uint8_t* mem_array) {
 
 	for (int i=0; i < oc; i++) {
 		int co = octants[e->aidata->viewdir][i];
-		cast_light(map, e->x, e->y, 32, 1, 1.0, 0.0, multipliers[0][co], multipliers[1][co], multipliers[2][co], multipliers[3][co], mem_array);
+		cast_light(map, e->x, e->y, 32, 1, 1.0, 0.0, multipliers[0][co], multipliers[1][co], multipliers[2][co], multipliers[3][co], mem_array, &flag_updated);
 	}
+
+	if (flag_updated) e->aidata->viewarr_updated = 1;
 	
 	for (int j = 0; j < MAP_HEIGHT; j++) {
 		for (int i = 0; i < MAP_WIDTH; i++) {
 			if (mem_array[j * MAP_WIDTH + i] == 3) {
-				if (e->vision_cb) e->twait += e->vision_cb(map,e,j,i,find_entity(map,i,j));
+				if (e->vision_cb) e->vision_cb(map,e,j,i,find_entity(map,i,j));
 			}
 		}
 	}

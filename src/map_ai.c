@@ -1,5 +1,6 @@
 #include "map_ai.h"
 #include "map_fov.h"
+#include "map_path.h"
 
 #include <stdbool.h>
 #include <stdlib.h>
@@ -14,16 +15,6 @@ bool needs_ai [ET_COUNT] = {
 	1, //CPU
 	0, //static entity
 };
-
-uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
-	
-	if (me->aidata == NULL) return 16;
-
-	me->aidata->viewdir = randval(8);
-
-	do_fov(map,me,me->aidata->viewarr);	
-	return 4;
-}
 
 int space_busy(struct t_map* map, uint8_t x, uint8_t y) {
 
@@ -51,6 +42,84 @@ int trymove(struct t_map* map, struct t_map_entity* whom, int8_t dx, int8_t dy) 
 
 	return time;
 }
+
+uint16_t enemy_seeFunc(struct t_map* map, struct t_map_entity* me, uint8_t y, uint8_t x, struct t_map_entity* whom) {
+
+	if (whom->type == ET_PLAYER) {
+
+	(me->aidata->alert_state)++;
+	
+	if ((me->aidata->alert_state) == 1) me->aidata->task = AIT_CHECKING_OUT;
+	
+	if ((me->aidata->alert_state) >= 3) me->aidata->task = AIT_PURSUING; (me->aidata->alert_state) = 20;
+
+	me->aidata->target = whom;
+
+	if ((me->aidata->dx != x) || (me->aidata->dy != y)) {
+	
+	me->aidata->dx = x; me->aidata->dy = y;
+	me->aidata->path_plotted = 0;
+	}
+
+
+
+	
+	}
+}
+
+uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
+	
+	int r = 0;
+
+	if (me->aidata == NULL) return 16;
+	
+	do_fov(map,me,me->aidata->viewarr);
+
+	enum movedirections md;
+
+	switch(me->aidata->task) {
+
+		case AIT_WORKING:
+		r = 16;
+
+		break;
+
+		case AIT_PATROLLING:
+	
+		me->aidata->viewdir = (me->aidata->viewdir + 1) % 8;
+		r = 16;
+
+		break;
+
+		case AIT_CHECKING_OUT:
+
+		if (me->aidata->path_plotted == 0) { plot_path(map,me,me->aidata->dx,me->aidata->dy,me->aidata->patharr,me->aidata->pathprev); me->aidata->path_plotted = 1; }
+
+		md = plot_follow(map,me,me->aidata->patharr,me->aidata->pathprev);
+		if (md != -1) r = trymove(map,me,movediff[md][0],movediff[md][1]); else r = 4;
+
+		if ( (me->aidata->viewarr[ (me->aidata->dy) * MAP_WIDTH + (me->aidata->dx) ] == 2) && (find_entity(map,(me->aidata->dx),(me->aidata->dy)) == NULL) ) { me->aidata->alert_state = 0; me->aidata->task = AIT_PATROLLING;}
+
+		break;
+
+		case AIT_PURSUING:
+		
+		if (me->aidata->path_plotted == 0) { plot_path(map,me,me->aidata->dx,me->aidata->dy,me->aidata->patharr,me->aidata->pathprev); me->aidata->path_plotted = 1; }
+
+		md = plot_follow(map,me,me->aidata->patharr,me->aidata->pathprev);
+		if (md != -1) r = trymove(map,me,movediff[md][0],movediff[md][1]); else r = 4;
+
+		me->aidata->alert_state--;
+		if (me->aidata->alert_state == 0) me->aidata->task = AIT_PATROLLING;
+
+		break;
+	}
+
+	if (r < 0) {return 0;} else return r;
+
+	return r;
+}
+
 
 uint16_t player_turnFunc(struct t_map* map, struct t_map_entity* me) {
 

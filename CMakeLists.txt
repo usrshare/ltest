@@ -17,8 +17,10 @@ add_executable (ltest
 		src/main.c
 		src/map_ai.c
 		src/map_fov.c
+		src/map_path.c
 		src/mapgen.c
 		src/mapmode.c
+		src/pqueue.c
 		src/random.c
 		src/ui_windows.c
 		src/utf8.c

@@ -40,7 +40,6 @@ int movediff[MD_COUNT][2] = {
 	{-1,0},
 	{-1,-1}};
 
-
 int generate_map(struct t_map* map, enum maptypes mt, int flags) {
 
 
@@ -73,7 +72,7 @@ struct t_map_entity* next_empty_entity(struct t_map* map) {
 	return NULL;
 }
 
-struct t_map_entity* next_empty_ai_data(struct t_map* map) {
+struct t_map_ai_data* next_empty_ai_data(struct t_map* map) {
 	for (int i=0; i < MAX_AI_ENTITIES; i++)
 		if (aient[i].usedby == NULL) return &(aient[i]);
 
@@ -107,17 +106,32 @@ int draw_map(struct t_map* map, struct t_map_entity* persp) {
 
 			if ((persp != NULL) && (persp->aidata)) tilevis = persp->aidata->viewarr[iy * MAP_WIDTH + ix];
 
+			chtype fovcolor = 0;
+
 			int enemyfov = 0;
 
 			if ((tflags[map->sq[iy*(MAP_WIDTH)+ix].type] & TF_BLOCKS_VISION) == 0) {
 			
 			for (int i=0; i < MAX_ENTITIES; i++) {
 
-				if ((map->ent[i].type != ET_PLAYER) && (map->ent[i].aidata) && (map->ent[i].aidata->viewarr[iy * MAP_WIDTH + ix] >= 2) ) enemyfov=1;
+				if ((map->ent[i].type != ET_PLAYER) && (map->ent[i].aidata) && (map->ent[i].aidata->viewarr[iy * MAP_WIDTH + ix] >= 2) ) {
+					
+					enemyfov=1;
+
+					switch (map->ent[i].aidata->task) {
+
+						case AIT_WORKING: fovcolor = CP_GREEN; break;
+						case AIT_PATROLLING: fovcolor = CP_CYAN; break;
+						case AIT_CHECKING_OUT: fovcolor = CP_YELLOW; break;
+						case AIT_PURSUING: fovcolor = CP_RED; break;
+						 
+					}
+
+				}
 
 			} }
 
-			if (tilevis) mvwaddch(mapwindow,iy,ix, (tilevis >= 2 ? A_BOLD : 0) | (enemyfov ? CP_CYAN : 0) | tilech );
+			if (tilevis) mvwaddch(mapwindow,iy,ix, (tilevis >= 2 ? A_BOLD : 0) | fovcolor | tilech );
 
 		}
 	}
@@ -186,7 +200,7 @@ int space_taken(struct t_map* map, uint8_t x, uint8_t y) {
 	return 0;
 }
 
-struct t_map_entity* spawn_entity(struct t_map* map, enum entitytypes type, enum spawnpos position, turnFunc tf, useFunc uf, hearFunc hf, seeFunc sf ) {
+struct t_map_entity* spawn_entity(struct t_map* map, enum entitytypes type, enum spawnpos position, turnFunc tf, useFunc uf, seeFunc sf, hearFunc hf) {
 
 	struct t_map_entity* newent = next_empty_entity(map);
 	if (newent == NULL) return NULL;
@@ -266,10 +280,10 @@ int mapmode() {
 
 	struct t_map_entity* player_ent = spawn_entity(&map1,ET_PLAYER,SF_RANDOM,player_turnFunc,NULL,NULL,NULL);
 
-	struct t_map_entity* enemies[10];
+	struct t_map_entity* enemies[3];
 
-	for (int i=0; i < 10; i++) {
-		enemies[i] = spawn_entity(&map1,ET_CPU,SF_RANDOM_INSIDE,enemy_turnFunc,NULL,NULL,NULL);
+	for (int i=0; i < 3; i++) {
+		enemies[i] = spawn_entity(&map1,ET_CPU,SF_RANDOM_INSIDE,enemy_turnFunc,NULL,enemy_seeFunc,NULL);
 	}
 
 	player_ent->aidata->wideview = 1;
@@ -285,7 +299,7 @@ int mapmode() {
 
 	keypad(statwindow,1);
 
-	draw_map(&map1, player_ent);
+	draw_map(&map1, NULL);
 
 	int loop = 1;
 
@@ -296,7 +310,7 @@ int mapmode() {
 		turn_n++;
 		loop = check_conditions(&map1);
 		wrefresh(statwindow);
-		draw_map(&map1, player_ent);
+		draw_map(&map1, NULL);
 	}
 
 	delwin(mapwindow);

@@ -623,6 +623,11 @@ int generate_buildings(struct t_map* map, enum generate_modes gm) {
 	if (gm == GM_RANDOM) gm = randbetween (GM_SINGLE, GM_ELEMENT_COUNT-1);
 
 	switch(gm) {
+		
+		case GM_EMPTY: {
+					 fill_rect(map,1,1,MAP_WIDTH-2,MAP_HEIGHT-2,TT_SPACE);
+					 surround_with_walls(map,MAP_WIDTH/2,MAP_HEIGHT/2);
+					 break; }
 
 		case GM_LIBERAL: {
 

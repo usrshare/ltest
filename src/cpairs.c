@@ -5,10 +5,11 @@ int init_pairs() {
 
     	int c = start_color();	
 
-	use_default_colors();
+	assume_default_colors(COLOR_WHITE,-1);
 	
-	if (c == ERR) exit(1);
+	if (c == ERR) return 1;
 	
+	init_pair(1,COLOR_WHITE,-1);
 	init_pair(1,COLOR_GREEN,-1);
 	init_pair(2,COLOR_CYAN,-1);
 	init_pair(3,COLOR_BLUE,-1);
