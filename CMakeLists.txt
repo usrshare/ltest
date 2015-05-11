@@ -12,7 +12,10 @@ add_custom_target(tags
 include_directories (${CMAKE_SOURCE_DIR}/inc)
 
 add_executable (ltest
-                src/main.c
+		src/cpairs.c
+		src/entity.c
+		src/main.c
+		src/map_ai.c
 		src/mapgen.c
 		src/mapmode.c
 		src/random.c
@@ -31,7 +34,7 @@ pkg_check_modules(NCURSESW "ncursesw" REQUIRED)
 
 include_directories(${NCURSESW_INCLUDE_DIRS})
 
-target_link_libraries(ltest ncursesw menu curl pthread libutf8proc)
+target_link_libraries(ltest ncursesw menu curl pthread libutf8proc m)
 
 install(TARGETS ltest
 	RUNTIME DESTINATION bin
