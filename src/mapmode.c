@@ -20,13 +20,25 @@ enum terrainflags tflags[TT_ELEMENT_COUNT] = {
 	TF_NOSPAWN, //special space
 	TF_SOLID | TF_BLOCKS_VISION | TF_BLOCKS_SOUND | TF_BLOCKS_ATTACKS | TF_NOSPAWN, //wall
 	TF_SOLID | TF_BLOCKS_SOUND | TF_BLOCKS_ATTACKS | TF_NOSPAWN, //window
-	TF_SOLID | TF_BLOCKS_VISION | TF_BLOCKS_ATTACKS | TF_NOSPAWN, //door
+	TF_SOLID | TF_BLOCKS_VISION | TF_BLOCKS_ATTACKS | TF_NOSPAWN, //closed door
+	TF_NOSPAWN, //open door
 	TF_SOLID | TF_NOSPAWN, //bars
 	TF_SOLID | TF_DODGE | TF_NOSPAWN, //table,
 	TF_NOSPAWN, //custom
 	TF_NOSPAWN, //stairs
 	TF_SOLID | TF_BLOCKS_VISION | TF_BLOCKS_SOUND | TF_BLOCKS_ATTACKS | TF_NOSPAWN, //unknown
 };
+
+int movediff[MD_COUNT][2] = {
+	{0,-1},
+	{1,-1},
+	{1,0},
+	{1,1},
+	{0,1},
+	{-1,1},
+	{-1,0},
+	{-1,-1}};
+
 
 int generate_map(struct t_map* map, enum maptypes mt, int flags) {
 
@@ -43,7 +55,8 @@ chtype mapchar(struct t_square* sq) {
 		case TT_SPECIAL_SPACE: return '.';
 		case TT_WALL: return ACS_CKBOARD;
 		case TT_WINDOW: return '~';
-		case TT_DOOR: return '+';
+		case TT_DOOR_CLOSED: return '+';
+		case TT_DOOR_OPEN: return '-';
 		case TT_BARS: return '#';
 		case TT_TABLE: return '-';
 		case TT_CUSTOM: return '!';
@@ -59,6 +72,13 @@ struct t_map_entity* next_empty_entity(struct t_map* map) {
 	return NULL;
 }
 
+struct t_map_entity* next_empty_ai_data(struct t_map* map) {
+	for (int i=0; i < MAX_AI_ENTITIES; i++)
+		if (aient[i].usedby == NULL) return &(aient[i]);
+
+	return NULL;
+}
+
 chtype entchar(struct t_map_entity* e) {
 
 	switch (e->type) {
@@ -68,13 +88,19 @@ chtype entchar(struct t_map_entity* e) {
 	}
 }
 
-int draw_map(struct t_map* map) {
+int draw_map(struct t_map* map, struct t_map_entity* persp) {
 
 	wmove(mapwindow,0,0);
 
 	for (int iy=0; iy< MAP_HEIGHT; iy++) {
 		for (int ix=0; ix < MAP_WIDTH; ix++) {
-			mvwaddch(mapwindow,iy,ix,mapchar(&map->sq[iy*(MAP_WIDTH)+ix]));
+
+			int tilevis = 1;
+
+			if ((persp != NULL) && (persp->aidata)) tilevis = persp->aidata->viewarr[iy * MAP_WIDTH + ix];
+
+			if (tilevis) mvwaddch(mapwindow,iy,ix, (tilevis == 2 ? A_BOLD : 0) | (mapchar(&map->sq[iy*(MAP_WIDTH)+ix])) );
+
 		}
 	}
 
@@ -83,79 +109,14 @@ int draw_map(struct t_map* map) {
 		if (map->ent[i].type == ET_NONE) continue;
 		int x = map->ent[i].x; int y = map->ent[i].y;
 
-		mvwaddch(mapwindow,y,x,entchar(&map->ent[i]));
+		if ( (persp == NULL) || ( (persp->aidata) && (persp->aidata->viewarr[y * (MAP_WIDTH) + x] == 2) ) ) {
 
+			mvwaddch(mapwindow,y,x,entchar(&map->ent[i]));
+		}
 
 	}
 
 	wrefresh(mapwindow);
-}
-
-int trymove(struct t_map* map, struct t_map_entity* whom, int8_t dx, int8_t dy) {
-
-	if ((dx < -1) || (dx > 1)) return 1;
-	if ((dy < -1) || (dy > 1)) return 1; //this is only for simple movements.
-
-	int time = (abs(dx) + abs(dy)) == 2 ? 6 : 4;
-	
-	int rx = whom->x + dx;
-	int ry = whom->y + dy;
-	
-	if (tflags[map->sq[ry*MAP_WIDTH+rx].type] & TF_SOLID) return -1; //solid
-
-	whom->x = rx;
-	whom->y = ry;
-
-	return time;
-}
-
-uint16_t player_turnFunc(struct t_map* map, struct t_map_entity* me) {
-
-	int m = wmove(statwindow_b,LINES-21,COLS-1);
-	if (m == ERR) beep();
-
-	int pch = getch();
-	int r = 0;
-
-	switch (pch) {
-
-		case 'h':
-		r = trymove(map,me,-1,0); //left
-		break;
-		
-		case 'j':
-		r = trymove(map,me,0,1); //up
-		break;
-		
-		case 'k':
-		r = trymove(map,me,0,-1); //down
-		break;
-		
-		case 'l':
-		r = trymove(map,me,1,0); //right
-		break;
-		
-		case 'y':
-		r = trymove(map,me,-1,-1); //northwest
-		break;
-		
-		case 'u':
-		r = trymove(map,me,1,-1); //northeast
-		break;
-		
-		case 'b':
-		r = trymove(map,me,-1,1); //southwest
-		break;
-		
-		case 'n':
-		r = trymove(map,me,1,1); //southeast
-		break;
-
-		case 'w': //wait
-		return 1;
-	}
-
-	if (r < 0) { beep(); return 0;} else return r;
 }
 
 int make_turn(struct t_map* map) {
@@ -186,10 +147,20 @@ int check_conditions(struct t_map* map) {
 	return 1;
 }
 
-int spawn_entity(struct t_map* map, enum entitytypes type, enum spawnpos position, turnFunc tf, useFunc uf ) {
+struct t_map_entity* spawn_entity(struct t_map* map, enum entitytypes type, enum spawnpos position, turnFunc tf, useFunc uf ) {
 
 	struct t_map_entity* newent = next_empty_entity(map);
-	if (newent == NULL) return 1;
+	if (newent == NULL) return NULL;
+
+	if (needs_ai[type]) {
+
+		struct t_map_ai_data* newai = next_empty_ai_data(map);
+		if (newai == NULL) return NULL;
+
+		newent->aidata = newai;
+		newai->usedby = newent;
+
+	}
 
 	newent->type = type;
 
@@ -236,6 +207,7 @@ int spawn_entity(struct t_map* map, enum entitytypes type, enum spawnpos positio
 	newent->turn = tf;
 	newent->use = uf;
 
+	return newent;
 }
 
 int mapmode() {
@@ -244,14 +216,17 @@ int mapmode() {
 
 	memset(&(map1.sq), 0, sizeof(struct t_square) * MAP_WIDTH * MAP_HEIGHT); 
 	memset(&(map1.ent), 0, sizeof(struct t_map_entity) * MAX_ENTITIES); 
+	memset(aient, 0, sizeof(struct t_map_ai_data) * MAX_AI_ENTITIES); 
 
 	int cs = curs_set(0);	
-	
+
 	mapwindow = newwin(20,COLS,LINES-20,0);
 
 	generate_buildings(&map1,GM_SINGLE);
-	
-	spawn_entity(&map1,ET_PLAYER,SF_RANDOM,player_turnFunc,NULL);
+
+	struct t_map_entity* player_ent = spawn_entity(&map1,ET_PLAYER,SF_RANDOM,player_turnFunc,NULL);
+
+	player_ent->wideview = 1;
 
 	statwindow_b = newwin(LINES-20,COLS,0,0);
 	wmove(statwindow_b,LINES-21,0);
@@ -264,7 +239,7 @@ int mapmode() {
 
 	keypad(statwindow,1);
 
-	draw_map(&map1);
+	draw_map(&map1, player_ent);
 
 	int loop = 1;
 
@@ -275,7 +250,7 @@ int mapmode() {
 		turn_n++;
 		loop = check_conditions(&map1);
 		wrefresh(statwindow);
-		draw_map(&map1);
+		draw_map(&map1, player_ent);
 	}
 
 	delwin(mapwindow);
@@ -285,4 +260,67 @@ int mapmode() {
 	curs_set(cs);
 
 	return 0;
+}
+
+int mapgetch() {
+
+	int x,y;
+
+	getparyx(statwindow,y,x);
+	int m = wmove(statwindow_b,LINES-21,COLS-1);
+	if (m == ERR) beep();
+
+	int c = getch();
+
+	wmove(statwindow,y,x);
+
+	return c;
+}
+
+enum movedirections askdir() {
+	
+	wprintw(statwindow,"Please specify a direction: [yuhjklbn]>");
+	wrefresh(statwindow);
+	
+	enum movedirections r = MD_COUNT;
+	
+	int go_on = 1;
+
+	while (go_on) {
+	int c = wgetch(statwindow);
+	wprintw(statwindow,"\n");
+	switch(c) {
+		case 'h':
+		case 'H':
+		r = MD_WEST; go_on = 0;break;
+		case 'j':
+		case 'J':
+		r = MD_SOUTH; go_on = 0;break;
+		case 'k':
+		case 'K':
+		r = MD_NORTH; go_on = 0;break;
+		case 'l':
+		case 'L':
+		r = MD_EAST; go_on = 0;break;
+		case 'y':
+		case 'Y':
+		r = MD_NORTHWEST; go_on = 0;break;
+		case 'u':
+		case 'U':
+		r = MD_NORTHEAST; go_on = 0;break;
+		case 'b':
+		case 'B':
+		r = MD_SOUTHWEST; go_on = 0;break;
+		case 'n':
+		case 'N':
+		r = MD_SOUTHEAST; go_on = 0;break;
+		default:
+		beep();
+		wprintw(statwindow,"Invalid direction. Please choose [yuhjklbn]>");
+		wrefresh(statwindow);
+	}
+
+	}
+
+	return r;
 }

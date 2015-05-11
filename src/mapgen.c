@@ -102,13 +102,13 @@ int wall_border_2(struct t_map* map, int x, int y, int w, int h) { //doesn't rep
 	int doors = 0;
 
 	for (int ix=x; ix < (x+w); ix++) {
-		if (map->sq[y*MAP_WIDTH+ix].type != TT_DOOR) map->sq[y*MAP_WIDTH+ix].type = TT_WALL; else doors++;
-		if (map->sq[(y+h-1)*MAP_WIDTH+ix].type != TT_DOOR) map->sq[(y+h-1)*MAP_WIDTH+ix].type = TT_WALL; else doors++;
+		if (map->sq[y*MAP_WIDTH+ix].type != TT_DOOR_CLOSED) map->sq[y*MAP_WIDTH+ix].type = TT_WALL; else doors++;
+		if (map->sq[(y+h-1)*MAP_WIDTH+ix].type != TT_DOOR_CLOSED) map->sq[(y+h-1)*MAP_WIDTH+ix].type = TT_WALL; else doors++;
 	}
 
 	for (int iy=y; iy < (y+h); iy++) {
-		if (map->sq[iy*MAP_WIDTH+x].type != TT_DOOR) map->sq[iy*MAP_WIDTH+x].type = TT_WALL; else doors++;
-		if (map->sq[iy*MAP_WIDTH+(x+w-1)].type != TT_DOOR) map->sq[iy*MAP_WIDTH+(x+w-1)].type = TT_WALL; else doors++;
+		if (map->sq[iy*MAP_WIDTH+x].type != TT_DOOR_CLOSED) map->sq[iy*MAP_WIDTH+x].type = TT_WALL; else doors++;
+		if (map->sq[iy*MAP_WIDTH+(x+w-1)].type != TT_DOOR_CLOSED) map->sq[iy*MAP_WIDTH+(x+w-1)].type = TT_WALL; else doors++;
 	}
 
 	return doors;
@@ -210,7 +210,7 @@ int build_doors(struct t_map* map, int x, int y, int w, int h, enum dirflags df,
 					      dy = y;
 
 					      int dx = od_n[randval(odc_n)];
-					      map->sq[dy * MAP_WIDTH + dx].type = TT_DOOR;
+					      map->sq[dy * MAP_WIDTH + dx].type = TT_DOOR_CLOSED;
 					      doorcount++;
 					      adf &= ~DF_NORTH;
 
@@ -220,7 +220,7 @@ int build_doors(struct t_map* map, int x, int y, int w, int h, enum dirflags df,
 					      dy = y + h - 1;
 
 					      int dx = od_s[randval(odc_s)];
-					      map->sq[dy * MAP_WIDTH + dx].type = TT_DOOR;
+					      map->sq[dy * MAP_WIDTH + dx].type = TT_DOOR_CLOSED;
 					      doorcount++;
 					      adf &= ~DF_SOUTH;
 
@@ -229,7 +229,7 @@ int build_doors(struct t_map* map, int x, int y, int w, int h, enum dirflags df,
 					     dx = x + w -1;
 
 					     int dy = od_e[randval(odc_e)];
-					     map->sq[dy * MAP_WIDTH + dx].type = TT_DOOR;
+					     map->sq[dy * MAP_WIDTH + dx].type = TT_DOOR_CLOSED;
 					     doorcount++;
 					     adf &= ~DF_EAST;
 
@@ -238,7 +238,7 @@ int build_doors(struct t_map* map, int x, int y, int w, int h, enum dirflags df,
 					     dx = x;
 
 					     int dy = od_w[randval(odc_w)];
-					     map->sq[dy * MAP_WIDTH + dx].type = TT_DOOR;
+					     map->sq[dy * MAP_WIDTH + dx].type = TT_DOOR_CLOSED;
 					     doorcount++;
 					     adf &= ~DF_WEST;
 
@@ -507,7 +507,7 @@ int iterate_rooms_2(struct t_map* map, int x, int y, int w, int h) {
 			}
 			if (w > 1) {
 				int door_y = y + randval(h);
-				map->sq[door_y*MAP_WIDTH+div_x].type = TT_DOOR; }
+				map->sq[door_y*MAP_WIDTH+div_x].type = TT_DOOR_CLOSED; }
 			iterate_rooms_2(map,x,y,div_x - x,h);
 			iterate_rooms_2(map,div_x+1,y,x + w - div_x - 1,h);
 		} else {
@@ -517,7 +517,7 @@ int iterate_rooms_2(struct t_map* map, int x, int y, int w, int h) {
 			}
 			if (h > 1) {
 				int door_x = x + randval(w);
-				map->sq[div_y*MAP_WIDTH+door_x].type = TT_DOOR; }
+				map->sq[div_y*MAP_WIDTH+door_x].type = TT_DOOR_CLOSED; }
 			iterate_rooms_2(map,x,y,w,div_y - y);
 			iterate_rooms_2(map,x,div_y+1,w,y + h - div_y - 1);
 		}
@@ -547,7 +547,7 @@ int iterate_rooms(struct t_map* map, int x, int y, int w, int h) {
 		}
 		if (w > 1) {
 			int door_y = y + randval(h);
-			map->sq[door_y*MAP_WIDTH+div_x].type = TT_DOOR; }
+			map->sq[door_y*MAP_WIDTH+div_x].type = TT_DOOR_CLOSED; }
 		iterate_rooms(map,x,y,div_x - x,h);
 		iterate_rooms(map,div_x+1,y,x + w - div_x - 1,h);
 	} else {
@@ -557,7 +557,7 @@ int iterate_rooms(struct t_map* map, int x, int y, int w, int h) {
 		}
 		if (h > 1) {
 			int door_x = x + randval(w);
-			map->sq[div_y*MAP_WIDTH+door_x].type = TT_DOOR; }
+			map->sq[div_y*MAP_WIDTH+door_x].type = TT_DOOR_CLOSED; }
 		iterate_rooms(map,x,y,w,div_y - y);
 		iterate_rooms(map,x,div_y+1,w,y + h - div_y - 1);
 	}
@@ -642,7 +642,7 @@ int generate_buildings(struct t_map* map, enum generate_modes gm) {
 					fill_rect(map,(MAP_WIDTH-lobbyw)/2,MAP_HEIGHT-1-outh-lobbyh,lobbyw,lobbyh,TT_SPACE);
 					surround_with_walls(map,MAP_WIDTH/2,MAP_HEIGHT-1-outh-(lobbyh/2));
 
-					map->sq[ (MAP_HEIGHT - 1 - outh) * MAP_WIDTH + (MAP_WIDTH/2) - 1 ].type = TT_DOOR;
+					map->sq[ (MAP_HEIGHT - 1 - outh) * MAP_WIDTH + (MAP_WIDTH/2) - 1 ].type = TT_DOOR_CLOSED;
 
 						recurse_grow(map,(MAP_WIDTH-lobbyw)/2,MAP_HEIGHT-1-outh-lobbyh,lobbyw,lobbyh,D_NORTH,RB_RANDOM);
 

@@ -1,4 +1,5 @@
 #include "cpairs.h"
+#include <curses.h>
 
 int init_pairs() {
 
