@@ -21,3 +21,9 @@ After doing so, **ltest** will be able to statically link **utf8proc**. Right no
 
 As a result, the executable file **ltest** will appear in the directory. Right now, it doesn't depend on any data files (and I hope to keep it that way), so it can be launched from (or copied into) any directory.
 
+### Libraries
+
+This application uses the following libraries:
+
+* [ncursesw](https://www.gnu.org/software/ncurses/) for a console UI. \[X11\]
+
