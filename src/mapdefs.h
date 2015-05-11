@@ -59,6 +59,8 @@ extern enum terrainflags tflags[TT_ELEMENT_COUNT];
 enum entitytypes {
 	ET_NONE = 0,
 	ET_PLAYER,
+	ET_CPU,
+	ET_STATIC,
 	ET_COUNT
 };
 
@@ -107,8 +109,6 @@ struct t_map_entity {
 	uint16_t x;
 	uint16_t y;
 	uint16_t twait; ///< turns left to wait
-	enum movedirections viewdir;
-	bool wideview;
 	struct t_map_ai_data* aidata;
 	turnFunc turn;
 	useFunc use;
