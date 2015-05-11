@@ -16,9 +16,13 @@ bool needs_ai [ET_COUNT] = {
 };
 
 uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
+	
+	if (me->aidata == NULL) return 16;
 
+	me->aidata->viewdir = randval(8);
 
-
+	do_fov(map,me,me->aidata->viewarr);	
+	return 4;
 }
 
 int space_busy(struct t_map* map, uint8_t x, uint8_t y) {

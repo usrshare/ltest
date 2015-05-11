@@ -8,6 +8,7 @@ struct t_map_ai_data {
 	struct t_map_entity* usedby;
 	enum movedirections viewdir;
 	bool wideview;
+	bool show_fov;
 
 	uint8_t viewarr [ MAP_WIDTH * MAP_HEIGHT ];
 

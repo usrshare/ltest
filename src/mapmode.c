@@ -1,5 +1,6 @@
 #include <curses.h>
 
+#include "cpairs.h"
 #include "mapmode.h"
 #include "mapgen.h"
 
@@ -100,11 +101,23 @@ int draw_map(struct t_map* map, struct t_map_entity* persp) {
 	for (int iy=0; iy< MAP_HEIGHT; iy++) {
 		for (int ix=0; ix < MAP_WIDTH; ix++) {
 
+			int tilech = mapchar(&map->sq[iy*(MAP_WIDTH)+ix]); 
+			
 			int tilevis = 1;
 
 			if ((persp != NULL) && (persp->aidata)) tilevis = persp->aidata->viewarr[iy * MAP_WIDTH + ix];
 
-			if (tilevis) mvwaddch(mapwindow,iy,ix, (tilevis == 2 ? A_BOLD : 0) | (mapchar(&map->sq[iy*(MAP_WIDTH)+ix])) );
+			int enemyfov = 0;
+
+			if ((tflags[map->sq[iy*(MAP_WIDTH)+ix].type] & TF_BLOCKS_VISION) == 0) {
+			
+			for (int i=0; i < MAX_ENTITIES; i++) {
+
+				if ((map->ent[i].type != ET_PLAYER) && (map->ent[i].aidata) && (map->ent[i].aidata->viewarr[iy * MAP_WIDTH + ix] >= 2) ) enemyfov=1;
+
+			} }
+
+			if (tilevis) mvwaddch(mapwindow,iy,ix, (tilevis >= 2 ? A_BOLD : 0) | (enemyfov ? CP_CYAN : 0) | tilech );
 
 		}
 	}
@@ -114,7 +127,7 @@ int draw_map(struct t_map* map, struct t_map_entity* persp) {
 		if (map->ent[i].type == ET_NONE) continue;
 		int x = map->ent[i].x; int y = map->ent[i].y;
 
-		if ( (persp == NULL) || ( (persp->aidata) && (persp->aidata->viewarr[y * (MAP_WIDTH) + x] == 2) ) ) {
+		if ( (persp == NULL) || ( (persp->aidata) && (persp->aidata->viewarr[y * (MAP_WIDTH) + x] >= 2) ) ) {
 
 			mvwaddch(mapwindow,y,x,entchar(&map->ent[i]));
 		}
@@ -167,7 +180,7 @@ int space_taken(struct t_map* map, uint8_t x, uint8_t y) {
 
 	for (int i=0; i < MAX_ENTITIES; i++) {
 		struct t_map_entity* e = &map->ent[i];
-		if ((e->x == x) && (e->y == y)) return 1;
+		if ((e->type != ET_NONE) && (e->x == x) && (e->y == y)) return 1;
 	}
 
 	return 0;
