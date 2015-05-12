@@ -177,6 +177,13 @@ uint16_t player_turnFunc(struct t_map* map, struct t_map_entity* me) {
 				  uint8_t dy = me->y + movediff[dir][1];
 				  if (map->sq[dy * MAP_WIDTH + dx].type == TT_DOOR_CLOSED) { map->sq[dy * MAP_WIDTH + dx].type = TT_DOOR_OPEN; r = 8;} else { beep(); r = 1;}
 				  break; }
+		case 'c': {
+
+				  enum movedirections dir = askdir();
+				  uint8_t dx = me->x + movediff[dir][0];
+				  uint8_t dy = me->y + movediff[dir][1];
+				  if (map->sq[dy * MAP_WIDTH + dx].type == TT_DOOR_OPEN) { map->sq[dy * MAP_WIDTH + dx].type = TT_DOOR_CLOSED; r = 8;} else { beep(); r = 1;}
+				  break; }
 
 		case 'w': //wait
 			  r = 1;
