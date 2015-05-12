@@ -280,10 +280,12 @@ int mapmode() {
 
 	struct t_map_entity* player_ent = spawn_entity(&map1,ET_PLAYER,SF_RANDOM,player_turnFunc,NULL,NULL,NULL);
 
-	struct t_map_entity* enemies[3];
+	struct t_map_entity* enemies[8];
 
-	for (int i=0; i < 3; i++) {
+	for (int i=0; i < 8; i++) {
 		enemies[i] = spawn_entity(&map1,ET_CPU,SF_RANDOM_INSIDE,enemy_turnFunc,NULL,enemy_seeFunc,NULL);
+
+		if (enemies[i]) {enemies[i]->aidata->task = AIT_PATROLLING;}
 	}
 
 	player_ent->aidata->wideview = 1;
@@ -299,7 +301,7 @@ int mapmode() {
 
 	keypad(statwindow,1);
 
-	draw_map(&map1, NULL);
+	draw_map(&map1, player_ent);
 
 	int loop = 1;
 
@@ -310,7 +312,7 @@ int mapmode() {
 		turn_n++;
 		loop = check_conditions(&map1);
 		wrefresh(statwindow);
-		draw_map(&map1, NULL);
+		draw_map(&map1, player_ent);
 	}
 
 	delwin(mapwindow);
