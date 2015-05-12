@@ -108,13 +108,17 @@ int draw_map(struct t_map* map, struct t_map_entity* persp) {
 
 			chtype fovcolor = 0;
 
+			int tilecolor = 0;
+
+			if (tilevis == 1) tilecolor = CP_BLUE; else if (tilevis >= 3) tilecolor = A_BOLD;
+
 			int enemyfov = 0;
 
 			if ((tflags[map->sq[iy*(MAP_WIDTH)+ix].type] & TF_BLOCKS_VISION) == 0) {
 			
 			for (int i=0; i < MAX_ENTITIES; i++) {
 
-				if ((map->ent[i].type != ET_PLAYER) && (map->ent[i].aidata) && (map->ent[i].aidata->viewarr[iy * MAP_WIDTH + ix] >= 2) ) {
+				if ((map->ent[i].type != ET_PLAYER) && (map->ent[i].aidata) && (map->ent[i].aidata->viewarr[iy * MAP_WIDTH + ix] >= 3) ) {
 					
 					enemyfov=1;
 
@@ -131,7 +135,7 @@ int draw_map(struct t_map* map, struct t_map_entity* persp) {
 
 			} }
 
-			if (tilevis) mvwaddch(mapwindow,iy,ix, (tilevis >= 2 ? A_BOLD : 0) | fovcolor | tilech );
+			if (tilevis) mvwaddch(mapwindow,iy,ix, tilecolor | fovcolor | tilech );
 
 		}
 	}
@@ -301,7 +305,7 @@ int mapmode() {
 
 	keypad(statwindow,1);
 
-	draw_map(&map1, player_ent);
+	draw_map(&map1, NULL);
 
 	int loop = 1;
 

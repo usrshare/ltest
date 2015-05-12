@@ -21,9 +21,10 @@ struct t_map_ai_data {
 	uint8_t viewarr [ MAP_WIDTH * MAP_HEIGHT ];
 
 	// 0 = never seen this square.
-	// 1 = seen it before, but not right now.
-	// 2 = seeing it right now.
-	// 3 = seeing it right now, and there's an entity there.
+	// 1 = seen it on a map, but not directly.
+	// 2 = seen it before, but not right now.
+	// 3 = seeing it right now.
+	// 4 = seeing it right now, and there's an entity there.
 	
 	bool viewarr_updated;
 	

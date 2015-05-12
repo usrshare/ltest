@@ -77,10 +77,10 @@ void cast_light(struct t_map* map, uint x, uint y, uint radius, uint row,
 				int ov = mem_array[ay * MAP_WIDTH + ax];
 				if (ov == 0) (*flag_updated) = 1; }
 
-				mem_array[ay * MAP_WIDTH + ax] = 2;
+				mem_array[ay * MAP_WIDTH + ax] = 3;
 
 				struct t_map_entity* ent = find_entity(map,ax,ay);
-				if (ent) mem_array [ay * MAP_WIDTH + ax] = 3;
+				if (ent) mem_array [ay * MAP_WIDTH + ax] = 4;
 			}
 
 			if (blocked) {
@@ -117,13 +117,13 @@ void do_fov(struct t_map* map, struct t_map_entity* e, uint8_t* mem_array) {
 	//1 means "remembered", 2 means "seen".
 	for (int j = 0; j < MAP_HEIGHT; j++) {
 		for (int i = 0; i < MAP_WIDTH; i++) {
-			if (mem_array[j * MAP_WIDTH + i] >= 2) {
-				mem_array[j * MAP_WIDTH + i] = 1;
+			if (mem_array[j * MAP_WIDTH + i] >= 3) {
+				mem_array[j * MAP_WIDTH + i] = 2;
 			}
 		}
 	}
 	
-	mem_array[(e->y) * MAP_WIDTH + (e->x)] = 2;
+	mem_array[(e->y) * MAP_WIDTH + (e->x)] = 3;
 
 	int oc = (e->aidata->wideview ? 4 : 2);
 
@@ -136,7 +136,7 @@ void do_fov(struct t_map* map, struct t_map_entity* e, uint8_t* mem_array) {
 	
 	for (int j = 0; j < MAP_HEIGHT; j++) {
 		for (int i = 0; i < MAP_WIDTH; i++) {
-			if (mem_array[j * MAP_WIDTH + i] == 3) {
+			if (mem_array[j * MAP_WIDTH + i] == 4) {
 				if (e->vision_cb) e->vision_cb(map,e,j,i,find_entity(map,i,j));
 			}
 		}
