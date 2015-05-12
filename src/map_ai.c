@@ -9,6 +9,25 @@
 
 struct t_map_ai_data aient[MAX_AI_ENTITIES];
 
+enum movedirections face_square (uint8_t sx, uint8_t sy, uint8_t dx, uint8_t dy) {
+
+	// this function tries to figure out the best direction in which someone at (sx,sy) has to face to see (dx,dy).
+
+	int diff_x = (dx - sx);
+	int diff_y = (dy - sy);
+
+	if ((diff_x == 0) && (diff_y == 0)) return -1; //the spots are the same!
+
+	if (abs(diff_x) > 2 * abs(diff_y)) return (diff_x > 0) ? MD_EAST: MD_WEST;
+	
+	if (abs(diff_y) > 2 * abs(diff_x)) return (diff_y > 0) ? MD_SOUTH: MD_NORTH;
+
+	// at this point, all remaining directions are diagonal.
+
+	if (diff_x > 0) return (diff_y > 0) ? MD_SOUTHEAST : MD_NORTHEAST; else return (diff_y > 0) ? MD_SOUTHWEST : MD_NORTHWEST;
+
+}
+
 bool needs_ai [ET_COUNT] = {
 	0, //none
 	1, //player
@@ -98,7 +117,7 @@ uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
 		md = plot_follow(map,me,me->aidata->patharr,me->aidata->pathprev);
 		if (md != -1) r = trymove(map,me,movediff[md][0],movediff[md][1]); else r = 4;
 
-		if ( (me->aidata->viewarr[ (me->aidata->dy) * MAP_WIDTH + (me->aidata->dx) ] == 2) && (find_entity(map,(me->aidata->dx),(me->aidata->dy)) == NULL) ) { me->aidata->alert_state = 0; me->aidata->task = AIT_PATROLLING;}
+		if ( (me->aidata->viewarr[ (me->aidata->dy) * MAP_WIDTH + (me->aidata->dx) ] == 3) && (find_entity(map,(me->aidata->dx),(me->aidata->dy)) == NULL) ) { me->aidata->alert_state = 0; me->aidata->task = AIT_PATROLLING;}
 
 		break;
 
@@ -108,6 +127,9 @@ uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
 
 		md = plot_follow(map,me,me->aidata->patharr,me->aidata->pathprev);
 		if (md != -1) r = trymove(map,me,movediff[md][0],movediff[md][1]); else r = 4;
+
+		md = face_square(me->x,me->y,me->aidata->dx,me->aidata->dy);
+		if (md != -1) { me->aidata->viewdir = md; r++; }
 
 		me->aidata->alert_state--;
 		if (me->aidata->alert_state == 0) me->aidata->task = AIT_PATROLLING;
