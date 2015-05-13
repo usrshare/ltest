@@ -1,5 +1,7 @@
 #include "map_path.h"
 #include "pqueue.h"
+#include <stdint.h>
+#include <string.h> //memset
 
 uint8_t costs[TT_ELEMENT_COUNT] = {
 
@@ -41,17 +43,19 @@ int plot_path(struct t_map* map, struct t_map_entity* who, uint8_t dx, uint8_t d
 	memset(patharr,-1,sizeof(uint16_t) * MAP_WIDTH * MAP_HEIGHT);
 	memset(pathprev,-1,sizeof(int) * MAP_WIDTH * MAP_HEIGHT);
 	
-	patharr[dy * MAP_WIDTH + dx] = 0;
+	intptr_t dydx = (dy * MAP_WIDTH + dx);	
+	
+	patharr[dydx] = 0;
 
 	struct pqel pathqueue[MAP_WIDTH * MAP_HEIGHT]; 
 	memset(pathqueue,0,sizeof(struct pqel) * MAP_WIDTH * MAP_HEIGHT);
 
-	pq_add_element(pathqueue,(MAP_WIDTH * MAP_HEIGHT), (void*)(dy * MAP_WIDTH + dx), 0);
+	pq_add_element(pathqueue,(MAP_WIDTH * MAP_HEIGHT), (void*)(dydx), 0);
 	int pqels = 1;
 
 	while (pqels) {
 
-		int xy = (int) pq_get_lowest(pathqueue, (MAP_WIDTH * MAP_HEIGHT)); pqels--;
+		intptr_t xy = (intptr_t) pq_get_lowest(pathqueue, (MAP_WIDTH * MAP_HEIGHT)); pqels--;
 		int x = (xy % MAP_WIDTH);
 		int y = (xy / MAP_WIDTH);
 

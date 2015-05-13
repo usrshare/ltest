@@ -9,10 +9,6 @@ int vispass(struct t_map* map, uint8_t x, uint8_t y) {
 	return !(tflags[map->sq[y * MAP_WIDTH + x].type] & TF_BLOCKS_VISION);
 }
 
-int vtile(uint8_t x, uint8_t y) {
-
-	return ((x < MAP_WIDTH) && (y < MAP_HEIGHT));
-}
 
 // the following code is shamelessly borrowed from the shadowcasting
 // code at http://www.roguebasin.com/index.php?title=C%2B%2B_shadowcasting_implementation.
@@ -41,7 +37,7 @@ static int octants[MD_COUNT][4] = {
 
 void cast_light(struct t_map* map, uint x, uint y, uint radius, uint row,
 		float start_slope, float end_slope, uint xx, uint xy, uint yx,
-		uint yy, uint8_t* mem_array, bool* flag_updated) {
+		uint yy, uint8_t* mem_array, bool* flag_updated, int* visible_entities) {
 	if (start_slope < end_slope) {
 		return;
 	}
@@ -80,7 +76,10 @@ void cast_light(struct t_map* map, uint x, uint y, uint radius, uint row,
 				mem_array[ay * MAP_WIDTH + ax] = 3;
 
 				struct t_map_entity* ent = find_entity(map,ax,ay);
-				if (ent) mem_array [ay * MAP_WIDTH + ax] = 4;
+				if (ent) {
+					mem_array [ay * MAP_WIDTH + ax] = 4;
+					if (visible_entities) (*visible_entities)++;
+				}
 			}
 
 			if (blocked) {
@@ -95,7 +94,7 @@ void cast_light(struct t_map* map, uint x, uint y, uint radius, uint row,
 				blocked = true;
 				next_start_slope = r_slope;
 				cast_light(map, x, y, radius, i + 1, start_slope, l_slope, xx,
-						xy, yx, yy,mem_array, flag_updated);
+						xy, yx, yy,mem_array, flag_updated, visible_entities);
 			}
 		}
 		if (blocked) {
@@ -104,14 +103,32 @@ void cast_light(struct t_map* map, uint x, uint y, uint radius, uint row,
 	}
 }
 
+void find_visible_entities(struct t_map* map, uint8_t* va, struct t_map_entity** o_entities, size_t sz) {
+
+	size_t idx=0;
+	
+	for (int j = 0; j < MAP_HEIGHT; j++) {
+		for (int i = 0; i < MAP_WIDTH; i++) {
+			if (va[j * MAP_WIDTH + i] == 4) {
+				
+				if (idx >= sz) return;
+				o_entities[idx] = find_entity(map,i,j);
+				idx++;
+
+			}
+		}
+	}
+
+}
+
 /* calculate which tiles can be seen by the player */
-void do_fov(struct t_map* map, struct t_map_entity* e, uint8_t* mem_array) {
+void do_fov(struct t_map* map, struct t_map_entity* e, uint8_t* mem_array, int* visible_entities) {
 
 	if (e == NULL) return;
 	if (e->aidata == NULL) return;
 	if (mem_array == NULL) return;
 
-	int flag_updated = 0;
+	bool flag_updated = 0;
 
 	/* un-see everything */
 	//1 means "remembered", 2 means "seen".
@@ -122,6 +139,8 @@ void do_fov(struct t_map* map, struct t_map_entity* e, uint8_t* mem_array) {
 			}
 		}
 	}
+
+	if (visible_entities) (*visible_entities) = 0;
 	
 	mem_array[(e->y) * MAP_WIDTH + (e->x)] = 3;
 
@@ -129,7 +148,7 @@ void do_fov(struct t_map* map, struct t_map_entity* e, uint8_t* mem_array) {
 
 	for (int i=0; i < oc; i++) {
 		int co = octants[e->aidata->viewdir][i];
-		cast_light(map, e->x, e->y, 32, 1, 1.0, 0.0, multipliers[0][co], multipliers[1][co], multipliers[2][co], multipliers[3][co], mem_array, &flag_updated);
+		cast_light(map, e->x, e->y, 32, 1, 1.0, 0.0, multipliers[0][co], multipliers[1][co], multipliers[2][co], multipliers[3][co], mem_array, &flag_updated, visible_entities);
 	}
 
 	if (flag_updated) e->aidata->viewarr_updated = 1;

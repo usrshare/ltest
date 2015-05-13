@@ -40,10 +40,9 @@ int movediff[MD_COUNT][2] = {
 	{-1,0},
 	{-1,-1}};
 
-int generate_map(struct t_map* map, enum maptypes mt, int flags) {
+int vtile(uint8_t x, uint8_t y) {
 
-
-
+	return ((x < MAP_WIDTH) && (y < MAP_HEIGHT));
 }
 
 chtype mapchar(struct t_square* sq) {
@@ -72,7 +71,7 @@ struct t_map_entity* next_empty_entity(struct t_map* map) {
 	return NULL;
 }
 
-struct t_map_ai_data* next_empty_ai_data(struct t_map* map) {
+struct t_map_ai_data* next_empty_ai_data(void) {
 	for (int i=0; i < MAX_AI_ENTITIES; i++)
 		if (aient[i].usedby == NULL) return &(aient[i]);
 
@@ -211,7 +210,7 @@ struct t_map_entity* spawn_entity(struct t_map* map, enum entitytypes type, enum
 
 	if (needs_ai[type]) {
 
-		struct t_map_ai_data* newai = next_empty_ai_data(map);
+		struct t_map_ai_data* newai = next_empty_ai_data();
 		if (newai == NULL) return NULL;
 
 		newent->aidata = newai;
@@ -287,7 +286,7 @@ int mapmode() {
 	struct t_map_entity* enemies[8];
 
 	for (int i=0; i < 8; i++) {
-		enemies[i] = spawn_entity(&map1,ET_CPU,SF_RANDOM_INSIDE,enemy_turnFunc,NULL,enemy_seeFunc,NULL);
+		enemies[i] = spawn_entity(&map1,ET_CPU,SF_RANDOM_INSIDE,enemy_turnFunc,NULL,NULL,NULL);
 
 		if (enemies[i]) {enemies[i]->aidata->task = AIT_PATROLLING;}
 	}
@@ -341,6 +340,11 @@ int mapgetch() {
 	wmove(statwindow,y,x);
 
 	return c;
+}
+
+int nc_beep(void) {
+
+	return beep();
 }
 
 enum movedirections askdir() {
