@@ -95,6 +95,7 @@ int wall_border(struct t_map* map, int x, int y, int w, int h) {
 		map->sq[iy*MAP_WIDTH+x].type = TT_WALL;
 		map->sq[iy*MAP_WIDTH+(x+w-1)].type = TT_WALL;
 	}
+	return 0;
 }
 
 int wall_border_2(struct t_map* map, int x, int y, int w, int h) { //doesn't replace doors!
@@ -113,11 +114,14 @@ int wall_border_2(struct t_map* map, int x, int y, int w, int h) { //doesn't rep
 
 	return doors;
 }
+int fill_rect(struct t_map* map, int x, int y, int w, int h, enum terraintypes tt) {
 
-int largest_room(struct t_map* map, int mx, int my, int vertical_lookup, int* w, int* h) {
+	for (int iy=y; iy < y+h; iy++)
+		for (int ix=x; ix < x+w; ix++)
+			map->sq[iy*MAP_WIDTH+ix].type = tt;
 
-
-}
+	return 0;
+}	
 
 int okay_door (struct t_map* map, int x, int y, int l, enum directions dir, enum terraintypes tt1, enum terraintypes tt2, int* out_posarray) {
 
@@ -169,7 +173,6 @@ int okay_door (struct t_map* map, int x, int y, int l, enum directions dir, enum
 
 	return okaydoors;
 }
-
 int build_doors(struct t_map* map, int x, int y, int w, int h, enum dirflags df, enum terraintypes tt1, enum terraintypes tt2, int min) {
 
 	int doorcount = 0;
@@ -202,7 +205,6 @@ int build_doors(struct t_map* map, int x, int y, int w, int h, enum dirflags df,
 		} while (direction == -1);
 
 		int dy = y, dx = 0;
-		enum terraintypes t1, t2;
 
 		switch (direction) {
 
@@ -247,6 +249,7 @@ int build_doors(struct t_map* map, int x, int y, int w, int h, enum dirflags df,
 		}
 
 	} while ((doorcount < min) && (adf != 0));
+	return 0;
 }
 
 enum terraintypes check_collision(struct t_map* map, int x, int y, int w, int h, enum terraintypes normaltype) {
@@ -257,7 +260,6 @@ enum terraintypes check_collision(struct t_map* map, int x, int y, int w, int h,
 
 	return normaltype;
 }
-
 int count_terrain_left(struct t_map* map, int x, int y, int w, int h, enum terraintypes tt) {
 
 	int n = 0;
@@ -269,8 +271,7 @@ int count_terrain_left(struct t_map* map, int x, int y, int w, int h, enum terra
 	return n;
 }
 
-int pop(unsigned x)
-{
+int pop(unsigned x){
 	x = x - ((x >> 1) & 0x55555555);
 	x = (x & 0x33333333) + ((x >> 2) & 0x33333333);
 	x = (x + (x >> 4)) & 0x0F0F0F0F;
@@ -279,7 +280,7 @@ int pop(unsigned x)
 	return x & 0x0000003F;
 }
 
-int find_next_area(struct t_map* map, int* x, int* y, int w, int h, enum directions growdir) {
+int find_next_area(int* x, int* y, int w, int h, enum directions growdir) {
 
 	switch (growdir) {
 
@@ -298,8 +299,10 @@ int find_next_area(struct t_map* map, int* x, int* y, int w, int h, enum directi
 		default:
 		return -1;
 	}
-
+	return 0;
 }
+
+int grow_room(struct t_map* map, int x, int y, enum directions growdir, enum dirflags join_to, int recurse, struct rect* outrect);
 
 int recurse_grow(struct t_map* map, int x, int y, int w, int h, enum directions growdir, enum recurse_behavior recbeh) {
 
@@ -310,9 +313,9 @@ int recurse_grow(struct t_map* map, int x, int y, int w, int h, enum directions 
 	int x_ccw = x, x_cw = x, x_f = x;
 	int y_ccw = y, y_cw = y, y_f = y;
 
-	find_next_area(map,&x_f,&y_f,w,h,growdir);
-	find_next_area(map,&x_ccw,&y_ccw,w,h,ccwDir(growdir));
-	find_next_area(map,&x_cw,&y_cw,w,h,cwDir(growdir));
+	find_next_area(&x_f,&y_f,w,h,growdir);
+	find_next_area(&x_ccw,&y_ccw,w,h,ccwDir(growdir));
+	find_next_area(&x_cw,&y_cw,w,h,cwDir(growdir));
 
 	struct rect o_f, o_ccw, o_cw;
 
@@ -340,13 +343,12 @@ int recurse_grow(struct t_map* map, int x, int y, int w, int h, enum directions 
 	if (grow_ccw) recurse_grow(map,o_ccw.x,o_ccw.y,o_ccw.w,o_ccw.h,ccwDir(growdir),recbeh);
 	if (grow_cw) recurse_grow(map,o_cw.x,o_cw.y,o_cw.w,o_cw.h,cwDir(growdir),recbeh);
 
+	return 0;
 }
 
 int grow_room(struct t_map* map, int x, int y, enum directions growdir, enum dirflags join_to, int recurse, struct rect* outrect) {
 
 	int nx=x, ny=y, nw=1, nh=1;
-
-	int direction = D_NONE;
 
 	if ( check_collision(map, nx, ny, nw, nh, TT_UNKNOWN) != TT_UNKNOWN) return 1;
 
@@ -420,33 +422,7 @@ int grow_room(struct t_map* map, int x, int y, enum directions growdir, enum dir
 
 
 	if (recurse) recurse_grow(map,nx,ny,nw,nh, growdir, RB_RANDOM);
-
-}
-
-int connect_rooms(struct t_map* map, int x, int y, int w, int h) {
-
-	//this function finds unconnected areas and builds doors to connect them.
-
-	int done_array  [MAP_WIDTH * MAP_HEIGHT];
-	int building_id [MAP_WIDTH * MAP_HEIGHT];
-
-	int done_count = 0;
-
-	memset(done_array , 0, sizeof(int) * MAP_HEIGHT * MAP_WIDTH);
-	memset(building_id, 0, sizeof(int) * MAP_HEIGHT * MAP_WIDTH);
-
-
-
-	int rx = x + randval(w);
-	int rw = y + randval(y);
-
-}
-
-
-int create_room(struct t_map* map, int x, int y, int w, int h) {
-
-
-
+	return 0;
 }
 
 int iterate_rooms_2(struct t_map* map, int x, int y, int w, int h) {
@@ -525,7 +501,7 @@ int iterate_rooms_2(struct t_map* map, int x, int y, int w, int h) {
 
 	}
 
-
+	return 0;
 }
 
 int iterate_rooms(struct t_map* map, int x, int y, int w, int h) {
@@ -610,14 +586,6 @@ int make_corridor(struct t_map* map, int x, int y, int w, int h) {
 	return 0;
 }
 
-int fill_rect(struct t_map* map, int x, int y, int w, int h, enum terraintypes tt) {
-
-	for (int iy=y; iy < y+h; iy++)
-		for (int ix=x; ix < x+w; ix++)
-			map->sq[iy*MAP_WIDTH+ix].type = tt;
-
-	return 0;
-}	
 int generate_buildings(struct t_map* map, enum generate_modes gm) {
 
 	if (gm == GM_RANDOM) gm = randbetween (GM_SINGLE, GM_ELEMENT_COUNT-1);
