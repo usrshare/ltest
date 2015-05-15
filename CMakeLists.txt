@@ -15,6 +15,7 @@ add_executable (ltest
 		src/cpairs.c
 		src/entity.c
 		src/main.c
+		src/map_actions.c
 		src/map_ai.c
 		src/map_fov.c
 		src/map_path.c
