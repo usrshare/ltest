@@ -1,3 +1,4 @@
+#include "mapmode.h"
 #include "map_path.h"
 #include "pqueue.h"
 #include <stdint.h>
@@ -22,9 +23,9 @@ uint8_t costs[TT_ELEMENT_COUNT] = {
 	255, //unknown
 };
 
-enum movedirections plot_follow(struct t_map* map, struct t_map_entity* who, uint16_t* patharr, enum movedirections* pathprev) {
+enum movedirections plot_follow(uint8_t x, uint8_t y, enum movedirections* pathprev) {
 
-	return (4 + pathprev[who->y * MAP_WIDTH + who->x]) % 8;
+	return (4 + pathprev[y * MAP_WIDTH + x]) % 8;
 }
 
 int getcost(struct t_map* map, struct t_map_entity* who, uint8_t x, uint8_t y) {
@@ -43,14 +44,14 @@ int plot_path(struct t_map* map, struct t_map_entity* who, uint8_t dx, uint8_t d
 	memset(patharr,-1,sizeof(uint16_t) * MAP_WIDTH * MAP_HEIGHT);
 	memset(pathprev,-1,sizeof(int) * MAP_WIDTH * MAP_HEIGHT);
 	
-	intptr_t dydx = (dy * MAP_WIDTH + dx);	
+	int dydx = (dy * MAP_WIDTH + dx);	
 	
 	patharr[dydx] = 0;
 
 	struct pqel pathqueue[MAP_WIDTH * MAP_HEIGHT]; 
 	memset(pathqueue,0,sizeof(struct pqel) * MAP_WIDTH * MAP_HEIGHT);
 
-	pq_add_element(pathqueue,(MAP_WIDTH * MAP_HEIGHT), (void*)(dydx), 0);
+	pq_add_element(pathqueue,(MAP_WIDTH * MAP_HEIGHT), (void*)(intptr_t)(dydx), 0);
 	int pqels = 1;
 
 	while (pqels) {
@@ -79,10 +80,11 @@ int plot_path(struct t_map* map, struct t_map_entity* who, uint8_t dx, uint8_t d
 			patharr[ny * MAP_WIDTH + nx] = alt;
 			pathprev[ny * MAP_WIDTH + nx] = dir;
 
-			int r = pq_decrease_or_add(pathqueue,(MAP_WIDTH * MAP_HEIGHT),(void*)(ny * MAP_WIDTH + nx), alt); if (r == 2) pqels++;
+			int r = pq_decrease_or_add(pathqueue,(MAP_WIDTH * MAP_HEIGHT),(void*)(intptr_t)(ny * MAP_WIDTH + nx), alt); if (r == 2) pqels++;
 
 		}
 
 	}
 	}
+	return 0;
 }

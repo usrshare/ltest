@@ -3,7 +3,7 @@
 
 struct pqel* pq_find_empty_element (struct pqel* array, size_t sz) {
 
-	for (int i=0; i < sz; i++)
+	for (size_t i=0; i < sz; i++)
 		if (array[i].v == NULL) return &array[i];
 	return NULL;
 }
@@ -21,7 +21,7 @@ int pq_add_element(struct pqel* array, size_t sz, void* ptr, int priority) {
 void* pq_get_lowest(struct pqel* array, size_t sz) {
 
 	int lowest_p = INT_MAX; void* lowest_v = NULL; int lowest_i = -1;
-	for (int i=0; i < sz; i++)
+	for (size_t i=0; i < sz; i++)
 		if ((array[i].v != NULL) && (array[i].p < lowest_p)) {
 			lowest_p = array[i].p;
 			lowest_v = array[i].v;
@@ -34,7 +34,7 @@ void* pq_get_lowest(struct pqel* array, size_t sz) {
 
 int pq_decrease_priority(struct pqel* array, size_t sz, void* ptr, int newpriority) {
 	
-	for (int i=0; i < sz; i++)
+	for (size_t i=0; i < sz; i++)
 		if (array[i].v == ptr) {
 			array[i].p = newpriority; return 0; }
 
@@ -43,7 +43,7 @@ int pq_decrease_priority(struct pqel* array, size_t sz, void* ptr, int newpriori
 
 int pq_decrease_or_add(struct pqel* array, size_t sz, void* ptr, int priority) {
 	
-	for (int i=0; i < sz; i++)
+	for (size_t i=0; i < sz; i++)
 		if (array[i].v == ptr) {
 			array[i].p = priority; return 0; }
 
@@ -52,7 +52,7 @@ int pq_decrease_or_add(struct pqel* array, size_t sz, void* ptr, int priority) {
 
 
 int pq_empty (struct pqel* array, size_t sz) {
-	for (int i=0; i < sz; i++)
+	for (size_t i=0; i < sz; i++)
 		if (array[i].v != NULL) return 0;
 
 	return 1;

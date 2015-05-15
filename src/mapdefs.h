@@ -56,6 +56,14 @@ enum terrainflags {
 
 extern enum terrainflags tflags[TT_ELEMENT_COUNT];
 
+enum extraflags {
+	XF_MAIN_ENTRANCE_POINT = 1,
+	XF_BACK_ENTRANCE_POINT = 2,
+	XF_ENEMY_SPAWN_POINT = 4,
+	XF_SAFE_AREA = 8,
+	XF_PATROL_WAYPOINT = 16,
+};
+
 enum entitytypes {
 	ET_NONE = 0,
 	ET_PLAYER,
@@ -76,6 +84,7 @@ enum spawnpos {
 
 struct t_square {
 	enum terraintypes type;
+	enum extraflags flags;
 	uint16_t hp;
 };
 

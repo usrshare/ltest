@@ -122,7 +122,7 @@ void find_visible_entities(struct t_map* map, uint8_t* va, struct t_map_entity**
 }
 
 /* calculate which tiles can be seen by the player */
-void do_fov(struct t_map* map, struct t_map_entity* e, uint8_t* mem_array, int* visible_entities) {
+void do_fov(struct t_map* map, struct t_map_entity* e, int radius, uint8_t* mem_array, int* visible_entities) {
 
 	if (e == NULL) return;
 	if (e->aidata == NULL) return;
@@ -148,7 +148,7 @@ void do_fov(struct t_map* map, struct t_map_entity* e, uint8_t* mem_array, int* 
 
 	for (int i=0; i < oc; i++) {
 		int co = octants[e->aidata->viewdir][i];
-		cast_light(map, e->x, e->y, 32, 1, 1.0, 0.0, multipliers[0][co], multipliers[1][co], multipliers[2][co], multipliers[3][co], mem_array, &flag_updated, visible_entities);
+		cast_light(map, e->x, e->y, radius, 1, 1.0, 0.0, multipliers[0][co], multipliers[1][co], multipliers[2][co], multipliers[3][co], mem_array, &flag_updated, visible_entities);
 	}
 
 	if (flag_updated) e->aidata->viewarr_updated = 1;

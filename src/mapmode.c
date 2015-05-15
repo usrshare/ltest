@@ -111,27 +111,19 @@ int draw_map(struct t_map* map, struct t_map_entity* persp) {
 
 			if (tilevis == 1) tilecolor = CP_BLUE; else if (tilevis >= 3) tilecolor = A_BOLD;
 
-			int enemyfov = 0;
-
 			if ((tflags[map->sq[iy*(MAP_WIDTH)+ix].type] & TF_BLOCKS_VISION) == 0) {
 			
 			for (int i=0; i < MAX_ENTITIES; i++) {
 
 				if ((map->ent[i].type != ET_PLAYER) && (map->ent[i].aidata) && (map->ent[i].aidata->viewarr[iy * MAP_WIDTH + ix] >= 3) ) {
 					
-					enemyfov=1;
-
 					switch (map->ent[i].aidata->task) {
-
 						case AIT_WORKING: fovcolor = CP_GREEN; break;
 						case AIT_PATROLLING: fovcolor = CP_CYAN; break;
 						case AIT_CHECKING_OUT: fovcolor = CP_YELLOW; break;
 						case AIT_PURSUING: fovcolor = CP_RED; break;
-						 
 					}
-
 				}
-
 			} }
 
 			if (tilevis) mvwaddch(mapwindow,iy,ix, tilecolor | fovcolor | tilech );
@@ -154,6 +146,7 @@ int draw_map(struct t_map* map, struct t_map_entity* persp) {
 	wrefresh(mapwindow);
 
 	wmove(statwindow,y,x);
+	return 0;
 }
 
 int make_turn(struct t_map* map) {
@@ -166,6 +159,7 @@ int make_turn(struct t_map* map) {
 
 		}
 	}
+	return 0;
 }
 
 int check_conditions(struct t_map* map) {
@@ -299,24 +293,20 @@ int mapmode() {
 	wrefresh(statwindow_b);
 
 	statwindow = subwin(statwindow_b,LINES-21,COLS,0,0);
-	if (statwindow == 0) exit(2);
+	if (statwindow == 0) return 1;
 	scrollok(statwindow,1);
 
 	keypad(statwindow,1);
 
-	draw_map(&map1, NULL);
-
 	int loop = 1;
-
 	int turn_n = 0;
-
-	while (loop) {
-		make_turn(&map1);
-		turn_n++;
-		loop = check_conditions(&map1);
+	do {
 		wrefresh(statwindow);
 		draw_map(&map1, player_ent);
-	}
+		make_turn(&map1);
+		loop = check_conditions(&map1);
+		turn_n++;
+	} while (loop);
 
 	delwin(mapwindow);
 	delwin(statwindow);

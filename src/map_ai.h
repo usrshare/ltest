@@ -3,12 +3,19 @@
 
 #include "mapdefs.h"
 
+#define HEATMAP_SIZE 128
+
 enum aitasks {
 
 	AIT_WORKING, // for non-hostile NPCs doing "their regular jobs"
 	AIT_PATROLLING, // for security/police NPCs
 	AIT_CHECKING_OUT,
 	AIT_PURSUING,
+};
+
+struct coords {
+	uint8_t x;
+	uint8_t y;
 };
 
 struct t_map_ai_data {
@@ -30,6 +37,9 @@ struct t_map_ai_data {
 	
 	uint16_t patharr [ MAP_WIDTH * MAP_HEIGHT ];
 	enum movedirections pathprev[ MAP_WIDTH * MAP_HEIGHT ];
+
+	uint16_t heatmap_old [ HEATMAP_SIZE ]; //storing coords as (y * MAP_WIDTH + x).
+	uint16_t heatmap_new [ HEATMAP_SIZE ]; //65535 stands for "empty".
 
 	enum aitasks task;
 

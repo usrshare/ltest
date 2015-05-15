@@ -1,5 +1,6 @@
 #ifndef MAPGEN_H
 #define MAPGEN_H
+#include "mapdefs.h"
 
 enum directions {
 	D_NONE = -1,
@@ -18,7 +19,6 @@ enum dirflags {
 };
 
 enum generate_modes {
-
 	GM_EMPTY,
 	GM_LIBERAL, //"Liberal Crime Squad" algorithm	
 	GM_RANDOM,
@@ -44,5 +44,7 @@ struct rect {
 	int w;
 	int h;
 };
+
+int generate_buildings(struct t_map* map, enum generate_modes gm);
 
 #endif
