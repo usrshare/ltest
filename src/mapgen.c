@@ -498,7 +498,7 @@ int grow_room(struct t_map* map, int x, int y, enum directions growdir, enum dir
 		outrect->h = nh;
 	}
 
-	decorate_room(map,nx,ny,nw,nh,RS_RANDOM);
+	//decorate_room(map,nx,ny,nw,nh,RS_RANDOM);
 
 	if (recurse) recurse_grow(map,nx,ny,nw,nh, growdir, RB_RANDOM);
 	return 0;
