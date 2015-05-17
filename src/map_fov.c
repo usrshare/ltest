@@ -24,15 +24,15 @@ static int multipliers[4][8] = {
 	{1, 0, 0, 1, -1, 0, 0, -1}
 };
 
-static int octants[MD_COUNT][4] = {
-	{0,3,1,2}, //n
-	{2,3,0,5}, //ne
-	{2,5,4,3}, //e
-	{4,5,2,7}, //se
-	{4,7,5,6}, //s
-	{6,7,1,4}, //sw
-	{1,6,0,7}, //w
-	{0,1,3,6}, //nw
+static int octants[MD_COUNT][8] = {
+	{0,3,1,2,4,5,6,7}, //n
+	{2,3,0,5,1,4,6,7}, //ne
+	{2,5,4,3,0,1,6,7}, //e
+	{4,5,2,7,0,1,3,6}, //se
+	{4,7,5,6,0,1,2,3}, //s
+	{6,7,1,4,0,2,3,5}, //sw
+	{1,6,0,7,2,3,4,5}, //w
+	{0,1,3,6,2,4,5,7}, //nw
 };
 
 void cast_light(struct t_map* map, uint x, uint y, uint radius, uint row,
@@ -121,8 +121,9 @@ void find_visible_entities(struct t_map* map, uint8_t* va, struct t_map_entity**
 
 }
 
+
 /* calculate which tiles can be seen by the player */
-void do_fov(struct t_map* map, struct t_map_entity* e, int radius, uint8_t* mem_array, int* visible_entities) {
+void do_fov(struct t_map* map, struct t_map_entity* e, int radius, enum fov_angles angle, uint8_t* mem_array, int* visible_entities) {
 
 	if (e == NULL) return;
 	if (e->aidata == NULL) return;
@@ -144,7 +145,13 @@ void do_fov(struct t_map* map, struct t_map_entity* e, int radius, uint8_t* mem_
 	
 	mem_array[(e->y) * MAP_WIDTH + (e->x)] = 3;
 
-	int oc = (e->aidata->wideview ? 4 : 2);
+	int oc = 0;
+
+	switch(angle) {
+		case FA_NORMAL: oc=2; break;
+		case FA_WIDE: oc=4; break;
+		case FA_FULL: oc=8; break;
+	}
 
 	for (int i=0; i < oc; i++) {
 		int co = octants[e->aidata->viewdir][i];

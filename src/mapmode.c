@@ -3,6 +3,7 @@
 #include "cpairs.h"
 #include "mapmode.h"
 #include "mapgen.h"
+#include "map_fov.h"
 
 #include "random.h"
 
@@ -89,7 +90,7 @@ chtype entchar(struct t_map_entity* e) {
 	}
 }
 
-int draw_map(struct t_map* map, struct t_map_entity* persp) {
+int draw_map(struct t_map* map, struct t_map_entity* persp, bool show_fov, bool show_targets, bool show_heatmaps) {
 
 	int x,y;
 	getparyx(statwindow,y,x);
@@ -105,12 +106,10 @@ int draw_map(struct t_map* map, struct t_map_entity* persp) {
 
 			if ((persp != NULL) && (persp->aidata)) tilevis = persp->aidata->viewarr[iy * MAP_WIDTH + ix];
 
+			chtype tileflags = 0;
+
+			if (show_fov) {
 			chtype fovcolor = 0;
-
-			int tilecolor = 0;
-
-			if (tilevis == 1) tilecolor = CP_BLUE; else if (tilevis >= 3) tilecolor = A_BOLD;
-
 			if ((tflags[map->sq[iy*(MAP_WIDTH)+ix].type] & TF_BLOCKS_VISION) == 0) {
 			
 			for (int i=0; i < MAX_ENTITIES; i++) {
@@ -122,11 +121,16 @@ int draw_map(struct t_map* map, struct t_map_entity* persp) {
 						case AIT_PATROLLING: fovcolor = CP_CYAN; break;
 						case AIT_CHECKING_OUT: fovcolor = CP_YELLOW; break;
 						case AIT_PURSUING: fovcolor = CP_RED; break;
+						case AIT_LOOKING_FOR: fovcolor = CP_PURPLE; break;
 					}
 				}
 			} }
+			tileflags |= fovcolor;
+			}
 
-			if (tilevis) mvwaddch(mapwindow,iy,ix, tilecolor | fovcolor | tilech );
+			if (tilevis == 1) tileflags |= CP_BLUE; else if (tilevis >= 3) tileflags |= A_BOLD;
+
+			if (tilevis) mvwaddch(mapwindow,iy,ix, tileflags | tilech );
 
 		}
 	}
@@ -134,13 +138,39 @@ int draw_map(struct t_map* map, struct t_map_entity* persp) {
 	for (int i=0; i < MAX_ENTITIES; i++) {
 
 		if (map->ent[i].type == ET_NONE) continue;
-		int x = map->ent[i].x; int y = map->ent[i].y;
 
-		if ( (persp == NULL) || ( (persp->aidata) && (persp->aidata->viewarr[y * (MAP_WIDTH) + x] >= 2) ) ) {
-
-			mvwaddch(mapwindow,y,x,entchar(&map->ent[i]));
+		if ((map->ent[i].aidata) != NULL) {
+		
+		if (show_targets) {
+			if (vtile(map->ent[i].aidata->dx,map->ent[i].aidata->dy))
+				mvwaddch(mapwindow,map->ent[i].aidata->dy,map->ent[i].aidata->dx,'%' | CP_PURPLE);
+		}
+		
+		if (show_heatmaps) {
+			for (int m=0; m < HEATMAP_SIZE; m++) {
+				uint16_t yx = map->ent[i].aidata->heatmap_old[m];
+				if (yx == 65535) continue;
+				uint8_t y = yx / MAP_WIDTH; uint8_t x = yx % MAP_WIDTH;
+				mvwaddch(mapwindow,y,x,'&' | CP_YELLOW);
+			}
+			for (int m=0; m < HEATMAP_SIZE; m++) {
+				uint16_t yx = map->ent[i].aidata->heatmap_new[m];
+				if (yx == 65535) continue;
+				uint8_t y = yx / MAP_WIDTH; uint8_t x = yx % MAP_WIDTH;
+				mvwaddch(mapwindow,y,x,'&' | CP_GREEN);
+			}
 		}
 
+		}
+	}
+	for (int i=0; i < MAX_ENTITIES; i++) {
+
+		if (map->ent[i].type == ET_NONE) continue;
+		int ex = map->ent[i].x; int ey = map->ent[i].y;
+		
+		if ( (persp == NULL) || ( (persp->aidata) && (persp->aidata->viewarr[ey * (MAP_WIDTH) + ex] >= 2) ) ) {
+			mvwaddch(mapwindow,ey,ex,entchar(&map->ent[i]));
+		}
 	}
 
 	wrefresh(mapwindow);
@@ -208,6 +238,10 @@ struct t_map_entity* spawn_entity(struct t_map* map, enum entitytypes type, enum
 		if (newai == NULL) return NULL;
 
 		newent->aidata = newai;
+		newai->dx = 255;
+		newai->dy = 255;
+		heatmap_clear(newai->heatmap_old);
+		heatmap_clear(newai->heatmap_new);
 		newai->usedby = newent;
 
 	}
@@ -277,15 +311,19 @@ int mapmode() {
 
 	struct t_map_entity* player_ent = spawn_entity(&map1,ET_PLAYER,SF_RANDOM,player_turnFunc,NULL,NULL,NULL);
 
-	struct t_map_entity* enemies[8];
+	#define ENEMIES_COUNT 16
 
-	for (int i=0; i < 8; i++) {
+	struct t_map_entity* enemies[ENEMIES_COUNT];
+
+	for (int i=0; i < ENEMIES_COUNT; i++) {
 		enemies[i] = spawn_entity(&map1,ET_CPU,SF_RANDOM_INSIDE,enemy_turnFunc,NULL,NULL,NULL);
 
 		if (enemies[i]) {enemies[i]->aidata->task = AIT_PATROLLING;}
 	}
 
 	player_ent->aidata->wideview = 1;
+
+	memset(player_ent->aidata->viewarr,1,sizeof(uint8_t) * MAP_WIDTH * MAP_HEIGHT);
 
 	statwindow_b = newwin(LINES-20,COLS,0,0);
 	wmove(statwindow_b,LINES-21,0);
@@ -297,12 +335,14 @@ int mapmode() {
 	scrollok(statwindow,1);
 
 	keypad(statwindow,1);
+	
+	do_fov(&map1,player_ent,25,FA_FULL,player_ent->aidata->viewarr,NULL);
 
 	int loop = 1;
 	int turn_n = 0;
 	do {
 		wrefresh(statwindow);
-		draw_map(&map1, player_ent);
+		draw_map(&map1, player_ent,1,1,1);
 		make_turn(&map1);
 		loop = check_conditions(&map1);
 		turn_n++;
