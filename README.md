@@ -21,6 +21,14 @@ After doing so, **ltest** will be able to statically link **utf8proc**. Right no
 
 As a result, the executable file **ltest** will appear in the directory. Right now, it doesn't depend on any data files (and I hope to keep it that way), so it can be launched from (or copied into) any directory.
 
+### Controls
+
+This is *very, very far* from a complete game. Right now, it is just a small demo that generates a map, puts enemies in random spaces and makes them spin around until they see you.
+
+The movement controls are taken from NetHack (HJKL = ←↓↑→, yubn = NW/NE/SW/SE), doors open automatically or on pressing O(open), C closes doors and F allows you to remove a nearby enemy (only if they're not alerted in any way).
+
+To exit, hit the standard Ctrl+C combination.
+
 ### Libraries
 
 This application uses the following libraries:

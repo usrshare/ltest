@@ -229,6 +229,9 @@ int update_heatmap(struct t_map* map, struct t_map_entity* me, uint8_t x, uint8_
 
 // -- end of heatmap functions
 
+int knock_out (struct t_map* map, struct t_map_entity* me, uint8_t x, uint8_t y) {
+}
+
 uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
 
 	int r = 0;
@@ -414,6 +417,18 @@ uint16_t player_turnFunc(struct t_map* map, struct t_map_entity* me) {
 				  uint8_t dx = me->x + movediff[dir][0];
 				  uint8_t dy = me->y + movediff[dir][1];
 				  if (map->sq[dy * MAP_WIDTH + dx].type == TT_DOOR_OPEN) { map->sq[dy * MAP_WIDTH + dx].type = TT_DOOR_CLOSED; r = 8;} else { nc_beep(); r = 1;}
+				  break; }
+
+		case 'f': {
+				  enum movedirections dir = askdir();
+				  uint8_t dx = me->x + movediff[dir][0];
+				  uint8_t dy = me->y + movediff[dir][1];
+				  me->aidata->viewdir = dir; 
+				  struct t_map_entity* enemy = find_entity(map,dx,dy);
+				  if ((enemy->aidata) && (enemy->aidata->alert_state == 0)) {
+					  kill_entity(enemy); r = 16;
+				  } else {nc_beep(); r = 4;}
+
 				  break; }
 
 		case 'w': //wait

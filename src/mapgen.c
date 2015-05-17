@@ -401,7 +401,7 @@ int grow_room(struct t_map* map, int x, int y, enum directions growdir, enum dir
 				break; }	
 		}
 
-	if (randval(64) < (nw * nh)) { growing=0;}
+	if (randval(256) < (nw * nh)) { growing=0;}
 	}
 
 	mindoors = 1;
