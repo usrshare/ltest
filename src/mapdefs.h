@@ -37,6 +37,7 @@ enum terraintypes {
 	TT_DOOR_OPEN,
 	TT_BARS,
 	TT_TABLE,
+	TT_LOCKER,
 	TT_CUSTOM,
 	TT_STAIRS,
 	TT_UNKNOWN,
@@ -52,6 +53,7 @@ enum terrainflags {
 	TF_DODGE = 16,
 	TF_NOSPAWN = 32,
 	TF_OUTSIDE = 64,
+	TF_CONTAINS_LOOT = 128,
 };
 
 extern enum terrainflags tflags[TT_ELEMENT_COUNT];

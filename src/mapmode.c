@@ -25,7 +25,8 @@ enum terrainflags tflags[TT_ELEMENT_COUNT] = {
 	TF_SOLID | TF_BLOCKS_VISION | TF_BLOCKS_ATTACKS | TF_NOSPAWN, //closed door
 	TF_NOSPAWN, //open door
 	TF_SOLID | TF_NOSPAWN, //bars
-	TF_SOLID | TF_DODGE | TF_NOSPAWN, //table,
+	TF_SOLID | TF_DODGE | TF_NOSPAWN | TF_CONTAINS_LOOT, //table,
+	TF_SOLID | TF_BLOCKS_VISION | TF_BLOCKS_SOUND | TF_NOSPAWN | TF_CONTAINS_LOOT, //locker
 	TF_NOSPAWN, //custom
 	TF_NOSPAWN, //stairs
 	TF_SOLID | TF_BLOCKS_VISION | TF_BLOCKS_SOUND | TF_BLOCKS_ATTACKS | TF_NOSPAWN, //unknown
@@ -59,6 +60,7 @@ chtype mapchar(struct t_square* sq) {
 		case TT_DOOR_OPEN: return '-';
 		case TT_BARS: return '#';
 		case TT_TABLE: return '-';
+		case TT_LOCKER: return '\\';
 		case TT_CUSTOM: return '!';
 		case TT_STAIRS: return '>';
 		default: return 'X';
