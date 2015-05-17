@@ -6,6 +6,7 @@
 
 #include "cpairs.h"
 #include "mapmode.h"
+#include "globals.h"
 
 int main(int argc, char** argv) {
 
@@ -13,18 +14,27 @@ int main(int argc, char** argv) {
 
 	int opt = -1;
 
+	dbgmode = 0;
+
 	while ((opt = getopt(argc, argv, "dv")) != -1) {
 		switch (opt) {
 			case 'd':
+				dbgmode = 1;
+				printf("Press ENTER to start (feel free to attach a debugger to this process at this moment).\n");
 				getc(stdin);
 				break;
 			case 'v':
 				printf("insert version info here\n");
 				exit(0);
 				break;
+			case '?':
 			default: /* '?' */
-				fprintf(stderr, "Usage: %s [-d] [-v]\n",
-						argv[0]);
+				fprintf(stderr, "Usage: %s [-d] [-v]\n"
+						"\n"
+						" -d : Debug mode.\n"
+						" -v : Version info.\n"
+						"\n"
+						,argv[0]);
 				exit(0);
 		}
 	}
