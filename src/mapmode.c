@@ -1,6 +1,8 @@
 #include <curses.h>
 
 #include "cpairs.h"
+#include "globals.h"
+
 #include "mapmode.h"
 #include "mapgen.h"
 #include "map_fov.h"
@@ -357,7 +359,7 @@ int mapmode() {
 	int turn_n = 0;
 	do {
 		wrefresh(statwindow);
-		draw_map(&map1, player_ent,1,1,1);
+		draw_map(&map1, player_ent,1,dbgmode ? 1 : 0, dbgmode ? 1 : 0);
 		make_turn(&map1);
 		loop = check_conditions(&map1);
 		turn_n++;
