@@ -295,6 +295,19 @@ struct t_map_entity* spawn_entity(struct t_map* map, enum entitytypes type, enum
 	return newent;
 }
 
+int kill_entity(struct t_map_entity* ent) {
+
+	//this removes the entity and all references to it.
+
+	ent->type = ET_NONE;
+
+	struct t_map_ai_data* ai = ent->aidata;
+	ent->aidata = NULL;
+	ent->turn = ent->use = ent->sound_cb = ent->vision_cb = NULL;
+	memset(ai,0,sizeof(struct t_map_ai_data));
+	return 0;
+}
+
 int mapmode() {
 
 	struct t_map map1;
