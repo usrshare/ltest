@@ -24,8 +24,8 @@ uint8_t costs[TT_ELEMENT_COUNT] = {
 };
 
 enum movedirections plot_follow(uint8_t x, uint8_t y, enum movedirections* pathprev) {
-
-	return (4 + pathprev[y * MAP_WIDTH + x]) % 8;
+	
+	if (pathprev[y * MAP_WIDTH + x] < MD_COUNT) return (4 + pathprev[y * MAP_WIDTH + x]) % 8; else return MD_COUNT;
 }
 
 int getcost(struct t_map* map, struct t_map_entity* who, uint8_t x, uint8_t y) {

@@ -10,7 +10,8 @@ enum aitasks {
 	AIT_WORKING, // for non-hostile NPCs doing "their regular jobs"
 	AIT_PATROLLING, // for security/police NPCs
 	AIT_CHECKING_OUT,
-	AIT_PURSUING,
+	AIT_PURSUING,   // when the AI sees the target directly
+	AIT_LOOKING_FOR,// and whenn doesn't.
 };
 
 struct coords {
@@ -46,6 +47,7 @@ struct t_map_ai_data {
 	int path_plotted;
 
 	uint8_t dx, dy;
+	uint8_t lx, ly; //last x and y
 
 	uint8_t alert_state;
 	struct t_map_entity* target;
