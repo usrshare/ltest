@@ -83,6 +83,84 @@ enum dirflags dirFlag(enum directions d) {
 
 // ---
 
+enum roomstyles {
+
+	RS_RANDOM,
+	RS_OFFICE,
+	RS_MEETING,
+	RS_CUBICLES,
+	RS_PERSONAL,
+	RS_LOCKER,
+	RS_WC,
+	RS_COUNT
+};
+
+int no_door(struct t_map* map, int x, int y) {
+
+	if (map->sq[(y+1)*MAP_WIDTH+x].type == TT_DOOR_CLOSED) return 1;
+	if (map->sq[(y-1)*MAP_WIDTH+x].type == TT_DOOR_CLOSED) return 1;
+	if (map->sq[y*MAP_WIDTH+(x-1)].type == TT_DOOR_CLOSED) return 1;
+	if (map->sq[y*MAP_WIDTH+(x+1)].type == TT_DOOR_CLOSED) return 1;
+	return 0;
+}
+
+int decorate_room(struct t_map* map, int x, int y, int w, int h, enum roomstyles style) {
+
+	//TODO
+
+	if (style == RS_RANDOM) style = randbetween(RS_RANDOM+1,RS_COUNT-1);
+
+	switch (style) {
+		case RS_OFFICE: {
+
+			break; }
+
+		case RS_MEETING: {
+			bool vertical = (w < h);
+			if ((w < 4) || (h < 4)) return 1;
+			
+			for (int iy=1; iy < (h-1); iy++)
+			for (int ix=1; ix < (w-1); ix++)
+				map->sq[(y +iy)*MAP_WIDTH+(x+ix)].type = TT_TABLE;
+
+			break; }
+		case RS_CUBICLES: {
+
+			break; }
+		case RS_PERSONAL: {
+
+			break; }
+		case RS_LOCKER: {
+
+			int randdirs = randval(16);
+			
+			if (randdirs & DF_NORTH) {
+				for (int l=0; l<w; l++) {
+					if (no_door(map,x + l, y) == 0) map->sq[y * MAP_WIDTH + (x+l)].type = TT_LOCKER; }
+			}
+			if (randdirs & DF_SOUTH) {
+				for (int l=0; l<w; l++) {
+					if (no_door(map,x + l, y+h-1) == 0) map->sq[(y+h-1) * MAP_WIDTH + (x+l)].type = TT_LOCKER; }
+			}
+			if (randdirs & DF_WEST) {
+				for (int l=0; l<h; l++) {
+					if (no_door(map,x, y+l) == 0) map->sq[(y+l) * MAP_WIDTH + x].type = TT_LOCKER; }
+			}
+			if (randdirs & DF_EAST) {
+				for (int l=0; l<h; l++) {
+					if (no_door(map,x+w-1, y+l) == 0) map->sq[(y+l) * MAP_WIDTH + (x+w-1)].type = TT_LOCKER; }
+			}
+
+
+			break; }
+		case RS_WC: {
+
+			break; }
+		default:
+			break;
+	}
+	return 0;
+}
 
 int wall_border(struct t_map* map, int x, int y, int w, int h) {
 
@@ -420,6 +498,7 @@ int grow_room(struct t_map* map, int x, int y, enum directions growdir, enum dir
 		outrect->h = nh;
 	}
 
+	decorate_room(map,nx,ny,nw,nh,RS_RANDOM);
 
 	if (recurse) recurse_grow(map,nx,ny,nw,nh, growdir, RB_RANDOM);
 	return 0;
@@ -540,8 +619,6 @@ int iterate_rooms(struct t_map* map, int x, int y, int w, int h) {
 	return 0;
 }
 
-
-
 int surround_iter(struct t_map* map, int x, int y, int* done_array) {
 
 	//surround current terraintype with walls using a flood-fill like algorithm.
@@ -574,8 +651,6 @@ int surround_with_walls(struct t_map* map, int x, int y) {
 
 	return 0;
 }
-
-
 
 int make_corridor(struct t_map* map, int x, int y, int w, int h) {
 
