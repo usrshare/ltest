@@ -3,6 +3,8 @@
 #include "map_fov.h"
 #include "map_path.h"
 
+#include "globals.h"
+
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -358,7 +360,10 @@ uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
 uint16_t player_turnFunc(struct t_map* map, struct t_map_entity* me) {
 
 	if (!(me->aidata)) return 0;
-
+	
+	do_fov(map,me,25,FA_WIDE,me->aidata->viewarr,NULL);	
+	draw_map(map, me,1,dbgmode ? 1 : 0, dbgmode ? 1 : 0,1);
+	
 	int pch = mapgetch();
 	int r = 0;
 
@@ -436,7 +441,8 @@ uint16_t player_turnFunc(struct t_map* map, struct t_map_entity* me) {
 	}
 
 	do_fov(map,me,25,FA_WIDE,me->aidata->viewarr,NULL);	
-
+	draw_map(map, me,1,dbgmode ? 1 : 0, dbgmode ? 1 : 0,0);
+	
 	if (r < 0) { nc_beep(); return 0;} else return r;
 }
 

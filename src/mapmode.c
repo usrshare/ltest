@@ -87,14 +87,14 @@ chtype entchar(struct t_map_entity* e) {
 
 	switch (e->type) {
 		case ET_NONE: return 0;
-		case ET_PLAYER: return ('@' | A_REVERSE);
+		case ET_PLAYER: return (('1' + (e->e_id)) | A_BOLD);
 		case ET_CPU: return '@';
 		case ET_STATIC: return '!';
 		default: return 'X';
 	}
 }
 
-int draw_map(struct t_map* map, struct t_map_entity* persp, bool show_fov, bool show_targets, bool show_heatmaps) {
+int draw_map(struct t_map* map, struct t_map_entity* persp, bool show_fov, bool show_targets, bool show_heatmaps, bool hl_persp) {
 
 	int x,y;
 	getparyx(statwindow,y,x);
@@ -147,6 +147,7 @@ int draw_map(struct t_map* map, struct t_map_entity* persp, bool show_fov, bool 
 
 	for (int i=0; i < MAX_ENTITIES; i++) {
 
+
 		if (map->ent[i].type == ET_NONE) continue;
 
 		if ((map->ent[i].aidata) != NULL) {
@@ -173,13 +174,16 @@ int draw_map(struct t_map* map, struct t_map_entity* persp, bool show_fov, bool 
 
 		}
 	}
+		
 	for (int i=0; i < MAX_ENTITIES; i++) {
 
 		if (map->ent[i].type == ET_NONE) continue;
 		int ex = map->ent[i].x; int ey = map->ent[i].y;
-		
-		if ( (persp == NULL) || ( (persp->aidata) && (persp->aidata->viewarr[ey * (MAP_WIDTH) + ex] >= 3) ) ) {
-			mvwaddch(mapwindow,ey,ex,entchar(&map->ent[i]));
+
+		if ( (persp == NULL) || (map->ent[i].flags & EF_ALWAYSVISIBLE) || ( (persp->aidata) && (persp->aidata->viewarr[ey * (MAP_WIDTH) + ex] >= 3) ) ) {
+
+			int highlight = (hl_persp) && (&map->ent[i] == persp);
+			mvwaddch(mapwindow,ey,ex,entchar(&map->ent[i]) | (highlight ? A_REVERSE : 0) );
 		}
 	}
 
@@ -332,7 +336,21 @@ int mapmode() {
 
 	generate_buildings(&map1,GM_SINGLE);
 
-	struct t_map_entity* player_ent = spawn_entity(&map1,ET_PLAYER,SF_RANDOM,player_turnFunc,NULL,NULL,NULL);
+	#define PLAYERS_COUNT 4
+
+	struct t_map_entity* players[PLAYERS_COUNT];
+	
+	for (int i=0; i < PLAYERS_COUNT; i++) {
+		players[i] = spawn_entity(&map1,ET_PLAYER,SF_RANDOM,player_turnFunc,NULL,NULL,NULL);
+		
+		if (players[i]) {
+		players[i]->flags |= EF_ALWAYSVISIBLE;
+		players[i]->e_id = i;
+		players[i]->aidata->wideview = 1;
+		memset(players[i]->aidata->viewarr,0,sizeof(uint8_t) * MAP_WIDTH * MAP_HEIGHT);
+		}
+	}
+       
 
 	#define ENEMIES_COUNT 16
 
@@ -343,10 +361,6 @@ int mapmode() {
 
 		if (enemies[i]) {enemies[i]->aidata->task = AIT_PATROLLING;}
 	}
-
-	player_ent->aidata->wideview = 1;
-
-	memset(player_ent->aidata->viewarr,1,sizeof(uint8_t) * MAP_WIDTH * MAP_HEIGHT);
 
 	statwindow_b = newwin(LINES-20,COLS,0,0);
 	wmove(statwindow_b,LINES-21,0);
@@ -359,13 +373,16 @@ int mapmode() {
 
 	keypad(statwindow,1);
 	
-	do_fov(&map1,player_ent,25,FA_FULL,player_ent->aidata->viewarr,NULL);
+	for (int i=0; i < PLAYERS_COUNT; i++) {
+		do_fov(&map1,players[i],25,FA_FULL,players[i]->aidata->viewarr,NULL);
+		draw_map(&map1,players[i],1,dbgmode ? 1 : 0, dbgmode ? 1 : 0,0);
+	}
+	
 
 	int loop = 1;
 	int turn_n = 0;
 	do {
 		wrefresh(statwindow);
-		draw_map(&map1, player_ent,1,dbgmode ? 1 : 0, dbgmode ? 1 : 0);
 		make_turn(&map1);
 		loop = check_conditions(&map1);
 		turn_n++;
