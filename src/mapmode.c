@@ -111,8 +111,16 @@ int draw_map(struct t_map* map, struct t_map_entity* persp, bool show_fov, bool 
 			if ((persp != NULL) && (persp->aidata)) tilevis = persp->aidata->viewarr[iy * MAP_WIDTH + ix];
 
 			chtype tileflags = 0;
+			
+			switch (tilevis) {
+				case 1: tileflags = CP_BLUE; break;
+				case 2: tileflags = CP_DARKGRAY; break;
+				case 3:
+				case 4:	tileflags = CP_WHITE; break;
+				default: break;
+			}
 
-			if (show_fov) {
+			if ((show_fov) && (tilevis >= 3)) {
 			chtype fovcolor = 0;
 			if ((tflags[map->sq[iy*(MAP_WIDTH)+ix].type] & TF_BLOCKS_VISION) == 0) {
 			
@@ -129,10 +137,8 @@ int draw_map(struct t_map* map, struct t_map_entity* persp, bool show_fov, bool 
 					}
 				}
 			} }
-			tileflags |= fovcolor;
+			if (fovcolor) tileflags = fovcolor;
 			}
-
-			if (tilevis == 1) tileflags |= CP_BLUE; else if (tilevis >= 3) tileflags |= A_BOLD;
 
 			if (tilevis) mvwaddch(mapwindow,iy,ix, tileflags | tilech );
 
@@ -172,7 +178,7 @@ int draw_map(struct t_map* map, struct t_map_entity* persp, bool show_fov, bool 
 		if (map->ent[i].type == ET_NONE) continue;
 		int ex = map->ent[i].x; int ey = map->ent[i].y;
 		
-		if ( (persp == NULL) || ( (persp->aidata) && (persp->aidata->viewarr[ey * (MAP_WIDTH) + ex] >= 2) ) ) {
+		if ( (persp == NULL) || ( (persp->aidata) && (persp->aidata->viewarr[ey * (MAP_WIDTH) + ex] >= 3) ) ) {
 			mvwaddch(mapwindow,ey,ex,entchar(&map->ent[i]));
 		}
 	}
