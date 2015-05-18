@@ -9,11 +9,15 @@
 
 #include "random.h"
 
+#include <stdarg.h>
 #include <string.h> //memset
 
-WINDOW* statwindow_b;
+WINDOW* topwindow;
+WINDOW* headerwindow;
 WINDOW* statwindow;
 WINDOW* mapwindow;
+
+int morecount = 0;
 
 enum terrainflags tflags[TT_ELEMENT_COUNT] = {
 	TF_OUTSIDE, //outside
@@ -96,8 +100,9 @@ chtype entchar(struct t_map_entity* e) {
 
 int draw_map(struct t_map* map, struct t_map_entity* persp, bool show_fov, bool show_targets, bool show_heatmaps, bool hl_persp) {
 
+	int cs = curs_set(0);
 	int x,y;
-	getparyx(statwindow,y,x);
+	getsyx(y,x);
 
 	wmove(mapwindow,0,0);
 
@@ -125,7 +130,7 @@ int draw_map(struct t_map* map, struct t_map_entity* persp, bool show_fov, bool 
 			if ((tflags[map->sq[iy*(MAP_WIDTH)+ix].type] & TF_BLOCKS_VISION) == 0) {
 			
 			for (int i=0; i < MAX_ENTITIES; i++) {
-
+				if (map->ent[i].type == ET_NONE) continue;
 				if ((map->ent[i].type != ET_PLAYER) && (map->ent[i].aidata) && (map->ent[i].aidata->viewarr[iy * MAP_WIDTH + ix] >= 3) ) {
 					
 					switch (map->ent[i].aidata->task) {
@@ -187,9 +192,11 @@ int draw_map(struct t_map* map, struct t_map_entity* persp, bool show_fov, bool 
 		}
 	}
 
-	wrefresh(mapwindow);
+	wnoutrefresh(mapwindow);
 
-	wmove(statwindow,y,x);
+	setsyx(y,x);
+	curs_set(cs);
+	doupdate();
 	return 0;
 }
 
@@ -247,7 +254,6 @@ struct t_map_entity* spawn_entity(struct t_map* map, enum entitytypes type, enum
 	if (newent == NULL) return NULL;
 
 	if (needs_ai[type]) {
-
 		struct t_map_ai_data* newai = next_empty_ai_data();
 		if (newai == NULL) return NULL;
 
@@ -257,7 +263,6 @@ struct t_map_entity* spawn_entity(struct t_map* map, enum entitytypes type, enum
 		heatmap_clear(newai->heatmap_old);
 		heatmap_clear(newai->heatmap_new);
 		newai->usedby = newent;
-
 	}
 
 	newent->type = type;
@@ -266,8 +271,15 @@ struct t_map_entity* spawn_entity(struct t_map* map, enum entitytypes type, enum
 
 	switch(position) {
 
-		case SF_DEFAULT:
-			break;
+		case SF_DEFAULT: {
+
+			int i=0;
+
+			do {
+				x = map->spawn_points[i].x; y = map->spawn_points[i].y;
+				i++;
+			} while ( space_taken(map,x,y) );
+			break; }
 
 		case SF_RANDOM:
 
@@ -330,7 +342,6 @@ int mapmode() {
 	memset(&(map1.ent), 0, sizeof(struct t_map_entity) * MAX_ENTITIES); 
 	memset(aient, 0, sizeof(struct t_map_ai_data) * MAX_AI_ENTITIES); 
 
-	int cs = curs_set(0);	
 
 	mapwindow = newwin(20,COLS,LINES-20,0);
 
@@ -341,7 +352,7 @@ int mapmode() {
 	struct t_map_entity* players[PLAYERS_COUNT];
 	
 	for (int i=0; i < PLAYERS_COUNT; i++) {
-		players[i] = spawn_entity(&map1,ET_PLAYER,SF_RANDOM,player_turnFunc,NULL,NULL,NULL);
+		players[i] = spawn_entity(&map1,ET_PLAYER,SF_DEFAULT,player_turnFunc,NULL,NULL,NULL);
 		
 		if (players[i]) {
 		players[i]->flags |= EF_ALWAYSVISIBLE;
@@ -362,17 +373,19 @@ int mapmode() {
 		if (enemies[i]) {enemies[i]->aidata->task = AIT_PATROLLING;}
 	}
 
-	statwindow_b = newwin(LINES-20,COLS,0,0);
-	wmove(statwindow_b,LINES-21,0);
-	whline(statwindow_b,ACS_HLINE,COLS);
-	wrefresh(statwindow_b);
+	topwindow = newwin(LINES-20,COLS,0,0);
+	headerwindow = subwin(topwindow,1,COLS,0,0);
 
-	statwindow = subwin(statwindow_b,LINES-21,COLS,0,0);
+	updheader();
+	
+	statwindow = subwin(topwindow,LINES-21,COLS,1,0);
 	if (statwindow == 0) return 1;
 	scrollok(statwindow,1);
 
 	keypad(statwindow,1);
-	
+
+	wmove(statwindow,0,0);
+
 	for (int i=0; i < PLAYERS_COUNT; i++) {
 		memset(players[i]->aidata->viewarr,1,sizeof(uint8_t) * MAP_WIDTH * MAP_HEIGHT);
 		do_fov(&map1,players[i],25,FA_FULL,players[i]->aidata->viewarr,NULL);
@@ -383,6 +396,7 @@ int mapmode() {
 	int loop = 1;
 	int turn_n = 0;
 	do {
+		wrefresh(headerwindow);
 		wrefresh(statwindow);
 		make_turn(&map1);
 		loop = check_conditions(&map1);
@@ -391,9 +405,8 @@ int mapmode() {
 
 	delwin(mapwindow);
 	delwin(statwindow);
-	delwin(statwindow_b);
-
-	curs_set(cs);
+	delwin(headerwindow);
+	delwin(topwindow);
 
 	return 0;
 }
@@ -401,14 +414,15 @@ int mapmode() {
 int mapgetch() {
 
 	int x,y;
+	morecount = 0;
 
-	getparyx(statwindow,y,x);
-	int m = wmove(statwindow_b,LINES-21,COLS-1);
+	getsyx(y,x);
+	int m = wmove(headerwindow,0,COLS-2);
 	if (m == ERR) beep();
 
 	int c = getch();
 
-	wmove(statwindow,y,x);
+	setsyx(y,x);
 
 	return c;
 }
@@ -416,6 +430,38 @@ int mapgetch() {
 int nc_beep(void) {
 
 	return beep();
+}
+
+int updheader() {
+	wmove(headerwindow,0,0);
+	whline(headerwindow,ACS_HLINE,COLS);
+	wattron(headerwindow, A_BOLD);
+	mvwprintw(headerwindow,0,1," insert title here. ");
+	wattroff(headerwindow, A_BOLD);
+	wrefresh(headerwindow);
+	return 0;
+}
+
+int statprintw(const char *fmt, ...) {
+
+	va_list varglist;
+	int r = vwprintw(statwindow,fmt,varglist);
+	morecount++;
+	if (morecount >= (LINES-21)) {
+		int y,x;
+		getsyx(y,x);
+		wmove(headerwindow,0,COLS-8);
+		wattron(headerwindow,A_REVERSE);
+		wprintw(headerwindow,"(more)");
+		wattroff(headerwindow,A_REVERSE);
+		wrefresh(headerwindow);
+		mapgetch();
+		updheader();
+		setsyx(y,x);
+		morecount = 0;
+	}
+	wrefresh(statwindow);
+	return r;
 }
 
 enum movedirections askdir() {
@@ -428,7 +474,9 @@ enum movedirections askdir() {
 	int go_on = 1;
 
 	while (go_on) {
+	echo();
 	int c = wgetch(statwindow);
+	noecho();
 	wprintw(statwindow,"\n");
 	switch(c) {
 		case 'h':

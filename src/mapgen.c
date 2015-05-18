@@ -3,6 +3,8 @@
 #include "pqueue.h"
 #include "random.h"
 
+#include "globals.h"
+
 #include <malloc.h>
 #include <string.h> //memset
 
@@ -710,7 +712,7 @@ int generate_buildings(struct t_map* map, enum generate_modes gm) {
 		case GM_SINGLE: {
 
 					fill_rect(map,2,2,MAP_WIDTH-4,MAP_HEIGHT-4,TT_UNKNOWN);
-					int outw = 3 + 2 * randval(5);
+					int outw = 5 + 2 * randval(5);
 					int outh = 3 + 2 * randval(2);
 					fill_rect(map,(MAP_WIDTH-outw)/2,MAP_HEIGHT-1-outh,outw,outh,TT_OUTSIDE);
 					int lobbyw = outw + (2 * randval(2));
@@ -722,6 +724,9 @@ int generate_buildings(struct t_map* map, enum generate_modes gm) {
 					map->sq[ (MAP_HEIGHT - 1 - outh) * MAP_WIDTH + (MAP_WIDTH/2) - 1 ].type = TT_DOOR_CLOSED;
 
 						recurse_grow(map,(MAP_WIDTH-lobbyw)/2,MAP_HEIGHT-1-outh-lobbyh,lobbyw,lobbyh,D_NORTH,RB_RANDOM, 0, roomqueue);
+
+					for (int i=0; i < SQUAD_MAX; i++)
+						map->spawn_points[i] = (struct coords){.x = 38 + (i%3), .y = MAP_HEIGHT - 3 + (i/3)};
 
 					break; }
 

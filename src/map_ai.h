@@ -14,11 +14,6 @@ enum aitasks {
 	AIT_LOOKING_FOR,// and whenn doesn't.
 };
 
-struct coords {
-	uint8_t x;
-	uint8_t y;
-};
-
 struct t_map_ai_data {
 
 	struct t_map_entity* usedby;
