@@ -732,10 +732,11 @@ int generate_buildings(struct t_map* map, enum generate_modes gm) {
 
 	}
 
-	while (pq_empty(roomqueue,ROOMQUEUE_SZ) == 0) {
-		struct roomparams* el = pq_get_lowest(roomqueue,ROOMQUEUE_SZ);
-		decorate_room(map,el->x,el->y,el->w,el->h,el->style);
-		free(el);
+	struct roomparams* nextroom = NULL;
+
+	while ((nextroom = pq_get_lowest(roomqueue,ROOMQUEUE_SZ)) != NULL) {
+		decorate_room(map,nextroom->x,nextroom->y,nextroom->w,nextroom->h,nextroom->style);
+		free(nextroom);
 	}
 	return 0;
 }

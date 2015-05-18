@@ -425,7 +425,7 @@ uint16_t player_turnFunc(struct t_map* map, struct t_map_entity* me) {
 				  uint8_t dy = me->y + movediff[dir][1];
 				  me->aidata->viewdir = dir; 
 				  struct t_map_entity* enemy = find_entity(map,dx,dy);
-				  if ((enemy->aidata) && (enemy->aidata->alert_state == 0)) {
+				  if ((enemy) && (enemy->aidata) && (enemy->aidata->alert_state == 0)) {
 					  kill_entity(enemy); r = 16;
 				  } else {nc_beep(); r = 4;}
 
