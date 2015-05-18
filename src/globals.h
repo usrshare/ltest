@@ -3,4 +3,6 @@
 
 extern int dbgmode;
 
+#define SQUAD_MAX 6
+
 #endif

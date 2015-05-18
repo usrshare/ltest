@@ -256,6 +256,10 @@ uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
 			if (curent == NULL) continue; //this shouldn't really happen, but fine.
 
 			if (curent->type == ET_PLAYER) {
+
+				if ( map->sq[(curent->y) * MAP_WIDTH + (curent->x)].type != TT_RESTRICTED_SPACE ) continue;
+
+
 				me->aidata->alert_state = 5; me->aidata->task = AIT_CHECKING_OUT; // "?"
 				me->aidata->target = curent;
 
@@ -409,6 +413,14 @@ uint16_t player_turnFunc(struct t_map* map, struct t_map_entity* me) {
 			r = trymove(map,me,1,1); //southeast
 			break;
 
+		case 'q':
+			statprintw("A really long sequence of text. 1\n");
+			statprintw("A really long sequence of text. 2\n");
+			statprintw("A really long sequence of text. 3\n");
+			statprintw("A really long sequence of text. 4\n");
+			statprintw("A really long sequence of text. 5\n");
+			break;
+
 		case 'o': {
 
 				  enum movedirections dir = askdir();
@@ -432,7 +444,7 @@ uint16_t player_turnFunc(struct t_map* map, struct t_map_entity* me) {
 				  struct t_map_entity* enemy = find_entity(map,dx,dy);
 				  if ((enemy) && (enemy->aidata) && (enemy->aidata->alert_state == 0)) {
 					  kill_entity(enemy); r = 16;
-				  } else {nc_beep(); r = 4;}
+				  } else {statprintw("You can't disable an alerted enemy.\n"); r = 4;}
 
 				  break; }
 

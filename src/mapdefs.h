@@ -3,11 +3,17 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include "globals.h"
 
 #define MAX_ENTITIES 128
 #define MAX_AI_ENTITIES 64
 #define MAP_WIDTH 80
 #define MAP_HEIGHT 20
+
+struct coords {
+	uint8_t x;
+	uint8_t y;
+};
 
 enum maptypes {
 
@@ -139,6 +145,8 @@ struct t_map {
 	
 	uint8_t width;
 	uint8_t height;
+
+	struct coords spawn_points[SQUAD_MAX];
 
 	struct t_map_entity ent[MAX_ENTITIES];
 };

@@ -17,6 +17,8 @@ int nc_beep(void);
 
 int vtile(uint8_t x, uint8_t y);
 
+int updheader();
+int statprintw(const char *fmt, ...);
 enum movedirections askdir();
 int mapmode();
 #endif
