@@ -54,6 +54,7 @@ enum terrainflags {
 	TF_NOSPAWN = 32,
 	TF_OUTSIDE = 64,
 	TF_CONTAINS_LOOT = 128,
+	TF_OKAY_DOOR = 256,
 };
 
 extern enum terrainflags tflags[TT_ELEMENT_COUNT];
