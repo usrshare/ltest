@@ -231,7 +231,7 @@ int okay_door (struct t_map* map, int x, int y, int l, enum directions dir, enum
 				t1 = map->sq[ (y-1) * MAP_WIDTH + ix].type;
 				t2 = map->sq[ (y+1) * MAP_WIDTH + ix].type;
 
-				if (((t1 == tt1) && (t2 == tt2)) || ((t1 == tt2) && (t2 == tt1))) {
+				if (((t1 == tt1) && (t2 == tt2)) || ((t1 == tt2) && (t2 == tt1)) || ((tflags[t1] & TF_OKAY_DOOR) && (tflags[t2] & TF_OKAY_DOOR))  ) {
 
 					if (out_posarray) out_posarray[okaydoors] = ix;
 					okaydoors++;
@@ -249,7 +249,7 @@ int okay_door (struct t_map* map, int x, int y, int l, enum directions dir, enum
 				t1 = map->sq[ iy * MAP_WIDTH + (x-1) ].type;
 				t2 = map->sq[ iy * MAP_WIDTH + (x+1) ].type;
 
-				if (((t1 == tt1) && (t2 == tt2)) || ((t1 == tt2) && (t2 == tt1))) {
+				if (((t1 == tt1) && (t2 == tt2)) || ((t1 == tt2) && (t2 == tt1)) || ((tflags[t1] & TF_OKAY_DOOR) && (tflags[t2] & TF_OKAY_DOOR))  ) {
 
 					if (out_posarray) out_posarray[okaydoors] = iy;
 					okaydoors++;
@@ -394,9 +394,13 @@ int find_next_area(int* x, int* y, int w, int h, enum directions growdir) {
 	return 0;
 }
 
-int grow_room(struct t_map* map, int x, int y, enum directions growdir, enum dirflags join_to, int recurse, struct rect* outrect, struct pqel* roomqueue);
+enum growflags {
+	GF_RESTRICTED = 1,
+};
 
-int recurse_grow(struct t_map* map, int x, int y, int w, int h, enum directions growdir, enum recurse_behavior recbeh, struct pqel* roomqueue) {
+int grow_room(struct t_map* map, int x, int y, enum directions growdir, enum dirflags join_to, int recurse,enum growflags flags, struct rect* outrect, struct pqel* roomqueue);
+
+int recurse_grow(struct t_map* map, int x, int y, int w, int h, enum directions growdir, enum recurse_behavior recbeh, enum growflags flags, struct pqel* roomqueue) {
 
 	if ((w <= 0) || (h <= 0)) return 1;
 	if ((x <= 0) || (y <= 0)) return 1;
@@ -428,18 +432,18 @@ int recurse_grow(struct t_map* map, int x, int y, int w, int h, enum directions 
 	}
 
 
-	if (grow_f) grow_room( map, x_f, y_f, growdir, dirFlag(opDir(growdir)), 0, &o_f, roomqueue);
-	if (grow_ccw) grow_room( map, x_ccw, y_ccw, ccwDir(growdir), dirFlag(cwDir(growdir)), 0, &o_ccw, roomqueue);
-	if (grow_cw) grow_room( map, x_cw, y_cw, cwDir(growdir), dirFlag(ccwDir(growdir)), 0,&o_cw, roomqueue);
+	if (grow_f) grow_room( map, x_f, y_f, growdir, dirFlag(opDir(growdir)), 0, flags, &o_f, roomqueue);
+	if (grow_ccw) grow_room( map, x_ccw, y_ccw, ccwDir(growdir), dirFlag(cwDir(growdir)),0, flags, &o_ccw, roomqueue);
+	if (grow_cw) grow_room( map, x_cw, y_cw, cwDir(growdir), dirFlag(ccwDir(growdir)), 0, flags,&o_cw, roomqueue);
 
-	if (grow_f) recurse_grow(map,o_f.x,o_f.y,o_f.w,o_f.h,growdir,recbeh, roomqueue);
-	if (grow_ccw) recurse_grow(map,o_ccw.x,o_ccw.y,o_ccw.w,o_ccw.h,ccwDir(growdir),recbeh, roomqueue);
-	if (grow_cw) recurse_grow(map,o_cw.x,o_cw.y,o_cw.w,o_cw.h,cwDir(growdir),recbeh, roomqueue);
+	if (grow_f) recurse_grow(map,o_f.x,o_f.y,o_f.w,o_f.h,growdir,recbeh, flags,roomqueue);
+	if (grow_ccw) recurse_grow(map,o_ccw.x,o_ccw.y,o_ccw.w,o_ccw.h,ccwDir(growdir),recbeh, flags,roomqueue);
+	if (grow_cw) recurse_grow(map,o_cw.x,o_cw.y,o_cw.w,o_cw.h,cwDir(growdir),recbeh, flags,roomqueue);
 
 	return 0;
 }
 
-int grow_room(struct t_map* map, int x, int y, enum directions growdir, enum dirflags join_to, int recurse, struct rect* outrect, struct pqel* roomqueue) {
+int grow_room(struct t_map* map, int x, int y, enum directions growdir, enum dirflags join_to, int recurse, enum growflags flags, struct rect* outrect, struct pqel* roomqueue) {
 
 	int nx=x, ny=y, nw=1, nh=1;
 
@@ -499,7 +503,9 @@ int grow_room(struct t_map* map, int x, int y, enum directions growdir, enum dir
 
 	mindoors = 1;
 
-	fill_rect(map,nx,ny,nw,nh,TT_SPACE);
+	if (randval(2) == 0) flags |= GF_RESTRICTED;
+
+	fill_rect(map,nx,ny,nw,nh,(flags & GF_RESTRICTED) ? TT_RESTRICTED_SPACE : TT_SPACE);
 	wall_border_2(map,nx-1,ny-1,nw+2,nh+2);
 	if (mindoors < 0) mindoors = 0;
 	build_doors(map,nx-1,ny-1,nw+2,nh+2,doors,TT_SPACE,TT_SPACE,mindoors);	
@@ -518,7 +524,7 @@ int grow_room(struct t_map* map, int x, int y, enum directions growdir, enum dir
 	newroom->style = RS_RANDOM;
 	pq_add_element(roomqueue,ROOMQUEUE_SZ,newroom,1);
 
-	if (recurse) recurse_grow(map,nx,ny,nw,nh, growdir, RB_RANDOM, roomqueue);
+	if (recurse) recurse_grow(map,nx,ny,nw,nh, growdir, RB_RANDOM, flags, roomqueue);
 	
 	//decorate_room(map,nx,ny,nw,nh,RS_RANDOM);
 	return 0;
@@ -715,7 +721,7 @@ int generate_buildings(struct t_map* map, enum generate_modes gm) {
 
 					map->sq[ (MAP_HEIGHT - 1 - outh) * MAP_WIDTH + (MAP_WIDTH/2) - 1 ].type = TT_DOOR_CLOSED;
 
-						recurse_grow(map,(MAP_WIDTH-lobbyw)/2,MAP_HEIGHT-1-outh-lobbyh,lobbyw,lobbyh,D_NORTH,RB_RANDOM, roomqueue);
+						recurse_grow(map,(MAP_WIDTH-lobbyw)/2,MAP_HEIGHT-1-outh-lobbyh,lobbyw,lobbyh,D_NORTH,RB_RANDOM, 0, roomqueue);
 
 					break; }
 
@@ -723,7 +729,7 @@ int generate_buildings(struct t_map* map, enum generate_modes gm) {
 		case GM_COMPLEX: {
 					 fill_rect(map,2,2,MAP_WIDTH-4,MAP_HEIGHT-4,TT_UNKNOWN);
 					 while (count_terrain_left(map,2,2,MAP_WIDTH-4,MAP_HEIGHT-4,TT_UNKNOWN)) {
-						 grow_room(map,2,2,-1,15,1,NULL, roomqueue);
+						 grow_room(map,2,2,-1,15,1,0, NULL, roomqueue);
 					 }
 
 					 break; }

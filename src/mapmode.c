@@ -18,9 +18,9 @@ WINDOW* mapwindow;
 enum terrainflags tflags[TT_ELEMENT_COUNT] = {
 	TF_OUTSIDE, //outside
 	TF_OUTSIDE, //grass
-	0, //corridor
-	0, //space
-	0, //restricted space
+	TF_OKAY_DOOR, //corridor
+	TF_OKAY_DOOR, //space
+	TF_OKAY_DOOR, //restricted space
 	TF_NOSPAWN, //special space
 	TF_SOLID | TF_BLOCKS_VISION | TF_BLOCKS_SOUND | TF_BLOCKS_ATTACKS | TF_NOSPAWN, //wall
 	TF_SOLID | TF_BLOCKS_SOUND | TF_BLOCKS_ATTACKS | TF_NOSPAWN, //window
@@ -54,7 +54,7 @@ chtype mapchar(struct t_square* sq) {
 	switch (sq->type) {
 		case TT_OUTSIDE: return ',';
 		case TT_SPACE: return '.';
-		case TT_RESTRICTED_SPACE: return '_';
+		case TT_RESTRICTED_SPACE: return ':';
 		case TT_SPECIAL_SPACE: return '.';
 		case TT_WALL: return ACS_CKBOARD;
 		case TT_WINDOW: return '~';
@@ -336,7 +336,7 @@ int mapmode() {
 
 	generate_buildings(&map1,GM_SINGLE);
 
-	#define PLAYERS_COUNT 4
+	#define PLAYERS_COUNT 1
 
 	struct t_map_entity* players[PLAYERS_COUNT];
 	
@@ -374,6 +374,7 @@ int mapmode() {
 	keypad(statwindow,1);
 	
 	for (int i=0; i < PLAYERS_COUNT; i++) {
+		memset(players[i]->aidata->viewarr,1,sizeof(uint8_t) * MAP_WIDTH * MAP_HEIGHT);
 		do_fov(&map1,players[i],25,FA_FULL,players[i]->aidata->viewarr,NULL);
 		draw_map(&map1,players[i],1,dbgmode ? 1 : 0, dbgmode ? 1 : 0,0);
 	}
