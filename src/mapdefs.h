@@ -74,6 +74,10 @@ enum entitytypes {
 	ET_COUNT
 };
 
+enum entityflags {
+	EF_ALLY = 1,
+	EF_ALWAYSVISIBLE = 2,
+};
 
 enum spawnpos {
 
@@ -117,6 +121,8 @@ typedef uint16_t (*useFunc)(struct t_map* map, struct t_map_entity* me, struct t
 
 struct t_map_entity {
 	enum entitytypes type;
+	enum entityflags flags;
+	uint8_t e_id;
 	uint16_t x;
 	uint16_t y;
 	uint16_t twait; ///< turns left to wait
