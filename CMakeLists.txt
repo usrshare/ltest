@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 project(ltest)
 
-set (CMAKE_C_FLAGS "-std=gnu99 -Wall -Wextra")
+set (CMAKE_C_FLAGS "-std=c99 -Wall -Wextra")
 
 set_source_files_properties(tags PROPERTIES GENERATED true)
 
@@ -20,6 +20,7 @@ add_executable (ltest
 		src/map_ai.c
 		src/map_fov.c
 		src/map_path.c
+		src/map_ui.c
 		src/mapgen.c
 		src/mapmode.c
 		src/pqueue.c
