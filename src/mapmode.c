@@ -1,6 +1,4 @@
-#include <curses.h>
 
-#include "cpairs.h"
 #include "globals.h"
 
 #include "mapmode.h"
@@ -8,16 +6,10 @@
 #include "map_fov.h"
 
 #include "random.h"
+#include "map_ui.h"
 
 #include <stdarg.h>
 #include <string.h> //memset
-
-WINDOW* topwindow;
-WINDOW* headerwindow;
-WINDOW* statwindow;
-WINDOW* mapwindow;
-
-int morecount = 0;
 
 enum terrainflags tflags[TT_ELEMENT_COUNT] = {
 	TF_OUTSIDE, //outside
@@ -48,30 +40,7 @@ int movediff[MD_COUNT][2] = {
 	{-1,0},
 	{-1,-1}};
 
-int vtile(uint8_t x, uint8_t y) {
-
-	return ((x < MAP_WIDTH) && (y < MAP_HEIGHT));
-}
-
-chtype mapchar(struct t_square* sq) {
-
-	switch (sq->type) {
-		case TT_OUTSIDE: return ',';
-		case TT_SPACE: return '.';
-		case TT_RESTRICTED_SPACE: return ':';
-		case TT_SPECIAL_SPACE: return '.';
-		case TT_WALL: return ACS_CKBOARD;
-		case TT_WINDOW: return '~';
-		case TT_DOOR_CLOSED: return '+';
-		case TT_DOOR_OPEN: return '-';
-		case TT_BARS: return '#';
-		case TT_TABLE: return '-';
-		case TT_LOCKER: return '\\';
-		case TT_CUSTOM: return '!';
-		case TT_STAIRS: return '>';
-		default: return 'X';
-	}
-}
+int vtile(uint8_t x, uint8_t y) { return ((x < MAP_WIDTH) && (y < MAP_HEIGHT)); }
 
 struct t_map_entity* next_empty_entity(struct t_map* map) {
 	for (int i=0; i < MAX_ENTITIES; i++)
@@ -87,122 +56,10 @@ struct t_map_ai_data* next_empty_ai_data(void) {
 	return NULL;
 }
 
-chtype entchar(struct t_map_entity* e) {
-
-	switch (e->type) {
-		case ET_NONE: return 0;
-		case ET_PLAYER: return (('1' + (e->e_id)) | A_BOLD);
-		case ET_CPU: return '@';
-		case ET_STATIC: return '!';
-		default: return 'X';
-	}
-}
-
-int draw_map(struct t_map* map, struct t_map_entity* persp, bool show_fov, bool show_targets, bool show_heatmaps, bool hl_persp) {
-
-	int cs = curs_set(0);
-	int x,y;
-	getsyx(y,x);
-
-	wmove(mapwindow,0,0);
-
-	for (int iy=0; iy< MAP_HEIGHT; iy++) {
-		for (int ix=0; ix < MAP_WIDTH; ix++) {
-
-			int tilech = mapchar(&map->sq[iy*(MAP_WIDTH)+ix]); 
-			
-			int tilevis = 1;
-
-			if ((persp != NULL) && (persp->aidata)) tilevis = persp->aidata->viewarr[iy * MAP_WIDTH + ix];
-
-			chtype tileflags = 0;
-			
-			switch (tilevis) {
-				case 1: tileflags = CP_BLUE; break;
-				case 2: tileflags = CP_DARKGRAY; break;
-				case 3:
-				case 4:	tileflags = CP_WHITE; break;
-				default: break;
-			}
-
-			if ((show_fov) && (tilevis >= 3)) {
-			chtype fovcolor = 0;
-			if ((tflags[map->sq[iy*(MAP_WIDTH)+ix].type] & TF_BLOCKS_VISION) == 0) {
-			
-			for (int i=0; i < MAX_ENTITIES; i++) {
-				if (map->ent[i].type == ET_NONE) continue;
-				if ((map->ent[i].type != ET_PLAYER) && (map->ent[i].aidata) && (map->ent[i].aidata->viewarr[iy * MAP_WIDTH + ix] >= 3) ) {
-					
-					switch (map->ent[i].aidata->task) {
-						case AIT_WORKING: fovcolor = CP_GREEN; break;
-						case AIT_PATROLLING: fovcolor = CP_CYAN; break;
-						case AIT_CHECKING_OUT: fovcolor = CP_YELLOW; break;
-						case AIT_PURSUING: fovcolor = CP_RED; break;
-						case AIT_LOOKING_FOR: fovcolor = CP_PURPLE; break;
-					}
-				}
-			} }
-			if (fovcolor) tileflags = fovcolor;
-			}
-
-			if (tilevis) mvwaddch(mapwindow,iy,ix, tileflags | tilech );
-
-		}
-	}
-
-	for (int i=0; i < MAX_ENTITIES; i++) {
-
-
-		if (map->ent[i].type == ET_NONE) continue;
-
-		if ((map->ent[i].aidata) != NULL) {
-		
-		if (show_targets) {
-			if (vtile(map->ent[i].aidata->dx,map->ent[i].aidata->dy))
-				mvwaddch(mapwindow,map->ent[i].aidata->dy,map->ent[i].aidata->dx,'%' | CP_PURPLE);
-		}
-		
-		if (show_heatmaps) {
-			for (int m=0; m < HEATMAP_SIZE; m++) {
-				uint16_t yx = map->ent[i].aidata->heatmap_old[m];
-				if (yx == 65535) continue;
-				uint8_t y = yx / MAP_WIDTH; uint8_t x = yx % MAP_WIDTH;
-				mvwaddch(mapwindow,y,x,'&' | CP_YELLOW);
-			}
-			for (int m=0; m < HEATMAP_SIZE; m++) {
-				uint16_t yx = map->ent[i].aidata->heatmap_new[m];
-				if (yx == 65535) continue;
-				uint8_t y = yx / MAP_WIDTH; uint8_t x = yx % MAP_WIDTH;
-				mvwaddch(mapwindow,y,x,'&' | CP_GREEN);
-			}
-		}
-
-		}
-	}
-		
-	for (int i=0; i < MAX_ENTITIES; i++) {
-
-		if (map->ent[i].type == ET_NONE) continue;
-		int ex = map->ent[i].x; int ey = map->ent[i].y;
-
-		if ( (persp == NULL) || (map->ent[i].flags & EF_ALWAYSVISIBLE) || ( (persp->aidata) && (persp->aidata->viewarr[ey * (MAP_WIDTH) + ex] >= 3) ) ) {
-
-			int highlight = (hl_persp) && (&map->ent[i] == persp);
-			mvwaddch(mapwindow,ey,ex,entchar(&map->ent[i]) | (highlight ? A_REVERSE : 0) );
-		}
-	}
-
-	wnoutrefresh(mapwindow);
-
-	setsyx(y,x);
-	curs_set(cs);
-	doupdate();
-	return 0;
-}
 
 int make_turn(struct t_map* map) {
 	for (int i=0; i < MAX_ENTITIES; i++) {
-		struct t_map_entity* e = &map->ent[i];
+		struct t_map_entity* e = (map->ent)+i;
 		if (e->type != ET_NONE) {
 
 			if (e->twait > 0) e->twait--;
@@ -342,9 +199,6 @@ int mapmode() {
 	memset(&(map1.ent), 0, sizeof(struct t_map_entity) * MAX_ENTITIES); 
 	memset(aient, 0, sizeof(struct t_map_ai_data) * MAX_AI_ENTITIES); 
 
-
-	mapwindow = newwin(20,COLS,LINES-20,0);
-
 	generate_buildings(&map1,GM_SINGLE);
 
 	#define PLAYERS_COUNT 1
@@ -353,7 +207,6 @@ int mapmode() {
 	
 	for (int i=0; i < PLAYERS_COUNT; i++) {
 		players[i] = spawn_entity(&map1,ET_PLAYER,SF_DEFAULT,player_turnFunc,NULL,NULL,NULL);
-		
 		if (players[i]) {
 		players[i]->flags |= EF_ALWAYSVISIBLE;
 		players[i]->e_id = i;
@@ -362,29 +215,14 @@ int mapmode() {
 		}
 	}
        
-
 	#define ENEMIES_COUNT 16
 
 	struct t_map_entity* enemies[ENEMIES_COUNT];
 
 	for (int i=0; i < ENEMIES_COUNT; i++) {
 		enemies[i] = spawn_entity(&map1,ET_CPU,SF_RANDOM_INSIDE,enemy_turnFunc,NULL,NULL,NULL);
-
 		if (enemies[i]) {enemies[i]->aidata->task = AIT_PATROLLING;}
 	}
-
-	topwindow = newwin(LINES-20,COLS,0,0);
-	headerwindow = subwin(topwindow,1,COLS,0,0);
-
-	updheader();
-	
-	statwindow = subwin(topwindow,LINES-21,COLS,1,0);
-	if (statwindow == 0) return 1;
-	scrollok(statwindow,1);
-
-	keypad(statwindow,1);
-
-	wmove(statwindow,0,0);
 
 	for (int i=0; i < PLAYERS_COUNT; i++) {
 		memset(players[i]->aidata->viewarr,1,sizeof(uint8_t) * MAP_WIDTH * MAP_HEIGHT);
@@ -392,124 +230,17 @@ int mapmode() {
 		draw_map(&map1,players[i],1,dbgmode ? 1 : 0, dbgmode ? 1 : 0,0);
 	}
 	
-
+	map_ui_init(&map1);
+	
 	int loop = 1;
 	int turn_n = 0;
 	do {
-		wrefresh(headerwindow);
-		wrefresh(statwindow);
+		update_ui(&map1);
 		make_turn(&map1);
 		loop = check_conditions(&map1);
 		turn_n++;
 	} while (loop);
 
-	delwin(mapwindow);
-	delwin(statwindow);
-	delwin(headerwindow);
-	delwin(topwindow);
-
+	map_ui_free(&map1);
 	return 0;
-}
-
-int mapgetch() {
-
-	int x,y;
-	morecount = 0;
-
-	getsyx(y,x);
-	int m = wmove(headerwindow,0,COLS-2);
-	if (m == ERR) beep();
-
-	int c = getch();
-
-	setsyx(y,x);
-
-	return c;
-}
-
-int nc_beep(void) {
-
-	return beep();
-}
-
-int updheader() {
-	wmove(headerwindow,0,0);
-	whline(headerwindow,ACS_HLINE,COLS);
-	wattron(headerwindow, A_BOLD);
-	mvwprintw(headerwindow,0,1," insert title here. ");
-	wattroff(headerwindow, A_BOLD);
-	wrefresh(headerwindow);
-	return 0;
-}
-
-int statprintw(const char *fmt, ...) {
-
-	va_list varglist;
-	int r = vwprintw(statwindow,fmt,varglist);
-	morecount++;
-	if (morecount >= (LINES-21)) {
-		int y,x;
-		getsyx(y,x);
-		wmove(headerwindow,0,COLS-8);
-		wattron(headerwindow,A_REVERSE);
-		wprintw(headerwindow,"(more)");
-		wattroff(headerwindow,A_REVERSE);
-		wrefresh(headerwindow);
-		mapgetch();
-		updheader();
-		setsyx(y,x);
-		morecount = 0;
-	}
-	wrefresh(statwindow);
-	return r;
-}
-
-enum movedirections askdir() {
-	
-	wprintw(statwindow,"Please specify a direction: [yuhjklbn]>");
-	wrefresh(statwindow);
-	
-	enum movedirections r = MD_COUNT;
-	
-	int go_on = 1;
-
-	while (go_on) {
-	echo();
-	int c = wgetch(statwindow);
-	noecho();
-	wprintw(statwindow,"\n");
-	switch(c) {
-		case 'h':
-		case 'H':
-		r = MD_WEST; go_on = 0;break;
-		case 'j':
-		case 'J':
-		r = MD_SOUTH; go_on = 0;break;
-		case 'k':
-		case 'K':
-		r = MD_NORTH; go_on = 0;break;
-		case 'l':
-		case 'L':
-		r = MD_EAST; go_on = 0;break;
-		case 'y':
-		case 'Y':
-		r = MD_NORTHWEST; go_on = 0;break;
-		case 'u':
-		case 'U':
-		r = MD_NORTHEAST; go_on = 0;break;
-		case 'b':
-		case 'B':
-		r = MD_SOUTHWEST; go_on = 0;break;
-		case 'n':
-		case 'N':
-		r = MD_SOUTHEAST; go_on = 0;break;
-		default:
-		beep();
-		wprintw(statwindow,"Invalid direction. Please choose [yuhjklbn]>");
-		wrefresh(statwindow);
-	}
-
-	}
-
-	return r;
 }

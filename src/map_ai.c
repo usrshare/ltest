@@ -3,6 +3,8 @@
 #include "map_fov.h"
 #include "map_path.h"
 
+#include "map_ui.h"
+
 #include "globals.h"
 
 #include <stdbool.h>
@@ -88,7 +90,6 @@ uint16_t* find_empty_heatmap(uint16_t* heatmap) {
 
 	return NULL;
 }
-
 int heatmap_exists(uint16_t* hm1, uint16_t* hm2, uint8_t x, uint8_t y) {
 
 	uint16_t yx = y * MAP_WIDTH + x;
@@ -243,6 +244,7 @@ uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
 	do_fov(map,me,12,FA_NORMAL,me->aidata->viewarr,&entities_sz);
 
 	struct t_map_entity* visible_ent[entities_sz];
+	memset(visible_ent,0,sizeof(struct t_map_entity*) * entities_sz);
 	find_visible_entities(map, me->aidata->viewarr, visible_ent, entities_sz);
 
 	uint8_t dx, dy;
