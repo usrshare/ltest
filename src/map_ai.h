@@ -3,12 +3,13 @@
 
 #include "mapdefs.h"
 
-#define HEATMAP_SIZE 128
+#define HEATMAP_SIZE 256
 
 enum aitasks {
 
 	AIT_WORKING, // for non-hostile NPCs doing "their regular jobs"
 	AIT_PATROLLING, // for security/police NPCs
+	AIT_PLEASE_LEAVE, // asking the target to leave the area
 	AIT_CHECKING_OUT,
 	AIT_PURSUING,   // when the AI sees the target directly
 	AIT_LOOKING_FOR,// and whenn doesn't.
@@ -46,6 +47,8 @@ struct t_map_ai_data {
 
 	uint8_t alert_state;
 	struct t_map_entity* target;
+	
+	uint16_t timer;
 
 	// array for pathfinding
 

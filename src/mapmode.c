@@ -199,6 +199,8 @@ int mapmode() {
 	memset(&(map1.ent), 0, sizeof(struct t_map_entity) * MAX_ENTITIES); 
 	memset(aient, 0, sizeof(struct t_map_ai_data) * MAX_AI_ENTITIES); 
 
+	map1.alert_state = 0; map1.alert_time = 0;
+
 	generate_buildings(&map1,GM_SINGLE);
 
 	#define PLAYERS_COUNT 1
@@ -239,6 +241,9 @@ int mapmode() {
 		make_turn(&map1);
 		loop = check_conditions(&map1);
 		turn_n++;
+		if (map1.alert_time > 0) map1.alert_time--; if ((map1.alert_time == 0) && (map1.alert_state > 0)) map1.alert_state--;
+		for (int i = 0; i < MAX_ENTITIES; i++) {
+			if ((map1.ent[i].aidata) && (map1.ent[i].aidata->timer > 0)) map1.ent[i].aidata->timer--; }
 	} while (loop);
 
 	map_ui_free(&map1);

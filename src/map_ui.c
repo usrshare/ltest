@@ -161,11 +161,19 @@ int nc_beep(void) {
 
 	return beep();
 }
-int updheader() {
+
+char* alertdescriptions[AL_COUNT] = {
+	"",
+	"Conservatives Suspicious",
+	"Conservatives Alerted",
+	"Backup Called"
+};
+
+int updheader(struct t_map* map) {
 	wmove(headerwindow,0,0);
 	whline(headerwindow,ACS_HLINE,COLS);
 	wattron(headerwindow, A_BOLD);
-	mvwprintw(headerwindow,0,1," insert title here. ");
+	mvwprintw(headerwindow,0,1," insert title here. - %s ",alertdescriptions[map->alert_state]);
 	wattroff(headerwindow, A_BOLD);
 	wrefresh(headerwindow);
 	return 0;
@@ -175,16 +183,16 @@ int statprintw(const char *fmt, ...) {
 	va_list varglist;
 	int r = vwprintw(statwindow,fmt,varglist);
 	morecount++;
-	if (morecount >= (LINES-21)) {
+	if (morecount >= (LINES-22)) {
 		int y,x;
 		getsyx(y,x);
-		wmove(headerwindow,0,COLS-8);
-		wattron(headerwindow,A_REVERSE);
-		wprintw(headerwindow,"(more)");
-		wattroff(headerwindow,A_REVERSE);
-		wrefresh(headerwindow);
+		wmove(statwindow,LINES-22,COLS-7);
+		wattron(statwindow,A_REVERSE);
+		wprintw(statwindow,"(more)");
+		wattroff(statwindow,A_REVERSE);
+		wmove(statwindow,LINES-22,0);
+		wrefresh(statwindow);
 		mapgetch();
-		updheader();
 		setsyx(y,x);
 		morecount = 0;
 	}
@@ -255,7 +263,7 @@ int map_ui_init(struct t_map* map) {
 	topwindow = newwin(LINES-20,COLS,0,0);
 	headerwindow = subwin(topwindow,1,COLS,0,0);
 
-	updheader();
+	updheader(map);
 	
 	statwindow = subwin(topwindow,LINES-21,COLS,1,0);
 	if (statwindow == 0) return 1;
