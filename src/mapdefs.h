@@ -140,11 +140,26 @@ struct t_map_entity {
 	seeFunc vision_cb;
 };
 
+enum t_alertlevel {
+
+	AL_NORMAL, //nobody is alerted
+	AL_SUSPICIOUS, //enemies suspicious
+	AL_ALERTED, //alarm raised
+	AL_BACKUP, //backup called
+	AL_COUNT, 
+};
+
 struct t_map {
+
+	char map_title[40];
+
 	struct t_square sq[MAP_WIDTH*MAP_HEIGHT];
 	
 	uint8_t width;
 	uint8_t height;
+
+	enum t_alertlevel alert_state;
+	uint16_t alert_time;
 
 	struct coords spawn_points[SQUAD_MAX];
 

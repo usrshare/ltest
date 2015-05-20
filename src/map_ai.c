@@ -105,7 +105,6 @@ int heatmap_exists(uint16_t* hm1, uint16_t* hm2, uint8_t x, uint8_t y) {
 	}
 	return 0;
 }
-
 int heatmap_add(uint16_t* hm, uint8_t x, uint8_t y) {
 
 	uint16_t yx = y * MAP_WIDTH + x;
@@ -116,13 +115,11 @@ int heatmap_add(uint16_t* hm, uint8_t x, uint8_t y) {
 
 	return 0;
 }
-
 int heatmap_clear(uint16_t* hm) {
 
 	memset(hm,0xff,sizeof(uint16_t) * HEATMAP_SIZE);
 	return 0;
 }
-
 int find_closest_on_heatmap(uint8_t x, uint8_t y, uint16_t* heatmap_old, uint16_t* heatmap_new, uint8_t* o_x, uint8_t* o_y) {
 
 	int8_t dx = 0, dy = 0, rx = x, ry = y;
@@ -158,8 +155,6 @@ int find_closest_on_heatmap(uint8_t x, uint8_t y, uint16_t* heatmap_old, uint16_
 
 	return 0;	
 }
-
-
 int spread_heatmap(struct t_map* map, uint8_t x, uint8_t y, uint16_t* heatmap_old, uint16_t* heatmap_new) {
 
 	enum movedirections md = 0;
@@ -177,7 +172,6 @@ int spread_heatmap(struct t_map* map, uint8_t x, uint8_t y, uint16_t* heatmap_ol
 
 	return 0;
 }
-
 int update_heatmap(struct t_map* map, struct t_map_entity* me, uint8_t x, uint8_t y) {
 
 	uint16_t* h_old = me->aidata->heatmap_old;
@@ -268,6 +262,13 @@ uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
 				me->aidata->dx = me->aidata->lx = dx =curent->x; 
 				me->aidata->dy = me->aidata->ly = dy =curent->y; 
 				me->aidata->path_plotted = 0;
+
+				if (map->alert_state == AL_NORMAL) {
+					map->alert_state = AL_SUSPICIOUS; map->alert_time = 60;
+					me->aidata->task = AIT_PLEASE_LEAVE; me->aidata->timer = 60;
+					statprintw("The guard tells the player to leave the restricted area.\n");
+				} else {
+					me->aidata->task = AIT_CHECKING_OUT; me->aidata->timer = 60; }
 			}
 		}
 
@@ -330,6 +331,22 @@ uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
 
 			me->aidata->viewdir = (me->aidata->viewdir + 1) % 8;
 			r = 16;
+			break;
+
+		case AIT_PLEASE_LEAVE:
+
+			md = plot_follow(me->x,me->y,me->aidata->pathprev);
+			if (md < MD_COUNT) r = trymove(map,me,movediff[md][0],movediff[md][1]); else r = 4;
+
+			if (me->aidata->viewarr[dy * MAP_WIDTH +dx] >= 3) {
+				md = face_square(me->x,me->y,dx,dy);
+				if (md < MD_COUNT) { me->aidata->viewdir = md; r++; } }
+
+			if ((map->sq[dy * MAP_WIDTH + dx].type != TT_RESTRICTED_SPACE)) {
+				me->aidata->task = AIT_PATROLLING;
+				me->aidata->timer = 0;
+			}
+
 			break;
 
 		case AIT_CHECKING_OUT:
