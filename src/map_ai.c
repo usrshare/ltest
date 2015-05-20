@@ -279,8 +279,9 @@ uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
 	
 			if (me->aidata->task == AIT_LOOKING_FOR) {heatmap_clear(me->aidata->heatmap_old); heatmap_clear(me->aidata->heatmap_new);}
 		
+			if (me->aidata->task >= AIT_CHECKING_OUT) {
 			me->aidata->alert_state = 50;
-			me->aidata->task = AIT_PURSUING;
+			me->aidata->task = AIT_PURSUING; }
 
 			dx = me->aidata->target->x; dy = me->aidata->target->y;
 

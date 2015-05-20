@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include "entity.h"
 #include "globals.h"
 
 #define MAX_ENTITIES 128
@@ -129,6 +130,7 @@ typedef uint16_t (*useFunc)(struct t_map* map, struct t_map_entity* me, struct t
 struct t_map_entity {
 	enum entitytypes type;
 	enum entityflags flags;
+	struct t_entity* ent;
 	uint8_t e_id;
 	uint16_t x;
 	uint16_t y;
