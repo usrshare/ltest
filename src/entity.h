@@ -2,6 +2,8 @@
 #define ENTITY_H
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdlib.h>
+
 /*
  Copyright (c) 2002,2003,2004 by Tarn Adams                                         //
  Copyright (c) 2015 usr_share
@@ -139,6 +141,8 @@ enum entity_skill {
    ES_COUNT
 };
 
+extern char* entitytypesstr[];
+
 struct t_entity {
 
 	uint32_t id;
@@ -171,5 +175,9 @@ struct t_entity {
 
 	uint16_t juice;
 };
+
+const char* safe_name(const char* nameptr);
+int describe_entity(struct t_entity* me, char* const restrict o_name, size_t strsize);
+
 
 #endif

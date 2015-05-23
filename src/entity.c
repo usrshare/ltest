@@ -1,6 +1,7 @@
 #include "entity.h"
 
 #include <malloc.h>
+#include <string.h>
 #include "globals.h"
 #include "random.h"
 
@@ -101,3 +102,38 @@ struct t_entity* creature_init() {
    newent->special[ESW_LOWERSPINE]=1;
 
 }
+
+char* entitytypesstr[] = {
+	"Default Entity Type",
+	"Type 1",
+	"Type 2",
+};
+
+const char* safe_name(const char* nameptr) {
+	if ((nameptr == NULL) || (strlen(nameptr) == 0)) return "???";
+	return nameptr;
+}
+
+int describe_entity(struct t_entity* me, char* const restrict o_name, size_t strsize) {
+	if (me != NULL) {
+		if (strlen(me->nickname) != 0) {
+			strncpy(o_name,me->nickname,strsize);
+			return 0;}
+
+		if ((strlen(me->firstname) != 0) || (strlen(me->firstname) != 0)) {
+		char fullname[66];
+		strncpy(fullname,safe_name(me->firstname),32);
+		strncat(fullname," ",1);
+		strncat(fullname,safe_name(me->lastname),32);
+		strncpy(o_name,fullname,strsize);
+		return 0; }
+
+		if (me->type != 0) {
+			strncpy(o_name,entitytypesstr[me->type],strsize); 
+			return 0; }
+		
+	}
+	strncpy(o_name, "Generic Entity",32);
+	return 0;
+}
+
