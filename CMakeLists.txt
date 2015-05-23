@@ -14,6 +14,7 @@ include_directories (${CMAKE_SOURCE_DIR}/inc)
 add_executable (ltest
 		src/cpairs.c
 		src/entity.c
+		src/entity_name.c
 		src/globals.c
 		src/main.c
 		src/map_actions.c
