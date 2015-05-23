@@ -121,11 +121,11 @@ extern int movediff[MD_COUNT][2];
 struct t_map;
 struct t_map_entity;
 
-typedef uint16_t (*hearFunc)(struct t_map* map, struct t_map_entity* me, uint8_t y, uint8_t x);
-typedef uint16_t (*seeFunc)(struct t_map* map, struct t_map_entity* me, uint8_t y, uint8_t x, struct t_map_entity* whom);
+//typedef uint16_t (*hearFunc)(struct t_map* map, struct t_map_entity* me, uint8_t y, uint8_t x);
+//typedef uint16_t (*seeFunc)(struct t_map* map, struct t_map_entity* me, uint8_t y, uint8_t x, struct t_map_entity* whom);
 typedef uint16_t (*turnFunc)(struct t_map* map, struct t_map_entity* me);
-typedef uint16_t (*turnFunc)(struct t_map* map, struct t_map_entity* me);
-typedef uint16_t (*useFunc)(struct t_map* map, struct t_map_entity* me, struct t_map_entity* user);
+typedef uint16_t (*actFunc)(struct t_map* map, struct t_map_entity* me);
+//typedef uint16_t (*useFunc)(struct t_map* map, struct t_map_entity* me, struct t_map_entity* user);
 
 struct t_map_entity {
 	enum entitytypes type;
@@ -136,10 +136,8 @@ struct t_map_entity {
 	uint16_t y;
 	uint16_t twait; ///< turns left to wait
 	struct t_map_ai_data* aidata;
-	turnFunc turn;
-	useFunc use;
-	hearFunc sound_cb;
-	seeFunc vision_cb;
+	turnFunc turn; //this function is called every turn
+	actFunc act; //this function is only called when twait is 0.
 };
 
 enum t_alertlevel {

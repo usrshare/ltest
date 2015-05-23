@@ -1,7 +1,9 @@
 #include "map_ui.h"
 
 #include <curses.h>
+#include <string.h>
 
+#include "entity.h"
 #include "map_ai.h"
 #include "cpairs.h"
 
@@ -179,10 +181,13 @@ int updheader(struct t_map* map) {
 	wrefresh(headerwindow);
 	return 0;
 }
+
 int statprintw(const char *fmt, ...) {
 
 	va_list varglist;
+	va_start(varglist,fmt);
 	int r = vwprintw(statwindow,fmt,varglist);
+	va_end(varglist);
 	morecount++;
 	if (morecount >= (LINES-22)) {
 		int y,x;
@@ -200,6 +205,27 @@ int statprintw(const char *fmt, ...) {
 	wrefresh(statwindow);
 	return r;
 }
+
+int describe_map_entity(struct t_map_entity* me, char* const restrict o_name, size_t strsize) {
+	return describe_entity(me->ent,o_name,strsize);
+}
+
+
+int statsay(struct t_map_entity* me, const char* fmt, ...) {
+
+	char my_description[66];
+	char outstr[1024];
+
+	describe_map_entity(me,my_description,66);
+
+	va_list varglist;
+	va_start(varglist,fmt);
+	int r = vsnprintf(outstr,1024,fmt,varglist);
+	va_end(varglist);
+	
+	return statprintw("%.66s:%.1024s",my_description,outstr);
+}
+
 enum movedirections askdir() {
 	
 	wprintw(statwindow,"Please specify a direction: [yuhjklbn]>");

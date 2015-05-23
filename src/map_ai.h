@@ -46,6 +46,7 @@ struct t_map_ai_data {
 	uint8_t lx, ly; //last x and y
 
 	uint8_t alert_state;
+	uint8_t alertmsg_state;
 	struct t_map_entity* target;
 
 	uint16_t timer;
@@ -61,7 +62,10 @@ extern struct t_map_ai_data aient[MAX_AI_ENTITIES];
 uint16_t enemy_seeFunc(struct t_map* map, struct t_map_entity* me, uint8_t y, uint8_t x, struct t_map_entity* whom);
 
 uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me);
+uint16_t enemy_actFunc(struct t_map* map, struct t_map_entity* me);
+
 uint16_t player_turnFunc(struct t_map* map, struct t_map_entity* me);
+uint16_t player_actFunc(struct t_map* map, struct t_map_entity* me);
 
 int heatmap_clear(uint16_t* hm);
 

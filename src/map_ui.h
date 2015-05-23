@@ -9,6 +9,7 @@ int mapgetch();
 int nc_beep(void);
 int updheader();
 int statprintw(const char *fmt, ...);
+int statsay(struct t_map_entity* me,const char *fmt, ...);
 enum movedirections askdir();
 
 int update_ui (struct t_map* map);
