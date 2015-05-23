@@ -106,7 +106,7 @@ struct t_entity* creature_init() {
 
 int entity_name(struct t_entity* who) {
 	random_first_name(who->firstname,who->gender_id);
-	random_last_name(who->lastname,who->align == ALIGN_ARCHCONSERVATIVE);
+	random_last_name(who->lastname,who->align == ALIGN_ARCHCONSERVATIVE,who->gender_id);
 }
 
 char* entityattrstr[EA_COUNT] = {
