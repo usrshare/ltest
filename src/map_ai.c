@@ -227,6 +227,7 @@ int update_heatmap(struct t_map* map, struct t_map_entity* me, uint8_t x, uint8_
 // -- end of heatmap functions
 
 int knock_out (struct t_map* map, struct t_map_entity* me, uint8_t x, uint8_t y) {
+	return 1;
 }
 
 uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
