@@ -1,8 +1,7 @@
 #ifndef ENTITY_H
 #define ENTITY_H
 #include <stdint.h>
-#include "mapmode.h"
-
+#include <stdbool.h>
 /*
  Copyright (c) 2002,2003,2004 by Tarn Adams                                         //
  Copyright (c) 2015 usr_share
@@ -31,7 +30,7 @@ This file is part of Liberal Crime Squad.                                       
         the bottom of includes.h in the top src folder.
 */
 
-// thif file based on creature/creature.h from Liberal Crime Squad
+// this file based on creature/creature.h from Liberal Crime Squad
 
 enum entity_gender {
 	EG_NEUTRAL,
@@ -43,6 +42,51 @@ enum entity_gender {
 	EG_FBIAS, //generation only
 	EG_RANDOM, //generation only
 };
+
+enum entity_bodyparts
+{
+   EB_HEAD,
+   EB_BODY,
+   EB_ARM_RIGHT,
+   EB_ARM_LEFT,
+   EB_LEG_RIGHT,
+   EB_LEG_LEFT,
+   EB_COUNT
+};
+
+enum entity_specialwounds
+{
+   ESW_TEETH,
+   ESW_RIGHTEYE,
+   ESW_LEFTEYE,
+   ESW_NOSE,
+   ESW_TONGUE,
+   ESW_RIGHTLUNG,
+   ESW_LEFTLUNG,
+   ESW_HEART,
+   ESW_LIVER,
+   ESW_STOMACH,
+   ESW_RIGHTKIDNEY,
+   ESW_LEFTKIDNEY,
+   ESW_SPLEEN,
+   ESW_RIBS,
+   ESW_NECK,
+   ESW_UPPERSPINE,
+   ESW_LOWERSPINE,
+   ESW_COUNT
+};
+
+#define RIBNUM 10
+#define TOOTHNUM 32
+
+#define WOUND_SHOT BIT1
+#define WOUND_CUT BIT2
+#define WOUND_BRUISED BIT3
+#define WOUND_BURNED BIT4
+#define WOUND_BLEEDING BIT5
+#define WOUND_TORN BIT6
+#define WOUND_NASTYOFF BIT7
+#define WOUND_CLEANOFF BIT8
 
 enum entity_attr {
 	EA_STR,
@@ -97,7 +141,9 @@ enum entity_skill {
 
 struct t_entity {
 
-	struct t_vmax attrvalue[EA_COUNT]; //attributes
+	uint32_t id;
+
+	uint8_t attrvalue[EA_COUNT]; //attributes
 	struct t_vmax skillvalue[ES_COUNT]; //skills
 
 	char firstname[32];   // current first name (liberal)
@@ -119,6 +165,11 @@ struct t_entity {
 	char align;
 	bool alive;
 	short type;
+   
+   	unsigned char wound[EB_COUNT];
+   	char special[ESW_COUNT];
+
+	uint16_t juice;
 };
 
 #endif

@@ -79,7 +79,8 @@ int draw_map(struct t_map* map, struct t_map_entity* persp, bool show_fov, bool 
 					switch (map->ent[i].aidata->task) {
 						case AIT_WORKING: fovcolor = CP_GREEN; break;
 						case AIT_PATROLLING: fovcolor = CP_CYAN; break;
-						case AIT_CHECKING_OUT: fovcolor = CP_YELLOW; break;
+						case AIT_CHECKING_OUT:
+						case AIT_PLEASE_LEAVE: fovcolor = CP_YELLOW; break;
 						case AIT_PURSUING: fovcolor = CP_RED; break;
 						case AIT_LOOKING_FOR: fovcolor = CP_PURPLE; break;
 					}
