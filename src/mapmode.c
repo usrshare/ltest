@@ -1,3 +1,4 @@
+// vim: cin:sts=4:sw=4 
 
 #include "globals.h"
 
@@ -45,6 +46,13 @@ int vtile(uint8_t x, uint8_t y) { return ((x < MAP_WIDTH) && (y < MAP_HEIGHT)); 
 struct t_map_entity* next_empty_entity(struct t_map* map) {
 	for (int i=0; i < MAX_ENTITIES; i++)
 		if (map->ent[i].type == ET_NONE) return &(map->ent[i]);
+
+	return NULL;
+}
+
+struct t_entity* next_empty_temp_entity(struct t_map* map) {
+	for (int i=0; i < MAX_ENTITIES; i++)
+		if (map->temp_ent[i].type == 0) return &(map->temp_ent[i]);
 
 	return NULL;
 }
@@ -106,7 +114,7 @@ int space_taken(struct t_map* map, uint8_t x, uint8_t y) {
 	return 0;
 }
 
-struct t_map_entity* spawn_entity(struct t_map* map, enum entitytypes type, enum spawnpos position, turnFunc tf, actFunc af) {
+struct t_map_entity* spawn_entity(struct t_map* map, enum entitytypes type, bool gen_creature, enum spawnpos position, turnFunc tf, actFunc af) {
 
 	struct t_map_entity* newent = next_empty_entity(map);
 	if (newent == NULL) return NULL;
@@ -126,6 +134,15 @@ struct t_map_entity* spawn_entity(struct t_map* map, enum entitytypes type, enum
 	newent->type = type;
 
 	int x,y;
+
+	if (gen_creature) {
+
+	    struct t_entity* newcr = next_empty_temp_entity(map);
+	    if (newcr == NULL) return NULL;
+
+	    creature_init(newcr,NULL);
+	    newent->ent = newcr;
+	}
 
 	switch(position) {
 
@@ -207,7 +224,7 @@ int mapmode() {
 	struct t_map_entity* players[PLAYERS_COUNT];
 	
 	for (int i=0; i < PLAYERS_COUNT; i++) {
-		players[i] = spawn_entity(&map1,ET_PLAYER,SF_DEFAULT,player_turnFunc,player_actFunc);
+		players[i] = spawn_entity(&map1,ET_PLAYER,SF_DEFAULT,false,player_turnFunc,player_actFunc);
 		if (players[i]) {
 		players[i]->flags |= EF_ALWAYSVISIBLE;
 		players[i]->e_id = i;
@@ -221,7 +238,7 @@ int mapmode() {
 	struct t_map_entity* enemies[ENEMIES_COUNT];
 
 	for (int i=0; i < ENEMIES_COUNT; i++) {
-		enemies[i] = spawn_entity(&map1,ET_CPU,SF_RANDOM_INSIDE,enemy_turnFunc,enemy_actFunc);
+		enemies[i] = spawn_entity(&map1,ET_CPU,SF_RANDOM_INSIDE,true,enemy_turnFunc,enemy_actFunc);
 		if (enemies[i]) {enemies[i]->aidata->task = AIT_PATROLLING;}
 	}
 

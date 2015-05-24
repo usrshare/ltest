@@ -1,3 +1,4 @@
+// vim: cin:sts=4:sw=4 
 #include "random.h"
 #include <stdlib.h>
 
@@ -11,6 +12,10 @@ int randbetween(int min, int max) {
 
 	int n = rand();
 	return min + (n % (max - min + 1));
+}
+
+int randrange(struct t_range* range) {
+    return randbetween(range->min,range->max);
 }
 
 int xdx(int dice, int sides) {

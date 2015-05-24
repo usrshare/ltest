@@ -1,3 +1,4 @@
+// vim: cin:sts=4:sw=4 
 #ifndef CPAIRS_H
 #define CPAIRS_H
 

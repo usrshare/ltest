@@ -1,8 +1,10 @@
+// vim: cin:sts=4:sw=4 
 #ifndef ENTITY_H
 #define ENTITY_H
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include "random.h"
 
 /*
    Copyright (c) 2002,2003,2004 by Tarn Adams                                         //
@@ -35,6 +37,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA   02111-1307   USA     
 // this file based on creature/creature.h from Liberal Crime Squad
 
 enum entity_gender {
+	EG_RANDOM = 0, //generation only
 	EG_NEUTRAL,
 	EG_MALE,
 	EG_FEMALE,
@@ -42,7 +45,6 @@ enum entity_gender {
 	EG_WMPATRIARCH, //generation and naming only
 	EG_MBIAS, //generation only
 	EG_FBIAS, //generation only
-	EG_RANDOM, //generation only
 };
 
 enum entity_bodyparts
@@ -161,13 +163,14 @@ struct t_entity {
 	uint32_t id;
 
 	uint8_t attributes[EA_COUNT]; //attributes
-	struct t_vmax skills[ES_COUNT]; //skills
+	uint16_t skills[ES_COUNT]; //skills
 
 	char firstname[32];   // current first name (liberal)
 	char o_firstname[32]; // original first name (conservative)
 	char middlename[32];  // 
 	char lastname[32];    //
 	char nickname[32];    // in-squad nickname
+	bool name_known;      // does the squad know this entity's name?
 
 	enum entity_gender gender_bio; //biological gender (conservative)
 	enum entity_gender gender_id; // gender identity (liberal)
@@ -187,11 +190,58 @@ struct t_entity {
 	char special[ESW_COUNT];
    	short blood;
 
+	short weapon;
+	short armor;
+
 	int16_t juice;
+	int32_t money;
 };
 
+#define RANDATTRS 5
+#define RANDSKILLS 10
+#define RANDWEAPONS 7
+#define RANDARMORS 3
+
+struct t_entity_generate_rules {
+
+	// this is a list of rules/limits the entity generator will have to obey.
+	// its functionality roughly corresponds with the rules given in
+	// Liberal Crime Squad's art/creatures.xml file.
+	short type;
+	enum entity_gender gender;
+	bool generate_name;
+	struct t_range age;
+	bool random_align; //TODO: if on, alignment will vary +/-2 from one specified
+			   //in "align", saturated at +2/-2.
+			   //so, if align = 2, random will not create conservatives,
+			   //and if -2, will not create liberals.
+	enum Alignment align;
+	enum entity_attr attrs[RANDATTRS];
+	struct t_range attrlim[RANDATTRS];
+	enum entity_skill skill[RANDSKILLS];
+	struct t_range skilllim[RANDSKILLS];
+	struct t_range infiltration;
+	struct t_range juice;
+	struct t_range money;
+	
+	short weapons[RANDWEAPONS];
+	struct t_range ammo[RANDWEAPONS];
+	short armors[RANDARMORS];
+
+};
+
+int random_gender_and_age(int* o_age, enum entity_gender* o_gender);
+
+//Creates a creature
+int creature_init(struct t_entity* o_entity, struct t_entity_generate_rules* genrules);
+
+//Returns either a name, or ???
 const char* safe_name(const char* nameptr);
+
+//Writes a string that describes the entity (name / profession) into the memory stored
 int describe_entity(struct t_entity* me, char* const restrict o_name, size_t strsize);
 
+//Gets the value of an attribute, according to all the changes caused by age, juice and health.
+int entity_get_attribute(struct t_entity* me, enum entity_attr attribute, bool usejuice);
 
 #endif

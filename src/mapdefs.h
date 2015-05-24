@@ -1,3 +1,4 @@
+// vim: cin:sts=4:sw=4 
 #ifndef MAPDEFS_H
 #define MAPDEFS_H
 
@@ -164,6 +165,9 @@ struct t_map {
 	struct coords spawn_points[SQUAD_MAX];
 
 	struct t_map_entity ent[MAX_ENTITIES];
+	struct t_entity temp_ent[MAX_ENTITIES]; //this stores a list of temporary entities for this map.
+						//these entities are either forgotten forever, or stored
+						//into a more permanent list (which doesn't exist yet)
 };
 
 #endif
