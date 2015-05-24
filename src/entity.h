@@ -208,6 +208,7 @@ struct t_entity_generate_rules {
 	// its functionality roughly corresponds with the rules given in
 	// Liberal Crime Squad's art/creatures.xml file.
 	short type;
+	char* type_name;
 	enum entity_gender gender;
 	bool generate_name;
 	struct t_range age;
