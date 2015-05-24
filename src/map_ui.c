@@ -39,7 +39,26 @@ chtype entchar(struct t_map_entity* e) {
 	switch (e->type) {
 		case ET_NONE: return 0;
 		case ET_PLAYER: return (('1' + (e->e_id)) | A_BOLD);
-		case ET_CPU: return '@';
+		case ET_CPU: {
+
+				int char_color = 0;
+
+				if (e->ent) {
+				    switch (e->ent->align) {
+					case ALIGN_ARCHCONSERVATIVE:
+					case ALIGN_CONSERVATIVE:
+					    char_color = CP_RED; break;
+					case ALIGN_MODERATE:
+					    char_color = 0; break;
+					case ALIGN_LIBERAL:
+					case ALIGN_ELITELIBERAL:
+					    char_color = CP_GREEN; break;
+				}}
+
+				
+				
+				
+				return char_color | '@'; }
 		case ET_STATIC: return '!';
 		default: return 'X';
 	}
