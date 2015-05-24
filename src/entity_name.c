@@ -1,3 +1,4 @@
+// vim: cin:sts=4:sw=4 
 #include "entity_name.h"
 #include "entity.h"
 

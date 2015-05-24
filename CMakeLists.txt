@@ -15,6 +15,7 @@ add_executable (ltest
 		src/cpairs.c
 		src/entity.c
 		src/entity_name.c
+		src/entity_types.c
 		src/globals.c
 		src/main.c
 		src/map_actions.c

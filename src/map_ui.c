@@ -1,3 +1,4 @@
+// vim: cin:sts=4:sw=4 
 #include "map_ui.h"
 
 #include <curses.h>
@@ -223,7 +224,7 @@ int statsay(struct t_map_entity* me, const char* fmt, ...) {
 	int r = vsnprintf(outstr,1024,fmt,varglist);
 	va_end(varglist);
 	
-	return statprintw("%.66s:%.1024s",my_description,outstr);
+	return statprintw("%.66s: %.1024s",my_description,outstr);
 }
 
 enum movedirections askdir() {

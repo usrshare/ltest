@@ -1,3 +1,4 @@
+// vim: cin:sts=4:sw=4 
 #include "map_ai.h"
 #include "mapmode.h"
 #include "map_fov.h"
