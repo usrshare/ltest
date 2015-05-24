@@ -197,7 +197,7 @@ struct t_entity {
 	int32_t money;
 };
 
-#define RANDATTRS 5
+#define RANDATTRS 7
 #define RANDSKILLS 10
 #define RANDWEAPONS 7
 #define RANDARMORS 3

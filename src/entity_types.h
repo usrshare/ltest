@@ -112,9 +112,9 @@ enum entity_types
    ET_BANK_MANAGER,
    ET_SECRET_SERVICE,
    ET_POLITICIAN,
-   ET_COUNT
+   ENTT_COUNT
 };
 
-extern struct t_entity_generate_rules type_rules[ET_COUNT];
+extern struct t_entity_generate_rules type_rules[ENTT_COUNT];
 
 #endif
