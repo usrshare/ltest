@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 project(ltest)
 
-set (CMAKE_C_FLAGS "-std=c99 -Wall -Wextra")
+set (CMAKE_C_FLAGS "-std=c99 -Wall -Wextra -D_POSIX_C_SOURCE=2")
 
 set_source_files_properties(tags PROPERTIES GENERATED true)
 
@@ -14,6 +14,8 @@ include_directories (${CMAKE_SOURCE_DIR}/inc)
 add_executable (ltest
 		src/cpairs.c
 		src/entity.c
+		src/entity_name.c
+		src/entity_types.c
 		src/globals.c
 		src/main.c
 		src/map_actions.c
