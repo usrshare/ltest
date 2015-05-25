@@ -346,6 +346,9 @@ uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
 			if ((map->sq[dy * MAP_WIDTH + dx].type != TT_RESTRICTED_SPACE)) {
 				me->aidata->task = AIT_PATROLLING;
 				me->aidata->timer = 0;
+			} else {
+				me->aidata->target->aidata->crimes++;
+				if (me->aidata->target->aidata->crimes > 25) me->aidata->task = AIT_PURSUING;
 			}
 
 			break;
