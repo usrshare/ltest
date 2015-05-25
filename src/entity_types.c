@@ -731,16 +731,41 @@ struct t_entity_generate_rules type_rules[ENTT_COUNT] = {
 	.skill = {ES_BUSINESS,ES_DRIVING,ES_HANDTOHAND,ES_PISTOL,ES_PSYCHOLOGY,ES_RELIGION,ES_RIFLE},
 	.skilllim = {{0,2},{2,5},{2,5},{0,2},{1,3},{6,9}},
 	},
-
-
-
-
-
-
-
-
-
-
-
-
+	{.type = ET_PSYCHOLOGIST,
+	.age = A_GRADUATE,
+	.attrs = {EA_HRT,EA_INT},
+	.attrlim = {{6,10},{6,10}},
+	.gender = EG_MBIAS,
+	.skill = {ES_PSYCHOLOGY},
+	.skilllim = {{4,7}},
+	},
+	{.type = ET_LOCKSMITH,
+	.age = A_MATURE,
+	.skill = {ES_SECURITY},
+	.skilllim = {{3,7}},
+	},
+	{.type = ET_MILITARYPOLICE,
+	.age = A_YOUNGADULT,
+	.align = ALIGN_CONSERVATIVE,
+	.attrs = {EA_AGI,EA_CON,EA_STR,EA_WIS},
+	.attrlim = {{7,10},{7,10},{7,10},{7,10}},
+	.gender = EG_MBIAS,
+	.infiltration = {10,40},
+	.juice = {100,150},
+	.money = {0,1},
+	.skill = {ES_DODGE,ES_HANDTOHAND,ES_PSYCHOLOGY,ES_RIFLE},
+	.skilllim = {{2,5},{3,5},{3,5},{4,7}},
+	},
+	{.type = ET_MILITARYOFFICER,
+	.age = A_MIDDLEAGED,
+	.align = ALIGN_CONSERVATIVE,
+	.attrs = {EA_CHA,EA_INT,EA_WIS},
+	.attrlim = {{7,10},{7,10},{10,10}},
+	.gender = EG_MBIAS,
+	.infiltration = {50,80},
+	.juice = {100,150},
+	.money = {0,1},
+	.skill = {ES_HANDTOHAND,ES_PERSUASION,ES_PISTOL,ES_PSYCHOLOGY,ES_RIFLE},
+	.skilllim = {{1,6},{3,7},{1,6},{1,6},{1,2}},
+	},
 };
