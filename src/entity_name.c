@@ -741,7 +741,7 @@ int random_first_name(char* dest, enum entity_gender gender) {
 		case EG_MALE:
 			if ((unsigned int)randval(arraylen(male_first_names) + arraylen(gender_neutral_first_names)) > arraylen(male_first_names)) name_gender = EG_NEUTRAL; else name_gender = EG_MALE; break;
 		case EG_FEMALE:
-			if ((unsigned int)randval(arraylen(male_first_names) + arraylen(gender_neutral_first_names)) > arraylen(male_first_names)) name_gender = EG_NEUTRAL; else name_gender = EG_MALE; break;
+			if ((unsigned int)randval(arraylen(female_first_names) + arraylen(gender_neutral_first_names)) > arraylen(female_first_names)) name_gender = EG_NEUTRAL; else name_gender = EG_FEMALE; break;
 		case EG_WMPATRIARCH: name_gender = EG_WMPATRIARCH; break;
 		default: name_gender = EG_NEUTRAL;
 	}
