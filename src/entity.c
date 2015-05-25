@@ -1,6 +1,7 @@
 // vim: cin:sts=4:sw=4 
 #include "entity.h"
 #include "entity_name.h"
+#include "entity_types.h"
 
 #include <malloc.h>
 #include <string.h>
@@ -164,6 +165,7 @@ int creature_init(struct t_entity* o_entity, struct t_entity_generate_rules* gen
 int entity_name(struct t_entity* who) {
     random_first_name(who->firstname,who->gender_id);
     random_last_name(who->lastname,who->align == ALIGN_ARCHCONSERVATIVE,who->gender_id);
+    return 0;
 }
 
 char* entityattrstr[EA_COUNT] = {
@@ -174,12 +176,6 @@ char* entityattrstr[EA_COUNT] = {
     "CON",
     "CHA",
     "HRT"
-};
-
-char* entitytypesstr[] = {
-    "Default Entity Type",
-    "Type 1",
-    "Type 2",
 };
 
 const char* safe_name(const char* nameptr) {
@@ -201,12 +197,12 @@ int describe_entity(struct t_entity* me, char* const restrict o_name, size_t str
 	    strncpy(o_name,fullname,strsize);
 	    return 0; }
 
-	if (me->type != 0) {
-	    strncpy(o_name,entitytypesstr[me->type],strsize); 
-	    return 0; }
+	const char* td = type_description(me);
+
+	if (td) { strncpy(o_name,type_description(me),strsize); return 0; }
 
     }
-    strncpy(o_name, "Generic Entity",32);
+    strncpy(o_name, "*",32);
     return 0;
 }
 

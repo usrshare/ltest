@@ -4,8 +4,7 @@
 
 // Based on Liberal Crime Squad's creature/creature.h file.
 
-enum entity_types
-{
+enum entity_types {
    ET_BOUNCER,
    ET_SECURITYGUARD,
    ET_SCIENTIST_LABTECH,
@@ -114,6 +113,8 @@ enum entity_types
    ET_POLITICIAN,
    ENTT_COUNT
 };
+
+const char* type_description (struct t_entity* e);
 
 extern struct t_entity_generate_rules type_rules[ENTT_COUNT];
 
