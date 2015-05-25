@@ -48,6 +48,8 @@ struct t_map_ai_data {
 	uint8_t alert_state;
 	struct t_map_entity* target;
 
+	uint16_t crimes;
+
 	uint16_t timer;
 
 	// array for pathfinding
