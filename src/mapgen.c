@@ -1,3 +1,4 @@
+// vim: cin:sts=4:sw=4 
 #include "mapgen.h"
 #include "mapmode.h"
 #include "pqueue.h"

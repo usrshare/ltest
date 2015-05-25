@@ -1,3 +1,4 @@
+// vim: cin:sts=4:sw=4 
 #include "map_actions.h"
 #include "mapdefs.h"
 #include "mapmode.h"

@@ -1,3 +1,4 @@
+// vim: cin:sts=4:sw=4 
 #ifndef PQUEUE_H
 #define PQUEUE_H
 #include <unistd.h>

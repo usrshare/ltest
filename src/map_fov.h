@@ -1,3 +1,4 @@
+// vim: cin:sts=4:sw=4 
 #ifndef MAP_FOV_H
 #define MAP_FOV_H
 #include <stdint.h>

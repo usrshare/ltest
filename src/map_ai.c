@@ -1,3 +1,4 @@
+// vim: cin:sts=4:sw=4 
 #include "map_ai.h"
 #include "mapmode.h"
 #include "map_fov.h"
@@ -227,12 +228,12 @@ int update_heatmap(struct t_map* map, struct t_map_entity* me, uint8_t x, uint8_
 // -- end of heatmap functions
 
 int knock_out (struct t_map* map, struct t_map_entity* me, uint8_t x, uint8_t y) {
+	return 1;
 }
 
 uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
 
-	int r = 0;
-	if (me->aidata == NULL) return 16;
+	if (me->aidata == NULL) return 1;
 
 	int entities_sz = 0;
 	do_fov(map,me,12,FA_NORMAL,me->aidata->viewarr,&entities_sz);
@@ -266,7 +267,6 @@ uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
 				if (map->alert_state == AL_NORMAL) {
 					map->alert_state = AL_SUSPICIOUS; map->alert_time = 60;
 					me->aidata->task = AIT_PLEASE_LEAVE; me->aidata->timer = 60;
-					statprintw("The guard tells the player to leave the restricted area.\n");
 				} else {
 					me->aidata->task = AIT_CHECKING_OUT; me->aidata->timer = 60; }
 			}
@@ -277,8 +277,10 @@ uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
 
 		if (can_see_entity(map,me,me->aidata->target)) {
 	
+			
+			// we don't need a heatmap if we can see the entity.
 			if (me->aidata->task == AIT_LOOKING_FOR) {heatmap_clear(me->aidata->heatmap_old); heatmap_clear(me->aidata->heatmap_new);}
-		
+				
 			if (me->aidata->task >= AIT_CHECKING_OUT) {
 			me->aidata->alert_state = 50;
 			me->aidata->task = AIT_PURSUING; }
@@ -317,9 +319,47 @@ uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
 		// there is a target.
 	}
 
-
 	if ( (me->aidata->path_plotted == 0) && (vtile(dx,dy)) )
 	{ plot_path(map,me,dx,dy,me->aidata->patharr,me->aidata->pathprev); me->aidata->path_plotted = 1; }
+	
+	switch(me->aidata->task) {
+
+		case AIT_WORKING:
+			break;
+
+		case AIT_PATROLLING:
+			break;
+
+		case AIT_PLEASE_LEAVE:
+			switch(me->aidata->timer) {
+				case 60:
+				statsay(me,"Please leave the restricted area.\n"); break;
+				case 30:
+				statsay(me,"I repeat: please leave the restricted area.\n"); break;
+				case 15:
+				statsay(me,"This is the last warning. If you don't leave this area, I'll use force.\n"); break;
+			}
+			break;
+
+		case AIT_CHECKING_OUT:
+			break;
+
+		case AIT_PURSUING:
+			break;
+
+		case AIT_LOOKING_FOR:
+			break;
+	}
+
+	return 0;
+}
+uint16_t enemy_actFunc(struct t_map* map, struct t_map_entity* me) {
+
+	if (me->aidata == NULL) return 0;
+
+	int r = 1;
+
+	uint8_t dx = me->aidata->dx,dy = me->aidata->dy;
 
 	enum movedirections md;
 	switch(me->aidata->task) {
@@ -380,11 +420,18 @@ uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
 	}
 
 	if (r < 0) {return 0;} else return r;
-
-	return r;
 }
 
 uint16_t player_turnFunc(struct t_map* map, struct t_map_entity* me) {
+
+	if (!(me->aidata)) return 0;
+	
+	do_fov(map,me,25,FA_WIDE,me->aidata->viewarr,NULL);	
+	draw_map(map, me,1,dbgmode ? 1 : 0, dbgmode ? 1 : 0,1);
+	
+	return 0;
+}
+uint16_t player_actFunc(struct t_map* map, struct t_map_entity* me) {
 
 	if (!(me->aidata)) return 0;
 	

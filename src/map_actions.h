@@ -1,3 +1,4 @@
+// vim: cin:sts=4:sw=4 
 #ifndef MAP_ACTIONS_H
 #define MAP_ACTIONS_H
 #include <stdint.h>

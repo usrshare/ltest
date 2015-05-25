@@ -1,7 +1,10 @@
+// vim: cin:sts=4:sw=4 
 #include "map_ui.h"
 
 #include <curses.h>
+#include <string.h>
 
+#include "entity.h"
 #include "map_ai.h"
 #include "cpairs.h"
 
@@ -36,7 +39,26 @@ chtype entchar(struct t_map_entity* e) {
 	switch (e->type) {
 		case ET_NONE: return 0;
 		case ET_PLAYER: return (('1' + (e->e_id)) | A_BOLD);
-		case ET_CPU: return '@';
+		case ET_CPU: {
+
+				int char_color = 0;
+
+				if (e->ent) {
+				    switch (e->ent->align) {
+					case ALIGN_ARCHCONSERVATIVE:
+					case ALIGN_CONSERVATIVE:
+					    char_color = CP_RED; break;
+					case ALIGN_MODERATE:
+					    char_color = 0; break;
+					case ALIGN_LIBERAL:
+					case ALIGN_ELITELIBERAL:
+					    char_color = CP_GREEN; break;
+				}}
+
+				
+				
+				
+				return char_color | '@'; }
 		case ET_STATIC: return '!';
 		default: return 'X';
 	}
@@ -79,7 +101,8 @@ int draw_map(struct t_map* map, struct t_map_entity* persp, bool show_fov, bool 
 					switch (map->ent[i].aidata->task) {
 						case AIT_WORKING: fovcolor = CP_GREEN; break;
 						case AIT_PATROLLING: fovcolor = CP_CYAN; break;
-						case AIT_CHECKING_OUT: fovcolor = CP_YELLOW; break;
+						case AIT_CHECKING_OUT:
+						case AIT_PLEASE_LEAVE: fovcolor = CP_YELLOW; break;
 						case AIT_PURSUING: fovcolor = CP_RED; break;
 						case AIT_LOOKING_FOR: fovcolor = CP_PURPLE; break;
 					}
@@ -178,10 +201,13 @@ int updheader(struct t_map* map) {
 	wrefresh(headerwindow);
 	return 0;
 }
+
 int statprintw(const char *fmt, ...) {
 
 	va_list varglist;
+	va_start(varglist,fmt);
 	int r = vwprintw(statwindow,fmt,varglist);
+	va_end(varglist);
 	morecount++;
 	if (morecount >= (LINES-22)) {
 		int y,x;
@@ -199,6 +225,27 @@ int statprintw(const char *fmt, ...) {
 	wrefresh(statwindow);
 	return r;
 }
+
+int describe_map_entity(struct t_map_entity* me, char* const restrict o_name, size_t strsize) {
+	return describe_entity(me->ent,o_name,strsize);
+}
+
+
+int statsay(struct t_map_entity* me, const char* fmt, ...) {
+
+	char my_description[66];
+	char outstr[1024];
+
+	describe_map_entity(me,my_description,66);
+
+	va_list varglist;
+	va_start(varglist,fmt);
+	int r = vsnprintf(outstr,1024,fmt,varglist);
+	va_end(varglist);
+	
+	return statprintw("%.66s: %.1024s",my_description,outstr);
+}
+
 enum movedirections askdir() {
 	
 	wprintw(statwindow,"Please specify a direction: [yuhjklbn]>");

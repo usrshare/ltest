@@ -1,3 +1,4 @@
+// vim: cin:sts=4:sw=4 
 #ifndef MAP_UI_H
 #define MAP_UI_H
 #include <stdbool.h>
@@ -9,6 +10,7 @@ int mapgetch();
 int nc_beep(void);
 int updheader();
 int statprintw(const char *fmt, ...);
+int statsay(struct t_map_entity* me,const char *fmt, ...);
 enum movedirections askdir();
 
 int update_ui (struct t_map* map);

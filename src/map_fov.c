@@ -1,3 +1,4 @@
+// vim: cin:sts=4:sw=4 
 #include "map_fov.h"
 #include "map_ai.h"
 #include "mapmode.h"
@@ -160,13 +161,6 @@ void do_fov(struct t_map* map, struct t_map_entity* e, int radius, enum fov_angl
 
 	if (flag_updated) e->aidata->viewarr_updated = 1;
 	
-	for (int j = 0; j < MAP_HEIGHT; j++) {
-		for (int i = 0; i < MAP_WIDTH; i++) {
-			if (mem_array[j * MAP_WIDTH + i] == 4) {
-				if (e->vision_cb) e->vision_cb(map,e,j,i,find_entity(map,i,j));
-			}
-		}
-	}
 }
 
 // end of shamelessly borrowed code.
