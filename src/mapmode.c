@@ -3,6 +3,7 @@
 #include "globals.h"
 
 #include "mapmode.h"
+#include "entity_types.h"
 #include "mapgen.h"
 #include "map_fov.h"
 
@@ -114,7 +115,7 @@ int space_taken(struct t_map* map, uint8_t x, uint8_t y) {
 	return 0;
 }
 
-struct t_map_entity* spawn_entity(struct t_map* map, enum entitytypes type, bool gen_creature, enum spawnpos position, turnFunc tf, actFunc af) {
+struct t_map_entity* spawn_entity(struct t_map* map, enum entitytypes type, bool gen_creature, struct t_entity_generate_rules* genrules, enum spawnpos position, turnFunc tf, actFunc af) {
 
 	struct t_map_entity* newent = next_empty_entity(map);
 	if (newent == NULL) return NULL;
@@ -140,7 +141,7 @@ struct t_map_entity* spawn_entity(struct t_map* map, enum entitytypes type, bool
 	    struct t_entity* newcr = next_empty_temp_entity(map);
 	    if (newcr == NULL) return NULL;
 
-	    creature_init(newcr,NULL);
+	    creature_init(newcr,genrules);
 	    newent->ent = newcr;
 	}
 
@@ -224,7 +225,7 @@ int mapmode() {
 	struct t_map_entity* players[PLAYERS_COUNT];
 	
 	for (int i=0; i < PLAYERS_COUNT; i++) {
-		players[i] = spawn_entity(&map1,ET_PLAYER,SF_DEFAULT,false,player_turnFunc,player_actFunc);
+		players[i] = spawn_entity(&map1,ET_PLAYER,false,NULL,SF_DEFAULT,player_turnFunc,player_actFunc);
 		if (players[i]) {
 		players[i]->flags |= EF_ALWAYSVISIBLE;
 		players[i]->e_id = i;
@@ -238,7 +239,7 @@ int mapmode() {
 	struct t_map_entity* enemies[ENEMIES_COUNT];
 
 	for (int i=0; i < ENEMIES_COUNT; i++) {
-		enemies[i] = spawn_entity(&map1,ET_CPU,SF_RANDOM_INSIDE,true,enemy_turnFunc,enemy_actFunc);
+		enemies[i] = spawn_entity(&map1,ET_CPU,true,&type_rules[ET_SECURITYGUARD],SF_RANDOM_INSIDE,enemy_turnFunc,enemy_actFunc);
 		if (enemies[i]) {enemies[i]->aidata->task = AIT_PATROLLING;}
 	}
 
