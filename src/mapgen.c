@@ -235,7 +235,7 @@ int place_tables(struct t_map* map, int x, int y, int w, int h) {
 
 	while (il > 0) {
 
-	    if ( (no_door(map,cx,cy,true) == 0) && (empty_neighbors(map,cx,cy,true) > 5) )
+	    if ( (no_door(map,cx,cy,true) == 0) && (empty_neighbors(map,cx,cy,true) > (iter == 0 ? 5 : 4)) )
 		map->sq[cy*MAP_WIDTH+cx].type = TT_TABLE;
 	    
 	    il--;
