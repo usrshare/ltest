@@ -110,13 +110,218 @@ enum dirflags dirFlag(enum directions d) {
 
 // ---
 
-int no_door(struct t_map* map, int x, int y) {
+int no_door(struct t_map* map, int x, int y, bool eightdir) {
 
 	if (map->sq[(y+1)*MAP_WIDTH+x].type == TT_DOOR_CLOSED) return 1;
 	if (map->sq[(y-1)*MAP_WIDTH+x].type == TT_DOOR_CLOSED) return 1;
 	if (map->sq[y*MAP_WIDTH+(x-1)].type == TT_DOOR_CLOSED) return 1;
 	if (map->sq[y*MAP_WIDTH+(x+1)].type == TT_DOOR_CLOSED) return 1;
+	
+	if (eightdir) {
+	if (map->sq[(y+1)*MAP_WIDTH+(x+1)].type == TT_DOOR_CLOSED) return 1;
+	if (map->sq[(y-1)*MAP_WIDTH+(x+1)].type == TT_DOOR_CLOSED) return 1;
+	if (map->sq[(y+1)*MAP_WIDTH+(x-1)].type == TT_DOOR_CLOSED) return 1;
+	if (map->sq[(y-1)*MAP_WIDTH+(x-1)].type == TT_DOOR_CLOSED) return 1;
+	}
 	return 0;
+}
+
+int empty_neighbors(struct t_map* map, int x, int y, bool eightdir) {
+
+	int en=0;
+
+	if ((tflags[map->sq[(y+1)*MAP_WIDTH+x].type] & TF_SOLID) == 0) en++;
+	if ((tflags[map->sq[(y-1)*MAP_WIDTH+x].type] & TF_SOLID) == 0) en++;
+	if ((tflags[map->sq[y*MAP_WIDTH+(x+1)].type] & TF_SOLID) == 0) en++;
+	if ((tflags[map->sq[y*MAP_WIDTH+(x-1)].type] & TF_SOLID) == 0) en++;
+	
+	if (eightdir) {
+	if ((tflags[map->sq[(y-1)*MAP_WIDTH+(x-1)].type] & TF_SOLID) == 0) en++;
+	if ((tflags[map->sq[(y-1)*MAP_WIDTH+(x+1)].type] & TF_SOLID) == 0) en++;
+	if ((tflags[map->sq[(y+1)*MAP_WIDTH+(x-1)].type] & TF_SOLID) == 0) en++;
+	if ((tflags[map->sq[(y+1)*MAP_WIDTH+(x+1)].type] & TF_SOLID) == 0) en++;
+	}
+	return en;
+}
+
+int iterate_rooms_2(struct t_map* map, int x, int y, int w, int h) {
+
+	if ((w <= 2) || (h <= 2)) return 0;	
+	int width = randbetween(1,5);
+
+	if ( (randval(3) == 0) && ((width < w) && (width < h)) ) {
+
+		// do a corridor
+
+		if (randval(w + h) > w) {
+
+			int cor_y = randbetween(y, y + h - width);
+
+			for (int ix=x; ix < (x+w); ix++) {
+				map->sq[(cor_y - 1)*MAP_WIDTH+ix].type = TT_WALL;
+				for (int iy = cor_y; iy < (cor_y + width); iy++) map->sq[iy*MAP_WIDTH+ix].type = TT_CORRIDOR;
+
+				map->sq[(cor_y + width)*MAP_WIDTH+ix].type = TT_WALL;
+
+			}
+
+
+			iterate_rooms_2(map,x,y,w,cor_y - 1- y);
+			iterate_rooms_2(map,x,cor_y+width+1,w,y + h - cor_y - width - 1);
+
+			//horizontal
+
+		} else {
+
+			int cor_x = randbetween(x, x + w - width);
+
+			for (int iy=y; iy < (y+h); iy++) {
+				map->sq[iy*MAP_WIDTH+(cor_x-1)].type = TT_WALL;
+				for (int ix = cor_x; ix < (cor_x + width); ix++) map->sq[iy*MAP_WIDTH+ix].type = TT_CORRIDOR;
+				map->sq[iy*MAP_WIDTH+(cor_x + width)].type = TT_WALL;
+
+			}
+
+			iterate_rooms_2(map,x,y,cor_x - 1 - x,h);
+			iterate_rooms_2(map,cor_x+width+1,y,x + w - cor_x - width - 1,h);
+
+			// vertical
+		}
+
+
+	} else {
+
+		if (((w * h) <= 12) && (randval(2) == 0)) return 0;
+		if ((w <= 2) || (h <= 2)) return 0;
+
+		if ( ( (randval(w + h) < w) || h <= 3) && w > 2) {
+
+			int div_x = x + randval(w - 2) + 1;
+			for (int iy=y; iy < (y+h); iy++) {
+				map->sq[iy*MAP_WIDTH+div_x].type = TT_WALL;
+			}
+			if (w > 1) {
+				int door_y = y + randval(h);
+				map->sq[door_y*MAP_WIDTH+div_x].type = TT_DOOR_CLOSED; }
+			iterate_rooms_2(map,x,y,div_x - x,h);
+			iterate_rooms_2(map,div_x+1,y,x + w - div_x - 1,h);
+		} else {
+			int div_y = y + randval(h - 2) + 1;
+			for (int ix=x; ix < (x+w); ix++) {
+				map->sq[div_y*MAP_WIDTH+ix].type = TT_WALL;
+			}
+			if (h > 1) {
+				int door_x = x + randval(w);
+				map->sq[div_y*MAP_WIDTH+door_x].type = TT_DOOR_CLOSED; }
+			iterate_rooms_2(map,x,y,w,div_y - y);
+			iterate_rooms_2(map,x,div_y+1,w,y + h - div_y - 1);
+		}
+		return 0;
+
+	}
+
+	return 0;
+}
+
+typedef int (*roomcb)(struct t_map* map, int x, int y, int w, int h);
+
+int place_cubicles(struct t_map* map, int x, int y, int w, int h) {
+
+	//right now, it just places tables all around the place.
+	for (int iy=y; iy< (y+h); iy++)
+		for (int ix=x; ix< (x+w); ix++)
+		    if ( (no_door(map,ix,iy,true) == 0) && (empty_neighbors(map,ix,iy,true) > 5) ) map->sq[iy*MAP_WIDTH+ix].type = TT_TABLE;
+	
+	return 0;
+}
+
+int divide_rooms(struct t_map* map, int x, int y, int w, int h, roomcb cb) {
+
+	//this one doesn't build walls.
+
+	if (((w * h) <= 12) && (randval(2) == 0)) { if (cb) cb(map,x,y,w,h); return 0;}
+	if ((w <= 3) && (h <= 3)) { if (cb) cb(map,x,y,w,h); return 0;}
+
+	if (( (randval(w + h) < w) || h <= 3) && w > 3) {
+		int div_x = x + randval(w - 2) + 1;
+		divide_rooms(map,x,y,div_x - x,h,cb);
+		divide_rooms(map,div_x+1,y,x + w - div_x - 1,h,cb);
+	} else {
+		int div_y = y + randval(h - 2) + 1;
+		divide_rooms(map,x,y,w,div_y - y,cb);
+		divide_rooms(map,x,div_y+1,w,y + h - div_y - 1,cb);
+	}
+	return 0;
+}
+
+int iterate_rooms(struct t_map* map, int x, int y, int w, int h) {
+
+
+	if (((w * h) <= 12) && (randval(2) == 0)) return 0;
+	if ((w <= 2) && (h <= 2)) return 0;
+
+	for (int iy=y; iy< (y+h); iy++)
+		for (int ix=x; ix< (x+w); ix++)
+			map->sq[iy*MAP_WIDTH+ix].type = TT_SPACE;
+
+
+	if (( (randval(w + h) < w) || h <= 3) && w > 3) {
+
+		int div_x = x + randval(w - 2) + 1;
+		for (int iy=y; iy < (y+h); iy++) {
+			map->sq[iy*MAP_WIDTH+div_x].type = TT_WALL;
+		}
+		if (w > 1) {
+			int door_y = y + randval(h);
+			map->sq[door_y*MAP_WIDTH+div_x].type = TT_DOOR_CLOSED; }
+		iterate_rooms(map,x,y,div_x - x,h);
+		iterate_rooms(map,div_x+1,y,x + w - div_x - 1,h);
+	} else {
+		int div_y = y + randval(h - 2) + 1;
+		for (int ix=x; ix < (x+w); ix++) {
+			map->sq[div_y*MAP_WIDTH+ix].type = TT_WALL;
+		}
+		if (h > 1) {
+			int door_x = x + randval(w);
+			map->sq[div_y*MAP_WIDTH+door_x].type = TT_DOOR_CLOSED; }
+		iterate_rooms(map,x,y,w,div_y - y);
+		iterate_rooms(map,x,div_y+1,w,y + h - div_y - 1);
+	}
+	return 0;
+}
+
+int clear_way(struct t_map* map, int x, int y, enum directions dir) {
+    while (vtile(x,y) && (map->sq[y * MAP_WIDTH + x].type != TT_SPACE) && (map->sq[y * MAP_WIDTH + x].type != TT_WALL)) {
+
+	map->sq[y * MAP_WIDTH + x].type = TT_SPACE;
+
+	switch(dir) {
+	    case D_NORTH: y--; break;
+	    case D_SOUTH: y++; break;
+	    case D_EAST: x++; break;
+	    case D_WEST: x--; break;
+	    default: return 1;
+	}
+    }
+    return 0;
+}
+
+int clear_entrances(struct t_map* map, int x, int y, int w, int h) {
+
+	//finds doors on the map, then builds straight lines to the nearest space and fills that space.
+
+	for (int ix = x; ix < (x + w); ix++) {
+	    if (map->sq[(y-1) * MAP_WIDTH + ix].type == TT_DOOR_CLOSED) clear_way(map,ix,y,D_SOUTH);
+	    if (map->sq[(y+h) * MAP_WIDTH + ix].type == TT_DOOR_CLOSED) clear_way(map,ix,y+h-1,D_NORTH);
+	}	    
+	
+	for (int iy = y; iy < (y + h); iy++) {
+	    if (map->sq[iy * MAP_WIDTH + (x-1)].type == TT_DOOR_CLOSED) clear_way(map,x,iy,D_EAST);
+	    if (map->sq[iy * MAP_WIDTH + (x+w)].type == TT_DOOR_CLOSED) clear_way(map,x+w-1,iy,D_WEST);
+	}
+
+	return 0;	
+    	
 }
 
 int decorate_room(struct t_map* map, int x, int y, int w, int h, enum roomstyles style) {
@@ -136,11 +341,15 @@ int decorate_room(struct t_map* map, int x, int y, int w, int h, enum roomstyles
 			
 			for (int iy=1; iy < (h-1); iy++)
 			for (int ix=1; ix < (w-1); ix++)
-				map->sq[(y +iy)*MAP_WIDTH+(x+ix)].type = TT_TABLE;
+				if (no_door(map,x+ix,y+iy, true) == 0) map->sq[(y +iy)*MAP_WIDTH+(x+ix)].type = TT_TABLE;
 
 			break; }
 		case RS_CUBICLES: {
 
+			divide_rooms(map,x,y,w,h,place_cubicles);
+			//clear_entrances(map,x,y,w,h);
+
+			
 			break; }
 		case RS_PERSONAL: {
 
@@ -153,19 +362,19 @@ int decorate_room(struct t_map* map, int x, int y, int w, int h, enum roomstyles
 			
 			if (randdirs & DF_NORTH) {
 				for (int l=0; l<w; l++) {
-					if (no_door(map,x + l, y) == 0) map->sq[y * MAP_WIDTH + (x+l)].type = TT_LOCKER; }
+					if (no_door(map,x + l, y, true) == 0) map->sq[y * MAP_WIDTH + (x+l)].type = TT_LOCKER; }
 			}
 			if (randdirs & DF_SOUTH) {
 				for (int l=0; l<w; l++) {
-					if (no_door(map,x + l, y+h-1) == 0) map->sq[(y+h-1) * MAP_WIDTH + (x+l)].type = TT_LOCKER; }
+					if (no_door(map,x + l, y+h-1, true) == 0) map->sq[(y+h-1) * MAP_WIDTH + (x+l)].type = TT_LOCKER; }
 			}
 			if (randdirs & DF_WEST) {
 				for (int l=0; l<h; l++) {
-					if (no_door(map,x, y+l) == 0) map->sq[(y+l) * MAP_WIDTH + x].type = TT_LOCKER; }
+					if (no_door(map,x, y+l,true) == 0) map->sq[(y+l) * MAP_WIDTH + x].type = TT_LOCKER; }
 			}
 			if (randdirs & DF_EAST) {
 				for (int l=0; l<h; l++) {
-					if (no_door(map,x+w-1, y+l) == 0) map->sq[(y+l) * MAP_WIDTH + (x+w-1)].type = TT_LOCKER; }
+					if (no_door(map,x+w-1, y+l, true) == 0) map->sq[(y+l) * MAP_WIDTH + (x+w-1)].type = TT_LOCKER; }
 			}
 
 
@@ -533,120 +742,6 @@ int grow_room(struct t_map* map, int x, int y, enum directions growdir, enum dir
 	return 0;
 }
 
-int iterate_rooms_2(struct t_map* map, int x, int y, int w, int h) {
-
-	if ((w <= 2) || (h <= 2)) return 0;	
-	int width = randbetween(1,5);
-
-	if ( (randval(3) == 0) && ((width < w) && (width < h)) ) {
-
-		// do a corridor
-
-		if (randval(w + h) > w) {
-
-			int cor_y = randbetween(y, y + h - width);
-
-			for (int ix=x; ix < (x+w); ix++) {
-				map->sq[(cor_y - 1)*MAP_WIDTH+ix].type = TT_WALL;
-				for (int iy = cor_y; iy < (cor_y + width); iy++) map->sq[iy*MAP_WIDTH+ix].type = TT_CORRIDOR;
-
-				map->sq[(cor_y + width)*MAP_WIDTH+ix].type = TT_WALL;
-
-			}
-
-
-			iterate_rooms_2(map,x,y,w,cor_y - 1- y);
-			iterate_rooms_2(map,x,cor_y+width+1,w,y + h - cor_y - width - 1);
-
-			//horizontal
-
-		} else {
-
-			int cor_x = randbetween(x, x + w - width);
-
-			for (int iy=y; iy < (y+h); iy++) {
-				map->sq[iy*MAP_WIDTH+(cor_x-1)].type = TT_WALL;
-				for (int ix = cor_x; ix < (cor_x + width); ix++) map->sq[iy*MAP_WIDTH+ix].type = TT_CORRIDOR;
-				map->sq[iy*MAP_WIDTH+(cor_x + width)].type = TT_WALL;
-
-			}
-
-			iterate_rooms_2(map,x,y,cor_x - 1 - x,h);
-			iterate_rooms_2(map,cor_x+width+1,y,x + w - cor_x - width - 1,h);
-
-			// vertical
-		}
-
-
-	} else {
-
-		if (((w * h) <= 12) && (randval(2) == 0)) return 0;
-		if ((w <= 2) || (h <= 2)) return 0;
-
-		if ( ( (randval(w + h) < w) || h <= 3) && w > 2) {
-
-			int div_x = x + randval(w - 2) + 1;
-			for (int iy=y; iy < (y+h); iy++) {
-				map->sq[iy*MAP_WIDTH+div_x].type = TT_WALL;
-			}
-			if (w > 1) {
-				int door_y = y + randval(h);
-				map->sq[door_y*MAP_WIDTH+div_x].type = TT_DOOR_CLOSED; }
-			iterate_rooms_2(map,x,y,div_x - x,h);
-			iterate_rooms_2(map,div_x+1,y,x + w - div_x - 1,h);
-		} else {
-			int div_y = y + randval(h - 2) + 1;
-			for (int ix=x; ix < (x+w); ix++) {
-				map->sq[div_y*MAP_WIDTH+ix].type = TT_WALL;
-			}
-			if (h > 1) {
-				int door_x = x + randval(w);
-				map->sq[div_y*MAP_WIDTH+door_x].type = TT_DOOR_CLOSED; }
-			iterate_rooms_2(map,x,y,w,div_y - y);
-			iterate_rooms_2(map,x,div_y+1,w,y + h - div_y - 1);
-		}
-		return 0;
-
-	}
-
-	return 0;
-}
-
-int iterate_rooms(struct t_map* map, int x, int y, int w, int h) {
-
-
-	if (((w * h) <= 12) && (randval(2) == 0)) return 0;
-	if ((w <= 3) && (h <= 3)) return 0;
-
-	for (int iy=y; iy< (y+h); iy++)
-		for (int ix=x; ix< (x+w); ix++)
-			map->sq[iy*MAP_WIDTH+ix].type = TT_SPACE;
-
-
-	if (( (randval(w + h) < w) || h <= 3) && w > 3) {
-
-		int div_x = x + randval(w - 2) + 1;
-		for (int iy=y; iy < (y+h); iy++) {
-			map->sq[iy*MAP_WIDTH+div_x].type = TT_WALL;
-		}
-		if (w > 1) {
-			int door_y = y + randval(h);
-			map->sq[door_y*MAP_WIDTH+div_x].type = TT_DOOR_CLOSED; }
-		iterate_rooms(map,x,y,div_x - x,h);
-		iterate_rooms(map,div_x+1,y,x + w - div_x - 1,h);
-	} else {
-		int div_y = y + randval(h - 2) + 1;
-		for (int ix=x; ix < (x+w); ix++) {
-			map->sq[div_y*MAP_WIDTH+ix].type = TT_WALL;
-		}
-		if (h > 1) {
-			int door_x = x + randval(w);
-			map->sq[div_y*MAP_WIDTH+door_x].type = TT_DOOR_CLOSED; }
-		iterate_rooms(map,x,y,w,div_y - y);
-		iterate_rooms(map,x,div_y+1,w,y + h - div_y - 1);
-	}
-	return 0;
-}
 
 int surround_iter(struct t_map* map, int x, int y, int* done_array) {
 
