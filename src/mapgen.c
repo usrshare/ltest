@@ -225,12 +225,37 @@ int iterate_rooms_2(struct t_map* map, int x, int y, int w, int h) {
 
 typedef int (*roomcb)(struct t_map* map, int x, int y, int w, int h);
 
-int place_cubicles(struct t_map* map, int x, int y, int w, int h) {
+int place_tables(struct t_map* map, int x, int y, int w, int h) {
 
 	//right now, it just places tables all around the place.
-	for (int iy=y; iy< (y+h); iy++)
+
+	int curdir = D_EAST; uint8_t cx = x, cy = y;
+
+	int iter=0; int il = w;
+
+	while (il > 0) {
+
+	    if ( (no_door(map,cx,cy,true) == 0) && (empty_neighbors(map,cx,cy,true) > 5) )
+		map->sq[cy*MAP_WIDTH+cx].type = TT_TABLE;
+	    
+	    il--;
+	    if (il == 0) { iter++; curdir = (curdir+1)%4 ; il = ( ((curdir == D_EAST) || (curdir == D_WEST)) ? w : h) - ((iter + 1) / 2); }
+	    
+	    switch(curdir) {
+		case D_EAST: cx++; break;
+		case D_WEST: cx--; break;
+		case D_SOUTH: cy++; break;
+		case D_NORTH: cy--; break;
+	    }
+	}
+
+
+
+
+	/*for (int iy=y; iy< (y+h); iy++)
 		for (int ix=x; ix< (x+w); ix++)
 		    if ( (no_door(map,ix,iy,true) == 0) && (empty_neighbors(map,ix,iy,true) > 5) ) map->sq[iy*MAP_WIDTH+ix].type = TT_TABLE;
+	 */
 	
 	return 0;
 }
@@ -333,10 +358,12 @@ int decorate_room(struct t_map* map, int x, int y, int w, int h, enum roomstyles
 	switch (style) {
 		case RS_OFFICE: {
 
+			divide_rooms(map,x,y,w,h,place_tables);
+
 			break; }
 
 		case RS_MEETING: {
-			bool vertical = (w < h);
+			//bool vertical = (w < h);
 			if ((w < 4) || (h < 4)) return 1;
 			
 			for (int iy=1; iy < (h-1); iy++)
@@ -346,7 +373,6 @@ int decorate_room(struct t_map* map, int x, int y, int w, int h, enum roomstyles
 			break; }
 		case RS_CUBICLES: {
 
-			divide_rooms(map,x,y,w,h,place_cubicles);
 			//clear_entrances(map,x,y,w,h);
 
 			
