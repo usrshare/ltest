@@ -24,6 +24,11 @@ uint8_t costs[TT_ELEMENT_COUNT] = {
 	255, //unknown
 };
 
+const struct plotflags plot_default = {
+    .persp = NULL,
+    .eightdir = true
+};
+
 enum movedirections plot_follow(uint8_t x, uint8_t y, enum movedirections* pathprev) {
 	
 	if (pathprev[y * MAP_WIDTH + x] < MD_COUNT) return (4 + pathprev[y * MAP_WIDTH + x]) % 8; else return MD_COUNT;
@@ -31,7 +36,7 @@ enum movedirections plot_follow(uint8_t x, uint8_t y, enum movedirections* pathp
 
 int getcost(struct t_map* map, struct t_map_entity* who, uint8_t x, uint8_t y) {
 		
-	bool tilevis = (who->aidata->viewarr[y * MAP_WIDTH + x]);
+	bool tilevis = (who ? (who->aidata->viewarr[y * MAP_WIDTH + x]) : 1);
 	enum terraintypes tt = map->sq[y * MAP_WIDTH + x].type; 
 
 	uint8_t tilecost;
@@ -40,14 +45,18 @@ int getcost(struct t_map* map, struct t_map_entity* who, uint8_t x, uint8_t y) {
 	if (tilecost == 255) return -1; else return tilecost;		
 }
 
-int plot_path(struct t_map* map, struct t_map_entity* who, uint8_t dx, uint8_t dy, uint16_t* patharr, enum movedirections* pathprev) {
-	
-	memset(patharr,-1,sizeof(uint16_t) * MAP_WIDTH * MAP_HEIGHT);
-	memset(pathprev,-1,sizeof(int) * MAP_WIDTH * MAP_HEIGHT);
+int plot_path(struct t_map* map, uint8_t dx, uint8_t dy, uint16_t* o_patharr, enum movedirections* o_pathprev, const struct plotflags* _pf) {
+
+	const struct plotflags* pf = (_pf ? _pf : &plot_default);
 	
 	int dydx = (dy * MAP_WIDTH + dx);	
+
+	if (pf->no_clear_patharr == false) {	
+	memset(o_patharr,-1,sizeof(uint16_t) * MAP_WIDTH * MAP_HEIGHT);
+	o_patharr[dydx] = 0;
+	}
+	memset(o_pathprev,-1,sizeof(int) * MAP_WIDTH * MAP_HEIGHT);
 	
-	patharr[dydx] = 0;
 
 	struct pqel pathqueue[MAP_WIDTH * MAP_HEIGHT]; 
 	memset(pathqueue,0,sizeof(struct pqel) * MAP_WIDTH * MAP_HEIGHT);
@@ -68,18 +77,23 @@ int plot_path(struct t_map* map, struct t_map_entity* who, uint8_t dx, uint8_t d
 		int nx = x + movediff[dir][0];
 		int ny = y + movediff[dir][1];
 
+		if ((pf->w && pf->h) && ((nx < pf->mx) || (nx >= (pf->mx + pf->w)) || (ny < pf->my) || (ny >= (pf->my + pf->w)))) continue;
+
 		if (!vtile(nx,ny)) continue; //this should be a valid tile!
 		
-		int cost = getcost(map,who,nx,ny);
+		int cost = getcost(map,pf->persp,nx,ny);
 		if (cost == -1) continue;
 
-		if (dir % 2) cost = (cost * 3) / 2;
+		if (dir % 2) {
+		    if (pf->eightdir) continue;
+		    cost = (cost * 3) / 2;
+		}
 
-		int alt = patharr[y * MAP_WIDTH + x] + cost;
-		if (alt < patharr[ny * MAP_WIDTH + nx]) {
+		int alt = o_patharr[y * MAP_WIDTH + x] + cost;
+		if (alt < o_patharr[ny * MAP_WIDTH + nx]) {
 
-			patharr[ny * MAP_WIDTH + nx] = alt;
-			pathprev[ny * MAP_WIDTH + nx] = dir;
+			o_patharr[ny * MAP_WIDTH + nx] = alt;
+			o_pathprev[ny * MAP_WIDTH + nx] = dir;
 
 			int r = pq_decrease_or_add(pathqueue,(MAP_WIDTH * MAP_HEIGHT),(void*)(intptr_t)(ny * MAP_WIDTH + nx), alt); if (r == 2) pqels++;
 

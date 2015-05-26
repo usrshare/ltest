@@ -96,7 +96,9 @@ int draw_map(struct t_map* map, struct t_map_entity* persp, bool show_fov, bool 
 			
 			for (int i=0; i < MAX_ENTITIES; i++) {
 				if (map->ent[i].type == ET_NONE) continue;
-				if ((map->ent[i].type != ET_PLAYER) && (map->ent[i].aidata) && (map->ent[i].aidata->viewarr[iy * MAP_WIDTH + ix] >= 3) ) {
+		
+				int ex = map->ent[i].x; int ey = map->ent[i].y;
+				if ((map->ent[i].type != ET_PLAYER) && (map->ent[i].aidata) && (persp->aidata->viewarr[ey * (MAP_WIDTH) + ex] >= 3) && (persp->aidata->viewarr[iy * MAP_WIDTH + ix] >= 3) ) {
 					
 					switch (map->ent[i].aidata->task) {
 						case AIT_WORKING: fovcolor = CP_GREEN; break;
