@@ -186,7 +186,7 @@ int update_heatmap(struct t_map* map, struct t_map_entity* me, uint8_t x, uint8_
 	uint16_t h_add [ HEATMAP_SIZE]; memset(h_add,0xff,sizeof(uint16_t) * HEATMAP_SIZE);
 
 	if ( vtile(x,y) ) { r = heatmap_add(h_new,x,y); if (r != 0) return 1; }
-	
+
 	for (int i=0; i < HEATMAP_SIZE; i++) {
 
 		if (h_new[i] != 65535) {
@@ -320,7 +320,10 @@ uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
 	}
 
 	if ( (me->aidata->path_plotted == 0) && (vtile(dx,dy)) )
-	{ plot_path(map,dx,dy,me->aidata->patharr,me->aidata->pathprev,&(struct plotflags){.persp = me, .eightdir = true}); me->aidata->path_plotted = 1; }
+	{ 
+	    struct plotflags view = {.persp = me, .eightdir = true};
+
+	    plot_path(map,dx,dy,me->aidata->patharr,me->aidata->pathprev,&view); me->aidata->path_plotted = 1; }
 	
 	switch(me->aidata->task) {
 
