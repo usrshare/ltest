@@ -62,14 +62,16 @@ int trymove(struct t_map* map, struct t_map_entity* whom, int8_t dx, int8_t dy) 
 	if ((dx < -1) || (dx > 1)) return 1;
 	if ((dy < -1) || (dy > 1)) return 1; //this is only for simple movements.
 
-	int time = (abs(dx) + abs(dy)) == 2 ? 6 : 4;
+	int agility = whom->ent ? entity_get_attribute(whom->ent,EA_AGI,true) : 5;
+
+	int time = (abs(dx) + abs(dy)) == 2 ? 30 : 20;
 
 	int rx = whom->x + dx;
 	int ry = whom->y + dy;
 
 	if (map->sq[ry * MAP_WIDTH + rx].type == TT_DOOR_CLOSED) {
 		map->sq[ry * MAP_WIDTH + rx].type = TT_DOOR_OPEN;
-		return 8;
+		return 40 / agility;
 	}
 
 	if (space_busy(map,rx,ry)) return -1; //solid
@@ -77,7 +79,7 @@ int trymove(struct t_map* map, struct t_map_entity* whom, int8_t dx, int8_t dy) 
 	whom->x = rx;
 	whom->y = ry;
 
-	return time;
+	return time / agility;
 }
 
 // -- these functions use heatmaps to determine where the player may hide.

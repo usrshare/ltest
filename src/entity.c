@@ -8,6 +8,8 @@
 #include "globals.h"
 #include "random.h"
 
+#define MAXATTRIBUTE 99
+
 uint32_t curcreatureid = 0;
 
 /*
@@ -103,17 +105,10 @@ int creature_init(struct t_entity* o_entity, struct t_entity_generate_rules* gen
     for(int a=0;a<EA_COUNT;a++)o_entity->attributes[a]=1;
     
     int attnum=32;
-    while(attnum>0)
-    {
-	int a=randval(EA_COUNT);
-	if(o_entity->attributes[a]<10)
-	{
-	    o_entity->attributes[a]++;
-	    attnum--;
-	}
-    }
 
     if (genrules) {
+
+	o_entity->type = genrules->type;
 
 	for (int i=0; i < RANDATTRS; i++)
 	    if (vrange(&genrules->attrlim[i])) o_entity->attributes[genrules->attrs[i]] = randrange(&genrules->attrlim[i]);
@@ -131,6 +126,23 @@ int creature_init(struct t_entity* o_entity, struct t_entity_generate_rules* gen
 
 	if (vrange(&genrules->juice)) o_entity->juice = randrange(&genrules->juice);
 	if (vrange(&genrules->money)) o_entity->money = randrange(&genrules->money);
+
+	for (int i=0; i < RANDATTRS; i++)
+	   if (vrange(&genrules->attrlim[i])) o_entity->attributes[genrules->attrs[i]] = randrange(&genrules->attrlim[i]);
+	for (int i=0; i < RANDSKILLS; i++)
+	   if (vrange(&genrules->skilllim[i])) o_entity->skills[genrules->skill[i]] = randrange(&genrules->skilllim[i]);
+	if (vrange(&genrules->attrpts)) attnum = randrange(&genrules->attrpts); 
+
+    }
+    
+    while(attnum>0)
+    {
+	int a=randval(EA_COUNT);
+	if(o_entity->attributes[a]<10)
+	{
+	    o_entity->attributes[a]++;
+	    attnum--;
+	}
     }
 
     //at this point, both the entity's alignment and gender are fixed.
@@ -204,6 +216,13 @@ int describe_entity(struct t_entity* me, char* const restrict o_name, size_t str
     }
     strncpy(o_name, "*",32);
     return 0;
+}
+
+char temp_name[128];
+
+const char* describe_entity_static(struct t_entity* me) {
+    int r = describe_entity(me,temp_name,128);
+    return (r == 0 ? temp_name : NULL);
 }
 
 // This table is based on 2010 age/gender distribution data from the U.S. Census Bureau
@@ -391,4 +410,252 @@ int entity_get_attribute(struct t_entity* me, enum entity_attr attribute, bool u
     if(ret>EA_COUNT) ret=EA_COUNT;
 
     return ret;
+}
+
+const char* entity_heshe(struct t_entity* e,bool capitalize)
+{  // subject pronoun (nominative case)
+   switch(e->gender_id)
+   {
+   case EG_MALE: return capitalize?"He":"he";
+   case EG_FEMALE: return capitalize?"She":"she";
+   default: return capitalize?"Xe":"xe"; // Elite Liberal gender-neutral pronoun... it is pronounced "zee" rhyming with "he" and "she"
+   // see http://homepage.ntlworld.com/jonathan.deboynepollard/FGA/sex-neutral-pronouns.html (great reference on this)
+   // or http://en.wiktionary.org/wiki/xe or http://en.wikipedia.org/wiki/Gender-specific_and_gender-neutral_pronouns#Summary (wiki references)
+   // or http://genderneutralpronoun.wordpress.com/about/alice/xe/ (examples of it being used in text)
+
+   // full conjugation of "xe"/"xyr"/"xem" (the "x"es are pronounced like "z"s):
+   // subject prononoun (nominative case):          xe      (pronounced "zee" rhyming with "he" and "she")
+   // pronominal adjective (possessive determiner): xyr     (pronounced "zur" rhyming with "her")
+   // object pronoun (oblique case);                xem     (pronounced "zem" rhyming with "them")
+   // possessive pronoun:                           xyrs    (pronounced "zurz" rhyming with "hers")
+   // reflexive pronoun:                            xemself (pronounced "zemself" rhyming with "themself")
+
+   // public schools in Vancouver, British Columbia in Canada officially use these pronouns:
+   // http://news.nationalpost.com/2014/06/17/vancouver-school-boards-genderless-pronouns-not-likely-to-stick-if-history-is-any-indication/
+   }
+}
+
+const char* entity_hisher(struct t_entity* e,bool capitalize)
+{  // pronominal adjective (possessive determiner)
+   switch(e->gender_id)
+   {
+   case EG_MALE: return capitalize?"His":"his";
+   case EG_FEMALE: return capitalize?"Her":"her";
+   default: return capitalize?"Xyr":"xyr"; // Elite Liberal gender-neutral pronoun... it is pronounced "zur" rhyming with "her"
+   // see http://homepage.ntlworld.com/jonathan.deboynepollard/FGA/sex-neutral-pronouns.html (great reference on this)
+   // or http://en.wiktionary.org/wiki/xyr or http://en.wikipedia.org/wiki/Gender-specific_and_gender-neutral_pronouns#Summary (wiki references)
+   // or http://genderneutralpronoun.wordpress.com/about/alice/xe/ (examples of it being used in text)
+
+   // the possessive pronoun is based on this pronominal adjective in all standard third-person pronouns (so "xyrs" is correct):
+   // his -> his, her -> hers, their -> theirs, and likewise xyr -> xyrs... just add "s" at the end if it doesn't already have an "s" at the end
+   }
+}
+const char* entity_himher(struct t_entity* e,bool capitalize) {
+// object pronoun (oblique case)
+   switch(e->gender_id)
+   {
+   case EG_MALE: return capitalize?"Him":"him";
+   case EG_FEMALE: return capitalize?"Her":"her";
+   default: return capitalize?"Xem":"xem"; // Elite Liberal gender-neutral pronoun... it is pronounced "zem" rhyming with "them"
+   // see http://homepage.ntlworld.com/jonathan.deboynepollard/FGA/sex-neutral-pronouns.html (great reference on this)
+   // or http://en.wiktionary.org/wiki/xem or http://en.wikipedia.org/wiki/Gender-specific_and_gender-neutral_pronouns#Summary (wiki references)
+   // or http://genderneutralpronoun.wordpress.com/about/alice/xe/ (examples of it being used in text)
+
+   // the reflexive pronoun is based on this object pronoun in all standard third-person pronouns (so "xemself" is correct):
+   // him -> himself, her -> herself, them -> themselves, it -> itself, one -> oneself, and likewise xem -> xemself... just add "self" unless plural in which case add "selves"
+
+   // some people mistakenly use xyrself instead of xemself but this is wrong as it doesn't follow the pattern used by ALL standard third-person pronouns,
+   // instead following the first-and-second-person pronoun pattern (my -> myself, your -> yourself/yourselves, our -> ourselves, thy -> thyself, and likewise xyr -> xyrself)
+   }
+}
+
+struct t_entity* getChaseDriver(struct t_entity* e) {
+    return NULL;
+}
+
+struct t_vehicle* getChaseVehicle(struct t_entity* e) {
+    return NULL;
+}
+
+int entity_skill_roll (struct t_entity* e, enum entity_skill skill) {
+   int pseudoskill = 0;
+   // Handle Pseudoskills
+   if (skill < 0)
+   {
+      switch (skill)
+      {
+      default:
+         g_setattr(CP_YELLOW);
+         g_addstr("-=ILLEGAL SKILL ROLL=-", gamelog);
+         g_getkey();
+         break;
+      case PSEUDOSKILL_ESCAPEDRIVE:
+      case PSEUDOSKILL_DODGEDRIVE:
+         pseudoskill = skill;   // Remember the details.
+         skill = SKILL_DRIVING; // Base skill is driving.
+         break;
+      }
+   }
+   // Take skill strength
+   int skill_value = skills[skill].value;
+   // plus the skill's associate attribute
+   int attribute_value = get_attribute(skills[skill].get_attribute(),true);
+
+   int adjusted_attribute_value;
+   switch(skill)
+   {
+   // most attributes get halved when applied to skills, capped by relative skill level...
+   default:
+      adjusted_attribute_value = MIN(attribute_value/2, skill_value+3);
+      break;
+   // ...and some may be so specialized that they ignore attributes, instead counting skill double
+   case SKILL_SECURITY:
+      adjusted_attribute_value = skill_value;
+      break;
+   }
+
+   Vehicle* v = getChaseVehicle(*this);
+   switch(pseudoskill)
+   {
+      case PSEUDOSKILL_ESCAPEDRIVE:
+         if (v != NULL)
+         {
+            skill_value = v->modifieddriveskill(skill_value+adjusted_attribute_value); // combine values and modify by vehicle stats
+            adjusted_attribute_value = 0;
+         }
+         else
+         {
+            skill_value = adjusted_attribute_value = 0; // Can't drive without a car
+         }
+         break;
+      case PSEUDOSKILL_DODGEDRIVE:
+         if (v != NULL)
+         {
+            skill_value = v->modifieddodgeskill(skill_value+adjusted_attribute_value); // combine values and modify by vehicle stats
+            adjusted_attribute_value = 0;
+         }
+         else
+         {
+            skill_value = adjusted_attribute_value = 0; // Can't drive without a car
+         }
+         break;
+   }
+   // add the adjusted attribute and skill to get the adjusted skill total
+   // that will be rolled on
+   int return_value = roll_check(skill_value + adjusted_attribute_value);
+
+   // Special skill handling
+   switch(skill)
+   {
+   // Skills that cannot be used if zero skill:
+   case SKILL_PSYCHOLOGY:
+   case SKILL_LAW:
+   case SKILL_SECURITY:
+   case SKILL_COMPUTERS:
+   case SKILL_MUSIC:
+   case SKILL_ART:
+   case SKILL_RELIGION:
+   case SKILL_SCIENCE:
+   case SKILL_BUSINESS:
+   case SKILL_TEACHING:
+   case SKILL_FIRSTAID:
+      if(skills[skill].value == 0)
+      {
+         return_value = 0; // Automatic failure
+         break;
+      }
+      break;
+   // Skills that should depend on clothing:
+   case SKILL_STEALTH:
+      {
+         float stealth = get_armor().get_stealth_value();
+         for (int i=1; i < get_armor().get_quality();i++) stealth *= 0.8;
+         if (get_armor().is_damaged()) stealth *= 0.5;
+
+         return_value *= static_cast<int>(stealth);
+         return_value /= 2;
+         // Shredded clothes get you no stealth.
+         if (get_armor().get_quality() > get_armor().get_quality_levels())
+            return_value = 0;
+      }
+      break;
+   case SKILL_SEDUCTION:
+   case SKILL_PERSUASION:
+      break;
+   // Unique disguise handling
+   case SKILL_DISGUISE:
+      {
+         // Check for appropriate uniform
+         char uniformed = hasdisguise(*this);
+
+         // Ununiformed disguise checks automatically fail
+         if(!uniformed) { return_value = 0; break; }
+         // reduce effectiveness for 'partial' uniforms (police uniforms when trespassing)
+         else { if(uniformed==2) return_value>>=1; }
+
+         // Bloody, damaged clothing hurts disguise check
+         if(get_armor().is_bloody()) { return_value>>=1; }
+         if(get_armor().is_damaged()) { return_value>>=1; }
+
+         // Carrying corpses or having hostages is very bad for disguise
+         if(prisoner!=NULL) { return_value>>=2; break; }
+      }
+   }
+   #ifdef SHOWMECHANICS
+   addstr(8,1," SkillRoll(");
+   addstr(Skill::get_name(skill));
+   addstr(", Skill Value ");
+   addstr(skills[skill].value);
+   addstr(", ");
+   if(return_value==0)
+      addstr("automatic failure");
+   else
+   {
+      addstr("Adjusted Attribute Value ");
+      addstr(adjusted_attribute_value);
+      addstr(", Outcome of ");
+      addstr(return_value);
+   }
+   addstr(")");
+
+   getkey();
+   #endif
+   return return_value;
+}
+
+int entity_attr_roll(struct t_entity* e,enum entity_attr attribute)
+{
+   int return_value = roll_check(entity_get_attribute(e,attribute,true));
+   // Roll on the attribute value
+   return return_value;
+}
+
+void entity_train(struct t_entity* e, int trainedskill, int experience) {
+    return entity_train4(e,trainedskill,experience,MAXATTRIBUTE);
+}
+
+void entity_train4(struct t_entity* e, int trainedskill, int experience, int upto) {
+   // Do we allow animals to gain skills? Right now, yes
+   //if(animalgloss==ANIMALGLOSS_ANIMAL)return;
+
+   // Don't give experience if already maxed out or requested to give none
+   if(skill_cap(trainedskill,true)<=skills[trainedskill].value || upto<=skills[trainedskill].value || experience==0)
+      return;
+   // Skill gain scaled by ability in the area
+   skill_experience[trainedskill]+=max(1,static_cast<int>(experience * skill_cap(trainedskill,false) / 6.0));
+
+   int abovenextlevel;
+   // only allow gaining experience on the new level if it doesn't put us over a level limit
+   if (skills[trainedskill].value >= (upto - 1) ||
+       skills[trainedskill].value >= (skill_cap(trainedskill,true) - 1))
+     abovenextlevel = 0;
+   else
+     abovenextlevel = 50 + 5*(1+skills[trainedskill].value); // enough skill points to get halfway through the next skill level
+
+   skill_experience[trainedskill] = min(skill_experience[trainedskill], 100 + 10*skills[trainedskill].value + abovenextlevel);
+
+}
+
+int entity_count_weapons(struct t_entity* e) {
+    return 0;
 }

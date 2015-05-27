@@ -2,6 +2,8 @@
 #ifndef CPAIRS_H
 #define CPAIRS_H
 
+#include <curses.h>
+
 #define CP_GREEN COLOR_PAIR(1)
 #define CP_CYAN COLOR_PAIR(2)
 #define CP_BLUE COLOR_PAIR(3)
