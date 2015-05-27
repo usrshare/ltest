@@ -48,9 +48,9 @@ bool vrange(struct t_range* range) {
     return true;
 }
 
-int creature_init(struct t_entity* o_entity, struct t_entity_generate_rules* genrules) {
+int creature_init(struct t_creature* o_entity, struct t_creature_generate_rules* genrules) {
 
-    memset(o_entity,0,sizeof(struct t_entity));
+    memset(o_entity,0,sizeof(struct t_creature));
 
     if ((genrules == NULL) || (genrules->gender = EG_RANDOM) || !vrange(&genrules->age)) {
 	random_gender_and_age(&o_entity->age, &o_entity->gender_id); }
@@ -174,7 +174,7 @@ int creature_init(struct t_entity* o_entity, struct t_entity_generate_rules* gen
     return 0;
 }
 
-int entity_name(struct t_entity* who) {
+int entity_name(struct t_creature* who) {
     random_first_name(who->firstname,who->gender_id);
     random_last_name(who->lastname,who->align == ALIGN_ARCHCONSERVATIVE,who->gender_id);
     return 0;
@@ -195,7 +195,7 @@ const char* safe_name(const char* nameptr) {
     return nameptr;
 }
 
-int describe_entity(struct t_entity* me, char* const restrict o_name, size_t strsize) {
+int describe_entity(struct t_creature* me, char* const restrict o_name, size_t strsize) {
     if (me != NULL) {
 	if (strlen(me->nickname) != 0) {
 	    strncpy(o_name,me->nickname,strsize);
@@ -220,7 +220,7 @@ int describe_entity(struct t_entity* me, char* const restrict o_name, size_t str
 
 char temp_name[128];
 
-const char* describe_entity_static(struct t_entity* me) {
+const char* describe_entity_static(struct t_creature* me) {
     int r = describe_entity(me,temp_name,128);
     return (r == 0 ? temp_name : NULL);
 }
@@ -274,7 +274,7 @@ int random_gender_and_age(int* o_age, enum entity_gender* o_gender) {
     return 0;
 }
 
-int entity_get_attribute(struct t_entity* me, enum entity_attr attribute, bool usejuice) {
+int entity_get_attribute(struct t_creature* me, enum entity_attr attribute, bool usejuice) {
 
     int age = me->age;
 
@@ -412,7 +412,7 @@ int entity_get_attribute(struct t_entity* me, enum entity_attr attribute, bool u
     return ret;
 }
 
-const char* entity_heshe(struct t_entity* e,bool capitalize)
+const char* entity_heshe(struct t_creature* e,bool capitalize)
 {  // subject pronoun (nominative case)
    switch(e->gender_id)
    {
@@ -435,7 +435,7 @@ const char* entity_heshe(struct t_entity* e,bool capitalize)
    }
 }
 
-const char* entity_hisher(struct t_entity* e,bool capitalize)
+const char* entity_hisher(struct t_creature* e,bool capitalize)
 {  // pronominal adjective (possessive determiner)
    switch(e->gender_id)
    {
@@ -450,7 +450,7 @@ const char* entity_hisher(struct t_entity* e,bool capitalize)
    // his -> his, her -> hers, their -> theirs, and likewise xyr -> xyrs... just add "s" at the end if it doesn't already have an "s" at the end
    }
 }
-const char* entity_himher(struct t_entity* e,bool capitalize) {
+const char* entity_himher(struct t_creature* e,bool capitalize) {
 // object pronoun (oblique case)
    switch(e->gender_id)
    {
@@ -469,15 +469,105 @@ const char* entity_himher(struct t_entity* e,bool capitalize) {
    }
 }
 
-struct t_entity* getChaseDriver(struct t_entity* e) {
+struct t_creature* getChaseDriver(struct t_creature* e) {
     return NULL;
 }
 
-struct t_vehicle* getChaseVehicle(struct t_entity* e) {
+struct t_vehicle* getChaseVehicle(struct t_creature* e) {
     return NULL;
 }
 
-int entity_skill_roll (struct t_entity* e, enum entity_skill skill) {
+
+
+void entity_train(struct t_creature* e, int trainedskill, int experience) {
+    return entity_train4(e,trainedskill,experience,MAXATTRIBUTE);
+}
+
+void entity_train4(struct t_creature* e, int trainedskill, int experience, int upto) {
+   // Do we allow animals to gain skills? Right now, yes
+   //if(animalgloss==ANIMALGLOSS_ANIMAL)return;
+
+   // Don't give experience if already maxed out or requested to give none
+   if(skill_cap(trainedskill,true)<=skills[trainedskill].value || upto<=skills[trainedskill].value || experience==0)
+      return;
+   // Skill gain scaled by ability in the area
+   skill_experience[trainedskill]+=max(1,static_cast<int>(experience * skill_cap(trainedskill,false) / 6.0));
+
+   int abovenextlevel;
+   // only allow gaining experience on the new level if it doesn't put us over a level limit
+   if (skills[trainedskill].value >= (upto - 1) ||
+       skills[trainedskill].value >= (skill_cap(trainedskill,true) - 1))
+     abovenextlevel = 0;
+   else
+     abovenextlevel = 50 + 5*(1+skills[trainedskill].value); // enough skill points to get halfway through the next skill level
+
+   skill_experience[trainedskill] = min(skill_experience[trainedskill], 100 + 10*skills[trainedskill].value + abovenextlevel);
+
+}
+
+int entity_count_weapons(struct t_creature* e) {
+    return 0;
+}
+
+void entity_die(struct entity* e) {
+
+   e->alive=0,e->blood=0;
+/*   if(e->id==uniqueCreatures.CEO().id)
+      uniqueCreatures.newCEO();
+   if(e->id==uniqueCreatures.President().id)
+   {
+      strcpy(oldPresidentName, execname[EXEC_PRESIDENT]);
+      promoteVP();
+      uniqueCreatures.newPresident();
+   } */
+}
+
+void addjuice(struct t_creature* e, long juice, long cap) {
+   
+    if(juice==0) return;
+
+   // Check against cap
+   if((juice>0 && e->juice>=cap) ||
+      (juice<0 && e->juice<=cap))
+      return;
+
+   // Apply juice gain
+   e->juice+=juice;
+
+   // Pyramid scheme of juice trickling up the chain
+   if(e->hireid!=-1)
+      for(int i=0;i<len(pool);i++)
+         if(pool[i]->id==e->hireid)
+         {
+            addjuice(*pool[i],juice/5,cr.juice);
+            break;
+         }
+
+   // Bounds check
+   if(e->juice>1000)e->juice=1000;
+   if(e->juice<-50)e->juice=-50;
+
+}
+
+bool enemy(struct t_creature* e){
+   if(e->align==ALIGN_CONSERVATIVE)
+      return true;
+   else if(e->type==ET_COP && e->align==ALIGN_MODERATE)
+   {
+      for(int i=0;i<len(pool);i++)
+         if(pool[i]==e)
+            return false;
+      return true;
+   }
+   else return false;
+}
+
+int entity_attr_roll(struct t_creature* e,enum entity_attr attribute){
+   int return_value = roll_check(entity_get_attribute(e,attribute,true));
+   // Roll on the attribute value
+   return return_value;
+}
+int entity_skill_roll (struct t_creature* e, enum entity_skill skill) {
    int pseudoskill = 0;
    // Handle Pseudoskills
    if (skill < 0)
@@ -622,40 +712,9 @@ int entity_skill_roll (struct t_entity* e, enum entity_skill skill) {
    #endif
    return return_value;
 }
-
-int entity_attr_roll(struct t_entity* e,enum entity_attr attribute)
-{
-   int return_value = roll_check(entity_get_attribute(e,attribute,true));
-   // Roll on the attribute value
-   return return_value;
+bool entity_attr_check(struct t_creature* e, enum entity_attr attr, int difficulty) {
+   return(entity_attr_roll(e,attr) >= difficulty);
 }
-
-void entity_train(struct t_entity* e, int trainedskill, int experience) {
-    return entity_train4(e,trainedskill,experience,MAXATTRIBUTE);
-}
-
-void entity_train4(struct t_entity* e, int trainedskill, int experience, int upto) {
-   // Do we allow animals to gain skills? Right now, yes
-   //if(animalgloss==ANIMALGLOSS_ANIMAL)return;
-
-   // Don't give experience if already maxed out or requested to give none
-   if(skill_cap(trainedskill,true)<=skills[trainedskill].value || upto<=skills[trainedskill].value || experience==0)
-      return;
-   // Skill gain scaled by ability in the area
-   skill_experience[trainedskill]+=max(1,static_cast<int>(experience * skill_cap(trainedskill,false) / 6.0));
-
-   int abovenextlevel;
-   // only allow gaining experience on the new level if it doesn't put us over a level limit
-   if (skills[trainedskill].value >= (upto - 1) ||
-       skills[trainedskill].value >= (skill_cap(trainedskill,true) - 1))
-     abovenextlevel = 0;
-   else
-     abovenextlevel = 50 + 5*(1+skills[trainedskill].value); // enough skill points to get halfway through the next skill level
-
-   skill_experience[trainedskill] = min(skill_experience[trainedskill], 100 + 10*skills[trainedskill].value + abovenextlevel);
-
-}
-
-int entity_count_weapons(struct t_entity* e) {
-    return 0;
+bool entity_skill_check(struct t_creature* e, enum entity_skill skill, int difficulty) {
+   return(entity_skill_roll(e,skill) >= difficulty);
 }

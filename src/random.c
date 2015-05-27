@@ -18,6 +18,10 @@ int randrange(struct t_range* range) {
     return randbetween(range->min,range->max);
 }
 
+char* pickrandom(const char* array[]) {
+    return array[randval(sizeof(array) / sizeof(*array))];
+}
+
 int xdx(int dice, int sides) {
 
 	int n = 0;

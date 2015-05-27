@@ -35,13 +35,29 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA   02111-1307   USA     
 #include "globals.h"
 #include "ui.h"
 #include "entity.h"
+#include "entity_types.h"
+#include "location.h"
+
+#include "armor.h"
+#include "weapon.h"
+
 #include <stdbool.h>
 #include <string.h>
+
+///--- forward declaration
+
+void armordamage(struct t_armor* armor,int bp, int damamount); //forward decl
+void adddeathmessage(struct t_creature* cr);
+void bloodblast(struct t_armor* armor);
+char incapacitated(struct t_creature* a,char noncombat,char* printed);
+void healthmodroll(int *aroll,struct t_creature* a);
+
+///---
 
 bool goodguyattack = false;
 
 /* attack handling for an individual creature and its target */
-void attack(struct t_entity* a,struct t_entity* t,char mistake,char* actual,bool force_melee)
+void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,bool force_melee)
 {
     *actual=0;
 
@@ -79,15 +95,15 @@ void attack(struct t_entity* a,struct t_entity* t,char mistake,char* actual,bool
     for(int e=0;e<ENCMAX;e++) if(encounter[e].exists) encnum++;
 
     if(!force_melee &&
-	    (((a.type==CREATURE_COP&&a.align==ALIGN_MODERATE&&a.enemy())||
-	      a.type==CREATURE_SCIENTIST_EMINENT||
-	      a.type==CREATURE_JUDGE_LIBERAL||
-	      a.type==CREATURE_JUDGE_CONSERVATIVE||
-	      (a.type==CREATURE_CORPORATE_CEO&&randval(2))||
-	      a.type==CREATURE_POLITICIAN||
-	      a.type==CREATURE_RADIOPERSONALITY||
-	      a.type==CREATURE_NEWSANCHOR||
-	      a.type==CREATURE_MILITARYOFFICER||
+	    (((a.type==ET_COP&&a.align==ALIGN_MODERATE&&enemy(a))||
+	      a.type==ET_SCIENTIST_EMINENT||
+	      a.type==ET_JUDGE_LIBERAL||
+	      a.type==ET_JUDGE_CONSERVATIVE||
+	      (a.type==ET_CORPORATE_CEO&&randval(2))||
+	      a.type==ET_POLITICIAN||
+	      a.type==ET_RADIOPERSONALITY||
+	      a.type==ET_NEWSANCHOR||
+	      a.type==ET_MILITARYOFFICER||
 	      a->weapon.has_musical_attack()) &&
 	     (a->weapon.has_musical_attack() || !a.is_armed() || a.align!=1)))
     {
@@ -227,9 +243,9 @@ void attack(struct t_entity* a,struct t_entity* t,char mistake,char* actual,bool
     //SKILL EFFECTS
     int wsk=attack_used->skill;
 
-    struct t_entity* driver = getChaseDriver(t);
+    struct t_creature* driver = getChaseDriver(t);
     struct t_vehicle* vehicle = getChaseVehicle(t);
-    struct t_entity* adriver = getChaseDriver(a);
+    struct t_creature* adriver = getChaseDriver(a);
     struct t_vehicle* avehicle = getChaseVehicle(a);
 
     // Basic roll
@@ -602,7 +618,7 @@ void attack(struct t_entity* a,struct t_entity* t,char mistake,char* actual,bool
 	    // Could the vehicle have bounced that round on its own?
 	    if (damamount==0)
 	    {
-		struct t_entity testDummy; // Spawn nude test dummy to see if body armor was needed to prevent damage
+		struct t_creature testDummy; // Spawn nude test dummy to see if body armor was needed to prevent damage
 		damagemod(testDummy,damtype,cardmg,w,armorpiercing,mod,extraarmor);
 
 		if (cardmg < 2) //fudge factor of 1 armor level due to randomness
@@ -634,7 +650,7 @@ void attack(struct t_entity* a,struct t_entity* t,char mistake,char* actual,bool
 	}
 	if(damamount>0)
 	{
-	    struct t_entity *target=0;
+	    struct t_creature *target=0;
 
 	    if(t->squadid!=-1&&t->hireid==-1&& //if the founder is hit...
 		    (damamount>t->blood||damamount>=10)&& //and lethal or potentially crippling damage is done...
@@ -644,13 +660,13 @@ void attack(struct t_entity* a,struct t_entity* t,char mistake,char* actual,bool
 		for(int i=0;i<6;i++)
 		{
 		    if(activesquad->squad[i]==NULL) break;
-		    if(activesquad->squad[i]==&t) break;
-		    if(activesquad->squad[i]->get_attribute(EA_HRT,true)>8&&
-			    activesquad->squad[i]->get_attribute(EA_AGI,true)>4)
+		    if(activesquad->squad[i]==t) break;
+		    if(entity_get_attribute(activesquad->squad[i],EA_HRT,true)>8&&
+			    entity_get_attribute(activesquad->squad[i],EA_AGI,true)>4)
 		    {
 			target=activesquad->squad[i];
 
-			clearmessagearea();
+			//clearmessagearea();
 			g_attrset(CP_GREEN);
 
 			//move(16,1);
@@ -663,7 +679,7 @@ void attack(struct t_entity* a,struct t_entity* t,char mistake,char* actual,bool
 			g_addstr("!", gamelog);
 			g_addstr("\n",NULL);
 
-			addjuice(*target,10,1000);//Instant juice!! Way to take the bullet!!
+			addjuice(target,10,1000);//Instant juice!! Way to take the bullet!!
 
 			g_getkey();
 
@@ -671,7 +687,7 @@ void attack(struct t_entity* a,struct t_entity* t,char mistake,char* actual,bool
 		    }
 		}
 	    }
-	    if(!target) target=&t;//If nobody jumps in front of the attack,
+	    if(!target) target=t;//If nobody jumps in front of the attack,
 
 	    target->wound[w]|=damtype;
 
@@ -701,7 +717,7 @@ void attack(struct t_entity* a,struct t_entity* t,char mistake,char* actual,bool
 		} while(target->blood-damamount<=0);
 	    }
 
-	    if(damagearmor) armordamage(target->get_armor(),w,damamount);
+	    if(damagearmor) armordamage(target->armor,w,damamount);
 
 	    target->blood-=damamount;
 
@@ -715,15 +731,15 @@ void attack(struct t_entity* a,struct t_entity* t,char mistake,char* actual,bool
 	    {
 		if((w==EB_HEAD && target->wound[EB_HEAD] & WOUND_NASTYOFF)||
 			(w==EB_BODY && target->wound[EB_BODY] & WOUND_NASTYOFF))
-		    bloodblast(&target->get_armor());
+		    bloodblast(target->armor);
 
 		char alreadydead=!target->alive;
 
 		if(!alreadydead)
 		{
-		    target->die();
+		    entity_die(target);
 
-		    if(t.align==-a.align)
+		    if(t->align==-a->align) 
 			addjuice(a,5+t->juice/20,1000); // Instant juice
 		    else addjuice(a,-(5+t->juice/20),-50);
 
@@ -731,14 +747,14 @@ void attack(struct t_entity* a,struct t_entity* t,char mistake,char* actual,bool
 		    {
 			if(target->align==1) stat_dead++;
 		    }
-		    else if(target->enemy()&&(t->animalgloss!=ANIMALGLOSS_ANIMAL||law[LAW_ANIMALRESEARCH]==2))
+		    else if(enemy(target)&&(t->animalgloss!=ANIMALGLOSS_ANIMAL||law[LAW_ANIMALRESEARCH]==2))
 		    {
 			stat_kills++;
 			if(location[cursite]->siege.siege) location[cursite]->siege.kills++;
 			if(location[cursite]->siege.siege && t->animalgloss==ANIMALGLOSS_TANK) location[cursite]->siege.tanks--;
 			if(location[cursite]->renting==RENTING_CCS)
 			{
-			    if(target->type==CREATURE_CCS_ARCHCONSERVATIVE) ccs_boss_kills++;
+			    if(target->type==ET_CCS_ARCHCONSERVATIVE) ccs_boss_kills++;
 			    ccs_siege_kills++;
 			}
 		    }
@@ -746,9 +762,9 @@ void attack(struct t_entity* a,struct t_entity* t,char mistake,char* actual,bool
 			    (target->animalgloss!=ANIMALGLOSS_ANIMAL||law[LAW_ANIMALRESEARCH]==2) &&
 			    !sneak_attack)
 		    {
-			sitecrime+=10;
-			sitestory->crime.push_back(CRIME_KILLEDSOMEBODY);
-			if(a.squadid!=-1) criminalizeparty(LAWFLAG_MURDER);
+			//sitecrime+=10;
+			//sitestory->crime.push_back(CRIME_KILLEDSOMEBODY);
+			//if(a.squadid!=-1) criminalizeparty(LAWFLAG_MURDER);
 		    }
 		}
 
@@ -772,13 +788,13 @@ void attack(struct t_entity* a,struct t_entity* t,char mistake,char* actual,bool
 
 		if(!alreadydead)
 		{
-		    severloot(t,groundloot);
-		    clearmessagearea();
-		    adddeathmessage(*target);
+		    //severloot(t,groundloot);
+		    //clearmessagearea();
+		    adddeathmessage(target);
 
 		    g_getkey();
 
-		    if(target->prisoner!=NULL) freehostage(t,1);
+		    //if(target->prisoner!=NULL) freehostage(t,1);
 		}
 	    }
 	    else
@@ -787,7 +803,7 @@ void attack(struct t_entity* a,struct t_entity* t,char mistake,char* actual,bool
 		else if(target->wound[w] & WOUND_NASTYOFF) strcat(str," BLOWING IT OFF!");
 		else strcat(str,attack_used->hit_punctuation);
 
-		if(target->wound[w] & WOUND_NASTYOFF) bloodblast(&target->get_armor());
+		if(target->wound[w] & WOUND_NASTYOFF) bloodblast(target->armor);
 
 		if(goodguyattack) g_attrset(CP_GREEN);
 		else g_attrset(CP_RED);
@@ -796,10 +812,11 @@ void attack(struct t_entity* a,struct t_entity* t,char mistake,char* actual,bool
 		g_addstr(str, gamelog);
 		g_addstr("\n",NULL);
 
-		printparty();
+		//printparty();
+		/*
 		if(mode==GM_CHASECAR||
 			mode==GM_CHASEFOOT) printchaseencounter();
-		else printencounter();
+		else printencounter();*/
 
 		g_getkey();
 
@@ -830,7 +847,7 @@ void attack(struct t_entity* a,struct t_entity* t,char mistake,char* actual,bool
 
 		    if(w==EB_HEAD)
 		    {
-			clearmessagearea();
+			//clearmessagearea();
 			if(goodguyattack) g_attrset(CP_GREEN);
 			else g_attrset(CP_RED);
 
@@ -870,7 +887,7 @@ void attack(struct t_entity* a,struct t_entity* t,char mistake,char* actual,bool
 				    {
 					if(teethminus==target->special[ESW_TEETH])
 					    g_addstr("All ", gamelog);
-					g_addstr(teethminus, gamelog);
+					g_addint(teethminus, gamelog);
 					g_addstr(" of ", gamelog);
 					g_addstr(describe_entity_static(target), gamelog);
 					g_addstr("'s teeth are ", gamelog);
@@ -990,7 +1007,7 @@ void attack(struct t_entity* a,struct t_entity* t,char mistake,char* actual,bool
 		    }
 		    if(w==EB_BODY)
 		    {
-			clearmessagearea();
+			//clearmessagearea();
 			//set_color(COLOR_MAGENTA,COLOR_BLACK,1);
 			if (goodguyattack) g_attrset(CP_GREEN);
 			else g_attrset(CP_RED);
@@ -1166,7 +1183,7 @@ void attack(struct t_entity* a,struct t_entity* t,char mistake,char* actual,bool
 				    {
 					if(ribminus==target->special[ESW_RIBS])
 					    g_addstr("All ", gamelog);
-					g_addstr(ribminus, gamelog);
+					g_addint(ribminus, gamelog);
 					g_addstr(" of ", gamelog);
 					g_addstr(describe_entity_static(target), gamelog);
 					g_addstr("'s ribs are ", gamelog);
@@ -1195,7 +1212,7 @@ void attack(struct t_entity* a,struct t_entity* t,char mistake,char* actual,bool
 			}
 		    }
 
-		    severloot(*target,groundloot);
+		    //severloot(*target,groundloot);
 		}
 
 		//set_color(COLOR_WHITE,COLOR_BLACK,1);
@@ -1209,20 +1226,20 @@ void attack(struct t_entity* a,struct t_entity* t,char mistake,char* actual,bool
 	    g_addstr(str, gamelog);
 	    g_addstr("\n",NULL);
 
-	    printparty();
+	    /*printparty();
 	    if(mode==GM_CHASECAR||
 		    mode==GM_CHASEFOOT) printchaseencounter();
-	    else printencounter();
+	    else printencounter();*/
 
 	    g_getkey();
 	}
     }
     else
     {
-	set_color(COLOR_WHITE,COLOR_BLACK,1);
+	g_attrset(CP_WHITE);
 
-	if(melee && aroll<droll-10 && t.blood>70 && t->animalgloss==ANIMALGLOSS_NONE
-		&& t->weapon && t->weapon.get_attack(false,true,true) != NULL)
+	if(melee && aroll<droll-10 && t->blood>70 && t->animalgloss==ANIMALGLOSS_NONE
+		&& t->weapon && get_attack(t->weapon,false,true,true) != NULL)
 	{
 
 	    strcpy(str,describe_entity_static(t));
@@ -1235,7 +1252,7 @@ void attack(struct t_entity* a,struct t_entity* t,char mistake,char* actual,bool
 
 	    goodguyattack = !goodguyattack;
 	    char actual_dummy;
-	    attack(t,a,0,actual_dummy,true);
+	    attack(t,a,0,&actual_dummy,true);
 	    goodguyattack = !goodguyattack;
 	}//TODO if missed person, but vehicle is large, it might damage the car. 
 	else
@@ -1256,7 +1273,7 @@ void attack(struct t_entity* a,struct t_entity* t,char mistake,char* actual,bool
 	    {
 		if (mode==GM_CHASECAR)
 		{
-		    strcpy(str, driver->name);
+		    strcpy(str, describe_entity_static(driver));
 		    switch(droll)
 		    {
 			case 1: strcpy(str, describe_entity_static(a)); strcat(str," missed!"); break;
@@ -1308,10 +1325,10 @@ void attack(struct t_entity* a,struct t_entity* t,char mistake,char* actual,bool
 	    //move(17,1);
 	    g_addstr(str, gamelog);
 	    g_addstr("\n",NULL);
-	    printparty();
+	    /*printparty();
 	    if(mode==GM_CHASECAR||
 		    mode==GM_CHASEFOOT) printchaseencounter();
-	    else printencounter();
+	    else printencounter();*/
 
 	    g_getkey();
 	}
@@ -1319,9 +1336,9 @@ void attack(struct t_entity* a,struct t_entity* t,char mistake,char* actual,bool
 
     for(;thrownweapons>0;thrownweapons--)
     {
-	if(a.has_thrown_weapon)
-	    a.ready_another_throwing_weapon();
-	a.drop_weapon(NULL);
+	if(a->has_thrown_weapon)
+	    ready_another_throwing_weapon(a);
+	drop_weapon(a,NULL);
     }
 
     *actual=1;
@@ -1331,7 +1348,7 @@ void attack(struct t_entity* a,struct t_entity* t,char mistake,char* actual,bool
 
 
 /* modifies a combat roll based on the creature's critical injuries */
-void healthmodroll(int *aroll,struct t_entity* a)
+void healthmodroll(int *aroll,struct t_creature* a)
 {
     if(a->special[ESW_RIGHTEYE]!=1) *aroll-=randval(2);
     if(a->special[ESW_LEFTEYE]!=1) *aroll-=randval(2);
@@ -1356,21 +1373,21 @@ void healthmodroll(int *aroll,struct t_entity* a)
 
 
 /* adjusts attack damage based on armor, other factors */
-void damagemod(struct t_entity &t,char &damtype,int &damamount,
+void damagemod(struct t_creature *t,char *damtype,int *damamount,
 	char hitlocation,char armorpenetration,int mod,int extraarmor)
 {
-    int armor=t.get_armor().get_armor(hitlocation);
+    int armor=get_armor_value(t->armor->type,hitlocation);
 
     if(t->animalgloss==ANIMALGLOSS_TANK)
     {
-	if(damtype!=WOUND_BURNED) armor=15;
+	if(*damtype!=WOUND_BURNED) armor=15;
 	else armor=10;
     }
 
 
-    //if(t.get_armor().get_quality()>1)
-    armor-=t.get_armor().get_quality()-1;
-    if(t.get_armor().is_damaged())
+    //if(t->armor.get_quality()>1)
+    armor-=t->armor->quality-1;
+    if(t->armor->damaged)
 	armor-=1;
 
     if(armor<0) armor=0; // Possible from second-rate clothes
@@ -1381,33 +1398,35 @@ void damagemod(struct t_entity &t,char &damtype,int &damamount,
 
     if(mod>10) mod=10; // Cap damage multiplier (every 5 points adds 1x damage)
 
-    if(mod<=-20) damamount>>=8;  //Cars plus heavy armor can be really tough.
-    else if(mod<=-14) damamount>>=7;
-    else if(mod<=-8) damamount>>=6;
-    else if(mod<=-6) damamount>>=5;
-    else if(mod<=-4) damamount>>=4;
-    else if(mod<=-3) damamount>>=3;
-    else if(mod<=-2) damamount>>=2;
-    else if(mod<=-1) damamount>>=1;
-    else if(mod>=0) damamount=(int)((float)damamount * (1.0f + 0.2f*mod));
+    if(mod<=-20) *damamount>>=8;  //Cars plus heavy armor can be really tough.
+    else if(mod<=-14) *damamount>>=7;
+    else if(mod<=-8) *damamount>>=6;
+    else if(mod<=-6) *damamount>>=5;
+    else if(mod<=-4) *damamount>>=4;
+    else if(mod<=-3) *damamount>>=3;
+    else if(mod<=-2) *damamount>>=2;
+    else if(mod<=-1) *damamount>>=1;
+    else if(mod>=0) *damamount=(int)((float)(*damamount) * (1.0f + 0.2f*mod));
 
     // Firefighter's bunker gear reduces fire damage by 3/4
-    if((damtype & WOUND_BURNED) && t.get_armor().has_fireprotection())
+    if((*damtype & WOUND_BURNED) && t->armor->type->has_fireprotection)
     {
 	// Damaged gear isn't as effective as undamaged gear
-	if(t.get_armor().is_damaged())
-	    damamount>>=1; // Only half as much damage reduction
+	if(t->armor->damaged)
+	    *damamount>>=1; // Only half as much damage reduction
 	else
-	    damamount>>=2; // Full damage reduction
+	    *damamount>>=2; // Full damage reduction
     }
 
-    if(damamount<0)damamount=0;
+    if(*damamount<0) *damamount=0;
 }
 
 
-void specialattack(struct t_entity &a, struct t_entity &t, char &actual)
+void specialattack(struct t_creature* a, struct t_creature* t, char *actual)
 {
-    std::string s = "";
+    char s [256];
+    strcpy(s,"");
+
     static const char *judge_debate[]   =
     {
 	"debates the death penalty with",
@@ -1503,27 +1522,27 @@ void specialattack(struct t_entity &a, struct t_entity &t, char &actual)
     int resist=0;
     char str[200];
 
-    clearmessagearea();
-    set_color(COLOR_WHITE,COLOR_BLACK,1);
+    //clearmessagearea();
+    g_attrset(CP_WHITE);
 
     strcpy(str,describe_entity_static(a));
     strcat(str," ");
 
     int attack=0;
-    if(a.align!=1)
-	attack=entity_attr_roll(a,EA_WIS)+t.get_attribute(EA_WIS,false);
-    else if(a.align==1)
-	attack=entity_attr_roll(a,EA_HRT)+t.get_attribute(EA_HRT,false);
+    if(a->align!=1)
+	attack=entity_attr_roll(a,EA_WIS)+entity_get_attr(t,EA_WIS,false);
+    else if(a->align==1)
+	attack=entity_attr_roll(a,EA_HRT)+entity_get_attr(t,EA_HRT,false);
 
-    switch(a.type)
+    switch(a->type)
     {
-	case CREATURE_JUDGE_CONSERVATIVE:
-	case CREATURE_JUDGE_LIBERAL:
+	case ET_JUDGE_CONSERVATIVE:
+	case ET_JUDGE_LIBERAL:
 	    strcat(str,pickrandom(judge_debate));
 	    strcat(str," ");
 	    strcat(str,describe_entity_static(t));
 	    strcat(str,"!");
-	    if(t.align==1)
+	    if(t->align==1)
 		resist=entity_skill_roll(t,ES_LAW)+
 		    entity_attr_roll(t,EA_HRT);
 	    else
@@ -1531,18 +1550,18 @@ void specialattack(struct t_entity &a, struct t_entity &t, char &actual)
 		    entity_attr_roll(t,EA_WIS);
 	    attack+=entity_skill_roll(a,ES_LAW);
 	    break;
-	case CREATURE_SCIENTIST_EMINENT:
+	case ET_SCIENTIST_EMINENT:
 	    switch(randval(3))
 	    {
 		case 0:strcat(str,"debates scientific ethics with");break;
-		case 1:if(a.align==-1)strcat(str,"explains the benefits of research to");
+		case 1:if(a->align==-1)strcat(str,"explains the benefits of research to");
 			   else strcat(str,"explains ethical research to");break;
 		case 2:strcat(str,"discusses the scientific method with");break;
 	    }
 	    strcat(str," ");
 	    strcat(str,describe_entity_static(t));
 	    strcat(str,"!");
-	    if(t.align==1)
+	    if(t->align==1)
 		resist=entity_skill_roll(t,ES_SCIENCE)+
 		    entity_attr_roll(t,EA_HRT);
 	    else
@@ -1550,15 +1569,15 @@ void specialattack(struct t_entity &a, struct t_entity &t, char &actual)
 		    entity_attr_roll(t,EA_WIS);
 	    attack+=entity_skill_roll(a,ES_SCIENCE);
 	    break;
-	case CREATURE_POLITICIAN:
-	    if(a.align==-1)
+	case ET_POLITICIAN:
+	    if(a->align==-1)
 		strcat(str,pickrandom(conservative_politician_debate));
 	    else
 		strcat(str,pickrandom(other_politician_debate));
 	    strcat(str," ");
 	    strcat(str,describe_entity_static(t));
 	    strcat(str,"!");
-	    if(t.align==1)
+	    if(t->align==1)
 		resist=entity_skill_roll(t,ES_LAW)+
 		    entity_attr_roll(t,EA_HRT);
 	    else
@@ -1566,15 +1585,15 @@ void specialattack(struct t_entity &a, struct t_entity &t, char &actual)
 		    entity_attr_roll(t,EA_WIS);
 	    attack+=entity_skill_roll(a,ES_LAW);
 	    break;
-	case CREATURE_CORPORATE_CEO:
-	    if(a.align==-1)
+	case ET_CORPORATE_CEO:
+	    if(a->align==-1)
 		strcat(str,pickrandom(conservative_ceo_debate));
 	    else
 		strcat(str,pickrandom(other_ceo_debate));
 	    strcat(str," ");
 	    strcat(str,describe_entity_static(t));
 	    strcat(str,"!");
-	    if(t.align==1)
+	    if(t->align==1)
 		resist=entity_skill_roll(t,ES_BUSINESS)+
 		    entity_attr_roll(t,EA_HRT);
 	    else
@@ -1582,31 +1601,31 @@ void specialattack(struct t_entity &a, struct t_entity &t, char &actual)
 		    entity_attr_roll(t,EA_WIS);
 	    attack+=entity_skill_roll(a,ES_BUSINESS);
 	    break;
-	case CREATURE_RADIOPERSONALITY:
-	case CREATURE_NEWSANCHOR:
+	case ET_RADIOPERSONALITY:
+	case ET_NEWSANCHOR:
 	    strcat(str,pickrandom(media_debate));
 	    strcat(str," ");
 	    strcat(str,describe_entity_static(t));
 	    strcat(str,"!");
-	    if(t.align==1)
+	    if(t->align==1)
 		resist=entity_attr_roll(t,EA_HRT);
 	    else
 		resist=entity_attr_roll(t,EA_WIS);
-	    attack+=entity_attr_roll(a,EA_CHARISMA);
+	    attack+=entity_attr_roll(a,EA_CHA);
 	    break;
-	case CREATURE_MILITARYOFFICER:
+	case ET_MILITARYOFFICER:
 	    strcat(str,pickrandom(military_debate));
 	    strcat(str," ");
 	    strcat(str,describe_entity_static(t));
 	    strcat(str,"!");
-	    if(t.align==1)
+	    if(t->align==1)
 		resist=entity_attr_roll(t,EA_HRT);
 	    else
 		resist=entity_attr_roll(t,EA_WIS);
-	    attack+=entity_attr_roll(a,EA_CHARISMA);
+	    attack+=entity_attr_roll(a,EA_CHA);
 	    break;
-	case CREATURE_COP:
-	    if(a.enemy())
+	case ET_COP:
+	    if(enemy(a))
 	    {
 		strcat(str,pickrandom(police_debate));
 		strcat(str,describe_entity_static(t));
@@ -1619,21 +1638,21 @@ void specialattack(struct t_entity &a, struct t_entity &t, char &actual)
 	    }
 	    //No break. If the cop is a liberal it will do a musical attack instead.
 	default:
-	    if(a->weapon.has_musical_attack() || a.type==CREATURE_COP)
+	    if(has_musical_attack(a->weapon) || a->type==ET_COP)
 	    {
 		switch(randval(5))
 		{
 		    case 0:strcat(str,"plays a song for");break;
 		    case 1:strcat(str,"sings to");break;
-		    case 2:if(a->weapon.has_musical_attack())
+		    case 2:if(has_musical_attack(a->weapon))
 			   {
 			       strcat(str,"strums the ");
-			       strcat(str,get_weapon_name(a->weapon,));
+			       strcat(str,get_weapon_name(a->weapon,0));
 			   }
 			   else // let's use a small enough instrument for anyone to carry in their pocket
 			       strcat(str,"blows a harmonica");
 			   strcat(str," at");break;
-		    case 3:if(a.align==1)strcat(str,"plays protest songs at");
+		    case 3:if(a->align==1)strcat(str,"plays protest songs at");
 			       else strcat(str,"plays country songs at");
 			       break;
 		    case 4:strcat(str,"rocks out at");break;
@@ -1644,7 +1663,7 @@ void specialattack(struct t_entity &a, struct t_entity &t, char &actual)
 
 		attack=entity_skill_roll(a,ES_MUSIC);
 
-		if(t.align==1)
+		if(t->align==1)
 		    resist=entity_attr_roll(t,EA_HRT);
 		else resist=entity_attr_roll(t,EA_WIS);
 		if(resist>0)
@@ -1659,45 +1678,59 @@ void specialattack(struct t_entity &a, struct t_entity &t, char &actual)
     g_addstr("\n",NULL);
 
     if((t->animalgloss==ANIMALGLOSS_TANK||(t->animalgloss==ANIMALGLOSS_ANIMAL&&law[LAW_ANIMALRESEARCH]!=2))
-	    ||(a.enemy() && t.flag & CREATUREFLAG_BRAINWASHED))
+	    ||(enemy(a) && t->flag & CREATUREFLAG_BRAINWASHED))
     {
 	//move(17,1);
-	g_addstr(s+describe_entity_static(t)+" is immune to the attack!", gamelog);
+	g_addstr(s,gamelog);
+	g_addstr(describe_entity_static(t), gamelog);
+	g_addstr(" is immune to the attack!", gamelog);
     }
-    else if (a.align == t.align)
+    else if (a->align == t->align)
     {
 	move (17,1);
-	g_addstr(s+describe_entity_static(t)+" already agrees with "+describe_entity_static(a)+".");
+	g_addstr(s,NULL);
+	g_addstr(describe_entity_static(t),NULL);
+	g_addstr(" already agrees with ",NULL);
+	g_addstr(describe_entity_static(a),NULL);
+	g_addstr(".",NULL);
     }
     else if(attack>resist)
     {
-	t.stunned+=(attack-resist)/4;
-	if(a.enemy())
+	t->stunned+=(attack-resist)/4;
+	if(enemy(a))
 	{
 	    if(t->juice>100)
 	    {
 		//move(17,1);
-		g_addstr(s+describe_entity_static(t)+" loses juice!", gamelog);
+		g_addstr(s, gamelog);
+		g_addstr(describe_entity_static(t), gamelog);
+		g_addstr(" loses juice!", gamelog);
 		addjuice(t,-50,100);
 	    }
-	    else if(randval(15)>t.get_attribute(EA_WIS,true) || t.get_attribute(EA_WIS,true) < t.get_attribute(EA_HRT,true))
+	    else if(randval(15)>entity_get_attribute(t,EA_WIS,true) || entity_get_attribute(t,EA_WIS,true) < entity_get_attribute(t,EA_HRT,true))
 	    {
 		//move(17,1);
-		g_addstr(s+describe_entity_static(t)+" is tainted with Wisdom!", gamelog);
-		t.adjust_attribute(EA_WIS,+1);
+		g_addstr(s, gamelog);
+		g_addstr(describe_entity_static(t), gamelog);
+		g_addstr(" is tainted with Wisdom!", gamelog);
+		t->attributes[EA_WIS] +=1;
 	    }
-	    else if(t.align==ALIGN_LIBERAL && t.flag & CREATUREFLAG_LOVESLAVE)
+	    else if(t->align==ALIGN_LIBERAL && t->flag & CREATUREFLAG_LOVESLAVE)
 	    {
 		//move(17,1);
-		g_addstr(s+describe_entity_static(t)+" can't bear to leave!", gamelog);
+		g_addstr(s, gamelog);
+		g_addstr(describe_entity_static(t), gamelog);
+		g_addstr(" can't bear to leave!", gamelog);
 	    }
 	    else
 	    {
-		if(a.align==-1)
+		if(a->align==-1)
 		{
 		    //move(17,1);
-		    g_addstr(s+describe_entity_static(t)+" is turned Conservative", gamelog);
-		    t.stunned=0;
+		g_addstr(s, gamelog);
+		g_addstr(describe_entity_static(t), gamelog);
+		    g_addstr(" is turned Conservative", gamelog);
+		    t->stunned=0;
 		    if(t->prisoner!=NULL)
 			freehostage(t,0);
 		    g_addstr("!", gamelog);
@@ -1705,8 +1738,10 @@ void specialattack(struct t_entity &a, struct t_entity &t, char &actual)
 		else
 		{
 		    //move(17,1);
-		    g_addstr(s+describe_entity_static(t)+" doesn't want to fight anymore", gamelog);
-		    t.stunned=0;
+		g_addstr(s, gamelog);
+		g_addstr(describe_entity_static(t), gamelog);
+		    g_addstr(" doesn't want to fight anymore", gamelog);
+		    t->stunned=0;
 		    if(t->prisoner!=NULL)
 			freehostage(t,0);
 		    g_addstr("!", gamelog);
@@ -1714,13 +1749,13 @@ void specialattack(struct t_entity &a, struct t_entity &t, char &actual)
 
 		for(int e=0;e<ENCMAX;e++)
 		{
-		    if(encounter[e].exists==0)
+		    if(encounter[e]->exists==0)
 		    {
 			encounter[e]=t;
-			encounter[e].exists=1;
-			if(a.align==-1)conservatise(encounter[e]);
+			encounter[e]->exists=1;
+			if(a->align==-1)conservatise(encounter[e]);
 			encounter[e]->cantbluff=2;
-			encounter[e].squadid=-1;
+			encounter[e]->squadid=-1;
 			break;
 		    }
 		}
@@ -1728,9 +1763,9 @@ void specialattack(struct t_entity &a, struct t_entity &t, char &actual)
 		bool flipstart=0;
 		for(int p=0;p<6;p++)
 		{
-		    if(activesquad->squad[p]==&t)
+		    if(activesquad->squad[p]==t)
 		    {
-			activesquad->squad[p]->die();
+			creature_die(activesquad->squad[p]);
 			activesquad->squad[p]->location=-1;
 			activesquad->squad[p]=NULL;
 			flipstart=1;
@@ -1745,25 +1780,31 @@ void specialattack(struct t_entity &a, struct t_entity &t, char &actual)
 	    if(t->juice>=100)
 	    {
 		//move(17,1);
-		g_addstr(s+describe_entity_static(t)+" seems less badass!", gamelog);
+		g_addstr(s, gamelog);
+		g_addstr(describe_entity_static(t), gamelog);
+		g_addstr(" seems less badass!", gamelog);
 		addjuice(t,-50,99);
 	    }
-	    else if(!t.attribute_check(EA_HRT,DIFFICULTY_AVERAGE) ||
-		    t.get_attribute(EA_HRT,true) < t.get_attribute(EA_WIS,true))
+	    else if(!entity_attr_check(t,EA_HRT,DIFFICULTY_AVERAGE) ||
+		    entity_get_attribute(t,EA_HRT,true) < entity_get_attribute(t,EA_WIS,true))
 	    {
 		//move(17,1);
-		g_addstr(s+describe_entity_static(t)+"'s Heart swells!", gamelog);
-		t.adjust_attribute(EA_HRT,+1);
+		g_addstr(s, gamelog);
+		g_addstr(describe_entity_static(t), gamelog);
+		g_addstr("'s Heart swells!", gamelog);
+		t->attributes[EA_HRT] += +1;
 	    }
 	    else
 	    {
 		//move(17,1);
-		g_addstr(s+describe_entity_static(t)+" has turned Liberal!", gamelog);
-		t.stunned=0;
+		g_addstr(s, gamelog);
+		g_addstr(describe_entity_static(t), gamelog);
+		g_addstr(" has turned Liberal!", gamelog);
+		t->stunned=0;
 
 		liberalize(t);
-		t.infiltration/=2;
-		t.flag|=CREATUREFLAG_CONVERTED;
+		t->infiltration/=2;
+		t->flag|=CREATUREFLAG_CONVERTED;
 		t->cantbluff=0;
 	    }
 	}
@@ -1771,7 +1812,9 @@ void specialattack(struct t_entity &a, struct t_entity &t, char &actual)
     else
     {
 	//move(17,1);
-	g_addstr(s+describe_entity_static(t)+" remains strong.", gamelog);
+	g_addstr(s, gamelog);
+	g_addstr(describe_entity_static(t), gamelog);
+	g_addstr(" remains strong.", gamelog);
     }
 
     g_addstr("\n",NULL);
@@ -1788,7 +1831,7 @@ void specialattack(struct t_entity &a, struct t_entity &t, char &actual)
 
 
 /* destroys armor, masks, drops weapons based on severe damage */
-void severloot(struct t_entity &cr,vector<Item *> &loot)
+void severloot(struct t_creature* cr,vector<Item *> &loot)
 {
     int armok=2;
     if((cr->wound[EB_ARM_RIGHT] & WOUND_NASTYOFF)||
@@ -1819,16 +1862,16 @@ void severloot(struct t_entity &cr,vector<Item *> &loot)
 
     if((((cr->wound[EB_BODY] & WOUND_CLEANOFF)||
 		    (cr->wound[EB_BODY] & WOUND_NASTYOFF))&&
-		cr.get_armor().covers(EB_BODY))||
+		cr->armor.covers(EB_BODY))||
 	    ((cr->wound[EB_HEAD] & WOUND_NASTYOFF)&&
-	     cr.get_armor().is_mask()))
+	     cr->armor.is_mask()))
     {
 	clearmessagearea();
 	g_attrset(CP_YELLOW);
 	//move(16,1);
 	g_addstr(cr.name, gamelog);
 	g_addstr("'s ", gamelog);
-	g_addstr(cr.get_armor().get_name(), gamelog);
+	g_addstr(cr->armor.get_name(), gamelog);
 	g_addstr(" has been destroyed.", gamelog);
 	g_addstr("\n",NULL);
 
@@ -1841,17 +1884,17 @@ void severloot(struct t_entity &cr,vector<Item *> &loot)
 
 
 /* damages the selected armor if it covers the body part specified */
-void armordamage(Armor &armor,int bp, int damamount)
+void armordamage(struct t_armor* armor,int bp, int damamount)
 {
-    if(armor.covers(bp) && randval(armor.get_durability()) < damamount)
+    if(armor->type->covers[bp] && (randval(armor->type->durability) < damamount))
     {
-	if (armor.is_damaged())
+	if (armor->damaged)
 	{
-	    armor.decrease_quality(randval(armor.get_durability()) < randval(damamount)/armor.get_quality() ? 1:0);
+	    armor_decrease_quality(armor,randval(armor->type->durability) < randval(damamount)/armor->quality ? 1:0);
 	}
 	else
 	{
-	    armor.set_damaged(true);
+	    armor->damaged |= true;
 	}
     }
 }
@@ -1859,34 +1902,34 @@ void armordamage(Armor &armor,int bp, int damamount)
 
 
 /* blood explosions */
-void bloodblast(Armor* armor)
+void bloodblast(struct t_armor* armor)
 {
     //GENERAL
     if(armor!=NULL)
-	armor->set_bloody(true);
+	armor->bloody |= true;
 
     if(mode!=GM_SITE)
 	return;
 
-    levelmap[locx][locy][locz].flag|=SITEBLOCK_BLOODY2;
+    //levelmap[locx][locy][locz].flag|=SITEBLOCK_BLOODY2;
 
     //HIT EVERYTHING
     for(int p=0;p<6;p++)
     {
 	if(activesquad->squad[p]==NULL) continue;
 	if(!randval(2))
-	    activesquad->squad[p]->get_armor().set_bloody(true);
+	    activesquad->squad[p]->armor->bloody |= true;
     }
 
     for(int e=0;e<ENCMAX;e++)
     {
-	if(!encounter[e].exists) continue;
+	if(!encounter[e]->exists) continue;
 	if(!randval(2))
-	    encounter[e].get_armor().set_bloody(true);
+	    encounter[e]->armor->bloody |= true;
     }
 
     //REFRESH THE SCREEN
-    printsitemap(locx,locy,locz);
+    //printsitemap(locx,locy,locz);
     refresh();
 }
 
@@ -1902,87 +1945,84 @@ void delenc(short e,char loot)
     //BURY IT
     for(int en=e;en<ENCMAX;en++)
     {
-	if(!encounter[en].exists) break;
+	if(!encounter[en]->exists) break;
 	if(en<ENCMAX-1) encounter[en]=encounter[en+1];
     }
-    encounter[ENCMAX-1].exists=0;
+    encounter[ENCMAX-1]->exists=0;
 }
 
 
 
 /* generates the loot dropped by a creature when it dies */
-void makeloot(struct t_entity &cr,vector<Item *> &loot)
+void makeloot(struct t_creature* cr,vector<Item *> &loot)
 {
-    cr.drop_weapons_and_clips(&loot);
-    cr.strip(&loot);
+    cr->drop_weapons_and_clips(&loot);
+    cr->strip(&loot);
 
-    if(cr.money>0 && mode == GM_SITE)
+    if(cr->money>0 && mode == GM_SITE)
     {
 	loot.push_back(new Money(cr.money));
-	cr.money=0;
+	cr->money=0;
     }
 }
 
 
 
 /* abandoned liberal is captured by conservatives */
-void capturecreature(struct t_entity &t)
+void capturecreature(struct t_creature *t)
 {
-    t.activity.type=ACTIVITY_NONE;
-    t.drop_weapons_and_clips(NULL);
+    t->activity.type=ACTIVITY_NONE;
+    t->drop_weapons_and_clips(NULL);
     //t.strip(NULL);
-    Armor clothes=Armor(*armortype[getarmortype("ARMOR_CLOTHES")]);
-    t.give_armor(clothes,NULL);
+    struct t_armor* clothes=new_armor(armortype[ARMOR_CLOTHES]);
+    t->give_armor(clothes,NULL);
 
     freehostage(t,2); // situation 2 = no message; this may want to be changed to 0 or 1
     if(t->prisoner)
     {
 	if(t->prisoner->squadid==-1)
-	    delete t->prisoner;
+	    free(t->prisoner);
 	t->prisoner=NULL; // Stop hauling people
     }
-    if(t.flag & CREATUREFLAG_JUSTESCAPED)
+    if(t->flag & CREATUREFLAG_JUSTESCAPED)
     {
-	t.location=cursite;
+	t->location=cursite;
 	if(sitetype==SITE_GOVERNMENT_PRISON||
 		sitetype==SITE_GOVERNMENT_COURTHOUSE)
 	{
-	    Armor prisoner=Armor(*armortype[getarmortype("ARMOR_PRISONER")]);
-	    t.give_armor(prisoner,NULL);
+	    struct t_armor* prisoner=new_armor(armortype[ARMOR_PRISONER]);
+	    t->give_armor(prisoner,NULL);
 	}
 	if(sitetype==SITE_GOVERNMENT_PRISON)
 	{
 	    // Clear criminal record?
-	    t.heat=0;
+	    t->heat=0;
 	    for(int i=0;i<LAWFLAGNUM;i++)
-		t.crimes_suspected[i]=0;
+		t->crimes_suspected[i]=0;
 	}
     }
     else
-	t.location = find_police_station(cursite);
+	t->location = find_police_station(cursite);
 
-    t.squadid=-1;
+    t->squadid=-1;
 }
 
 
 
 /* checks if the creature can fight and prints flavor text if they can't */
-char incapacitated(struct t_entity &a,char noncombat,char* printed)
+char incapacitated(struct t_creature *a,char noncombat,char* printed)
 {
     *printed=0;
 
     if(a->animalgloss==ANIMALGLOSS_TANK)
     {
-	if(a.blood<=20||(a.blood<=50&&(randval(2)||a.forceinc)))
+	if(a->blood<=20||(a->blood<=50&&(randval(2)||a->forceinc)))
 	{
-	    a.forceinc=0;
+	    a->forceinc=0;
 	    if(noncombat)
 	    {
-		clearmessagearea();
+		g_attrset(CP_WHITE);
 
-		set_color(COLOR_WHITE,COLOR_BLACK,1);
-
-		//move(16,1);
 		g_addstr("The ", gamelog);
 		g_addstr(describe_entity_static(a), gamelog);
 		switch(randval(3))
@@ -2004,17 +2044,15 @@ char incapacitated(struct t_entity &a,char noncombat,char* printed)
 
     if(a->animalgloss==ANIMALGLOSS_ANIMAL)
     {
-	if(a.blood<=20||(a.blood<=50&&(randval(2)||a.forceinc)))
+	if(a->blood<=20||(a->blood<=50&&(randval(2)||a->forceinc)))
 	{
-	    a.forceinc=0;
+	    a->forceinc=0;
 	    if(noncombat)
 	    {
-		clearmessagearea();
-		set_color(COLOR_WHITE,COLOR_BLACK,1);
+		g_attrset(CP_WHITE);
 
-		//move(16,1);
 		g_addstr("The ", gamelog);
-		g_addstr(describe_entity_static(a));
+		g_addstr(describe_entity_static(a), gamelog);
 		switch(randval(3))
 		{
 		    case 0: g_addstr(" yelps in pain...", gamelog); break;
@@ -2025,7 +2063,7 @@ char incapacitated(struct t_entity &a,char noncombat,char* printed)
 
 		g_addstr("\n",NULL);
 
-		printed=1;
+		*printed=1;
 	    }
 	    return 1;
 	}
@@ -2033,105 +2071,105 @@ char incapacitated(struct t_entity &a,char noncombat,char* printed)
 	return 0;
     }
 
-    if(a.blood<=20||(a.blood<=50&&(randval(2)||a.forceinc)))
+    if(a->blood<=20||(a->blood<=50&&(randval(2)||a->forceinc)))
     {
-	a.forceinc=0;
+	a->forceinc=0;
 	if(noncombat)
 	{
 	    clearmessagearea();
-	    set_color(COLOR_WHITE,COLOR_BLACK,1);
+	    g_attrset(CP_WHITE);
 
 	    //move(16,1);
-	    g_addstr(describe_entity_static(a));
+	    g_addstr(describe_entity_static(a), gamelog);
 	    switch(randval(54))
 	    {
-		case 0: g_addstr(" desperately cries out to Jesus."); break;
-		case 1: if(law[LAW_FREESPEECH]==-2) g_addstr(" [makes a stinky].");
-			    else g_addstr(" soils the floor."); break;
-		case 2: g_addstr(" whimpers in a corner."); break;
-		case 3: g_addstr(" begins to weep."); break;
-		case 4: g_addstr(" vomits."); break;
-		case 5: g_addstr(" chortles..."); break;
-		case 6: g_addstr(" screams in pain."); break;
-		case 7: g_addstr(" asks for mother."); break;
-		case 8: g_addstr(" prays softly..."); break;
-		case 9: g_addstr(" clutches at the wounds."); break;
-		case 10: g_addstr(" reaches out and moans."); break;
-		case 11: g_addstr(" hollers in pain."); break;
-		case 12: g_addstr(" groans in agony."); break;
-		case 13: g_addstr(" begins hyperventilating."); break;
-		case 14: g_addstr(" shouts a prayer."); break;
-		case 15: g_addstr(" coughs up blood."); break;
-		case 16: if(mode!=GM_CHASECAR) g_addstr(" stumbles against a wall.");
-			     else g_addstr(" leans against the door."); break;
-		case 17: g_addstr(" begs for forgiveness."); break;
-		case 18: g_addstr(" shouts \"Why have you forsaken me?\""); break;
-		case 19: g_addstr(" murmurs \"Why Lord?   Why?\""); break;
-		case 20: g_addstr(" whispers \"Am I dead?\""); break;
-		case 21: if(law[LAW_FREESPEECH]==-2) g_addstr(" [makes a mess], moaning.");
-			     else g_addstr(" pisses on the floor, moaning."); break;
-		case 22: g_addstr(" whispers incoherently."); break;
-		case 23: if(a.special[ESW_RIGHTEYE]&&a.special[ESW_LEFTEYE])
-			     g_addstr(" stares off into space.");
-			 else if(a.special[ESW_RIGHTEYE]||a.special[ESW_LEFTEYE])
-			     g_addstr(" stares into space with one empty eye.");
-			 else g_addstr(" stares out with hollow sockets."); break;
-		case 24: g_addstr(" cries softly."); break;
-		case 25: g_addstr(" yells until the scream cracks dry."); break;
-		case 26: if(a.special[ESW_TEETH]>1) g_addstr("'s teeth start chattering.");
-			     else if(a.special[ESW_TEETH]==1) g_addstr("'s tooth starts chattering.");
-			     else g_addstr("'s gums start chattering."); break;
-		case 27: g_addstr(" starts shaking uncontrollably."); break;
-		case 28: g_addstr(" looks strangely calm."); break;
-		case 29: g_addstr(" nods off for a moment."); break;
-		case 30: g_addstr(" starts drooling."); break;
-		case 31: g_addstr(" seems lost in memories."); break;
-		case 32: g_addstr(" shakes with fear."); break;
-		case 33: g_addstr(" murmurs \"I'm so afraid...\""); break;
-		case 34: g_addstr(" cries \"It can't be like this...\""); break;
-		case 35: if(a.age<20 && !a->animalgloss) g_addstr(" cries \"Mommy!\"");
-			     else switch(a.type) {
-				 case CREATURE_GENETIC:
-				     g_addstr(" murmurs \"What about my offspring?\""); break;
-				 case CREATURE_GUARDDOG:
-				     g_addstr(" murmurs \"What about my puppies?\""); break;
+		case 0: g_addstr(" desperately cries out to Jesus.", gamelog); break;
+		case 1: if(law[LAW_FREESPEECH]==-2) g_addstr(" [makes a stinky].", gamelog);
+			    else g_addstr(" soils the floor.", gamelog); break;
+		case 2: g_addstr(" whimpers in a corner.", gamelog); break;
+		case 3: g_addstr(" begins to weep.", gamelog); break;
+		case 4: g_addstr(" vomits.", gamelog); break;
+		case 5: g_addstr(" chortles...", gamelog); break;
+		case 6: g_addstr(" screams in pain.", gamelog); break;
+		case 7: g_addstr(" asks for mother.", gamelog); break;
+		case 8: g_addstr(" prays softly...", gamelog); break;
+		case 9: g_addstr(" clutches at the wounds.", gamelog); break;
+		case 10: g_addstr(" reaches out and moans.", gamelog); break;
+		case 11: g_addstr(" hollers in pain.", gamelog); break;
+		case 12: g_addstr(" groans in agony.", gamelog); break;
+		case 13: g_addstr(" begins hyperventilating.", gamelog); break;
+		case 14: g_addstr(" shouts a prayer.", gamelog); break;
+		case 15: g_addstr(" coughs up blood.", gamelog); break;
+		case 16: if(mode!=GM_CHASECAR) g_addstr(" stumbles against a wall.", gamelog);
+			     else g_addstr(" leans against the door.", gamelog); break;
+		case 17: g_addstr(" begs for forgiveness.", gamelog); break;
+		case 18: g_addstr(" shouts \"Why have you forsaken me?\"", gamelog); break;
+		case 19: g_addstr(" murmurs \"Why Lord?   Why?\"", gamelog); break;
+		case 20: g_addstr(" whispers \"Am I dead?\"", gamelog); break;
+		case 21: if(law[LAW_FREESPEECH]==-2) g_addstr(" [makes a mess], moaning.", gamelog);
+			     else g_addstr(" pisses on the floor, moaning.", gamelog); break;
+		case 22: g_addstr(" whispers incoherently.", gamelog); break;
+		case 23: if(a->special[ESW_RIGHTEYE]&&a->special[ESW_LEFTEYE])
+			     g_addstr(" stares off into space.", gamelog);
+			 else if(a->special[ESW_RIGHTEYE]||a->special[ESW_LEFTEYE])
+			     g_addstr(" stares into space with one empty eye.", gamelog);
+			 else g_addstr(" stares out with hollow sockets.", gamelog); break;
+		case 24: g_addstr(" cries softly.", gamelog); break;
+		case 25: g_addstr(" yells until the scream cracks dry.", gamelog); break;
+		case 26: if(a->special[ESW_TEETH]>1) g_addstr("'s teeth start chattering.", gamelog);
+			     else if(a->special[ESW_TEETH]==1) g_addstr("'s tooth starts chattering.", gamelog);
+			     else g_addstr("'s gums start chattering.", gamelog); break;
+		case 27: g_addstr(" starts shaking uncontrollably.", gamelog); break;
+		case 28: g_addstr(" looks strangely calm.", gamelog); break;
+		case 29: g_addstr(" nods off for a moment.", gamelog); break;
+		case 30: g_addstr(" starts drooling.", gamelog); break;
+		case 31: g_addstr(" seems lost in memories.", gamelog); break;
+		case 32: g_addstr(" shakes with fear.", gamelog); break;
+		case 33: g_addstr(" murmurs \"I'm so afraid...\"", gamelog); break;
+		case 34: g_addstr(" cries \"It can't be like this...\"", gamelog); break;
+		case 35: if(a->age<20 && !a->animalgloss) g_addstr(" cries \"Mommy!\"", gamelog);
+			     else switch(a->type) {
+				 case ET_GENETIC:
+				     g_addstr(" murmurs \"What about my offspring?\"", gamelog); break;
+				 case ET_GUARDDOG:
+				     g_addstr(" murmurs \"What about my puppies?\"", gamelog); break;
 				 default:
-				     g_addstr(" murmurs \"What about my children?\""); break;
+				     g_addstr(" murmurs \"What about my children?\"", gamelog); break;
 			     } break;
-		case 36: g_addstr(" shudders quietly."); break;
-		case 37: g_addstr(" yowls pitifully."); break;
-		case 38: g_addstr(" begins losing faith in God."); break;
-		case 39: g_addstr(" muses quietly about death."); break;
-		case 40: g_addstr(" asks for a blanket."); break;
-		case 41: g_addstr(" shivers softly."); break;
-		case 42: if(law[LAW_FREESPEECH]==-2)g_addstr(" [makes a mess].");
-			     else g_addstr(" vomits up a clot of blood."); break;
-		case 43: if(law[LAW_FREESPEECH]==-2)g_addstr(" [makes a mess].");
-			     else g_addstr(" spits up a cluster of bloody bubbles."); break;
-		case 44: g_addstr(" pleads for mercy."); break;
-		case 45: g_addstr(" quietly asks for coffee."); break;
-		case 46: g_addstr(" looks resigned."); break;
-		case 47: g_addstr(" scratches at the air."); break;
-		case 48: g_addstr(" starts to giggle uncontrollably."); break;
-		case 49: g_addstr(" wears a look of pain."); break;
-		case 50: g_addstr(" questions God."); break;
-		case 51: g_addstr(" whispers \"Mama baby.  Baby loves mama.\""); break;
-		case 52: g_addstr(" asks for childhood toys frantically."); break;
-		case 53: g_addstr(" murmurs \"But I go to church...\""); break;
+		case 36: g_addstr(" shudders quietly.", gamelog); break;
+		case 37: g_addstr(" yowls pitifully.", gamelog); break;
+		case 38: g_addstr(" begins losing faith in God.", gamelog); break;
+		case 39: g_addstr(" muses quietly about death.", gamelog); break;
+		case 40: g_addstr(" asks for a blanket.", gamelog); break;
+		case 41: g_addstr(" shivers softly.", gamelog); break;
+		case 42: if(law[LAW_FREESPEECH]==-2)g_addstr(" [makes a mess].", gamelog);
+			     else g_addstr(" vomits up a clot of blood.", gamelog); break;
+		case 43: if(law[LAW_FREESPEECH]==-2)g_addstr(" [makes a mess].", gamelog);
+			     else g_addstr(" spits up a cluster of bloody bubbles.", gamelog); break;
+		case 44: g_addstr(" pleads for mercy.", gamelog); break;
+		case 45: g_addstr(" quietly asks for coffee.", gamelog); break;
+		case 46: g_addstr(" looks resigned.", gamelog); break;
+		case 47: g_addstr(" scratches at the air.", gamelog); break;
+		case 48: g_addstr(" starts to giggle uncontrollably.", gamelog); break;
+		case 49: g_addstr(" wears a look of pain.", gamelog); break;
+		case 50: g_addstr(" questions God.", gamelog); break;
+		case 51: g_addstr(" whispers \"Mama baby.  Baby loves mama.\"", gamelog); break;
+		case 52: g_addstr(" asks for childhood toys frantically.", gamelog); break;
+		case 53: g_addstr(" murmurs \"But I go to church...\"", gamelog); break;
 	    }
 
-	    printed=1;
+	    *printed=1;
 	}
 
 	return 1;
     }
-    else if(a.stunned)
+    else if(a->stunned)
     {
 	if(noncombat)
 	{
-	    a.stunned--;
-	    clearmessagearea();
-	    set_color(COLOR_WHITE,COLOR_BLACK,1);
+	    a->stunned--;
+	    
+	    g_attrset(CP_WHITE);
 
 	    //move(16,1);
 	    g_addstr(describe_entity_static(a), gamelog);
@@ -2152,18 +2190,17 @@ char incapacitated(struct t_entity &a,char noncombat,char* printed)
 
 	    g_addstr("\n",NULL);
 
-	    printed=1;
+	    *printed=1;
 	}
 	return 1;
     }
 
-    if(a.special[ESW_NECK]==2||
-	    a.special[ESW_UPPERSPINE]==2)
+    if(a->special[ESW_NECK]==2||
+	    a->special[ESW_UPPERSPINE]==2)
     {
 	if(!noncombat)
 	{
-	    clearmessagearea();
-	    set_color(COLOR_WHITE,COLOR_BLACK,1);
+	    g_attrset(CP_WHITE);
 
 	    //move(16,1);
 	    g_addstr(describe_entity_static(a), gamelog);
@@ -2178,7 +2215,7 @@ char incapacitated(struct t_entity &a,char noncombat,char* printed)
 
 	    g_addstr("\n",NULL);
 
-	    printed=1;
+	    *printed=1;
 	}
 
 	return 1;
@@ -2190,7 +2227,7 @@ char incapacitated(struct t_entity &a,char noncombat,char* printed)
 
 
 /* describes a character's death */
-void adddeathmessage(struct t_entity &cr)
+void adddeathmessage(struct t_creature* cr)
 {
     g_attrset(CP_YELLOW);
 
@@ -2200,7 +2237,7 @@ void adddeathmessage(struct t_entity &cr)
     if((cr->wound[EB_HEAD] & WOUND_CLEANOFF)||
 	    (cr->wound[EB_HEAD] & WOUND_NASTYOFF))
     {
-	strcpy(str,cr.name);
+	strcpy(str,describe_entity_static(cr));
 	switch(randval(4))
 	{
 	    case 0:
@@ -2241,7 +2278,7 @@ void adddeathmessage(struct t_entity &cr)
     else if((cr->wound[EB_BODY] & WOUND_CLEANOFF)||
 	    (cr->wound[EB_BODY] & WOUND_NASTYOFF))
     {
-	strcpy(str,cr.name);
+	strcpy(str,describe_entity_static(cr));
 	switch(randval(2))
 	{
 	    case 0:strcat(str," breaks into pieces."); break;
@@ -2251,7 +2288,7 @@ void adddeathmessage(struct t_entity &cr)
     }
     else
     {
-	strcpy(str,cr.name);
+	strcpy(str,describe_entity_static(cr));
 	switch(randval(11))
 	{
 	    case 0:
@@ -2320,7 +2357,7 @@ void adddeathmessage(struct t_entity &cr)
 		strcat(str," speaks these final words: ");
 		g_addstr(str, gamelog);
 		//move(17,1);
-		switch(cr.align)
+		switch(cr->align)
 		{
 		    case ALIGN_LIBERAL:
 		    case ALIGN_ELITELIBERAL:

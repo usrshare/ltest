@@ -14,7 +14,7 @@
 #define A_MIDDLEAGED {35,59}
 #define A_SENIOR {65,94}
 
-const char* type_description (struct t_entity* e) {
+const char* type_description (struct t_creature* e) {
 
 	switch(e->type) {
 		case ET_BOUNCER: return "Club Security";
@@ -129,7 +129,7 @@ const char* type_description (struct t_entity* e) {
 	return NULL;
 }
 
-struct t_entity_generate_rules type_rules[ENTT_COUNT] = {
+struct t_creature_generate_rules type_rules[ENTT_COUNT] = {
 	{.type = ET_BOUNCER, .gender = EG_MBIAS,
 		.attrs = {EA_AGI,EA_CON,EA_STR},
 		.attrlim = {{3,10},{3,10},{4,10}},

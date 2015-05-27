@@ -107,7 +107,7 @@ struct t_weapon {
 };
 
 const char* get_loaded_cliptypename(struct t_weapon* weapon);
-struct t_attackst* get_attack(struct t_weapon* weapon, bool force_ranged, bool force_melee, bool force_no_reload);
+struct t_attackst* get_attack(struct t_weapon* w, bool force_ranged, bool force_melee, bool force_no_reload);
 
 const char* get_weapon_name(struct t_weapon* weapon, int what);
 
