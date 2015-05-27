@@ -126,6 +126,42 @@ enum Laws
    LAWNUM
 };
 
+enum Lawflags
+{
+   LAWFLAG_TREASON,      // "Treason"
+   LAWFLAG_TERRORISM,    // "Terrorism"
+   LAWFLAG_MURDER,       // "Murder"
+   LAWFLAG_KIDNAPPING,   // "Kidnapping"
+   LAWFLAG_BANKROBBERY,  // "Bank robbery"
+   LAWFLAG_ARSON,        // "Arson"
+   LAWFLAG_BURNFLAG,     // "Flag burning" / "Flag Murder"
+   LAWFLAG_SPEECH,       // "Harmful speech"
+   LAWFLAG_BROWNIES,     // "Drug dealing"
+   LAWFLAG_ESCAPED,      // "Escaping prison"
+   LAWFLAG_HELPESCAPE,   // "Releasing prisoners"
+   LAWFLAG_JURY,         // "Jury tampering"
+   LAWFLAG_RACKETEERING, // "Racketeering"
+   LAWFLAG_EXTORTION,    // "Extortion"
+   LAWFLAG_ARMEDASSAULT, // "Armed assault"
+   LAWFLAG_ASSAULT,      // "Assault"
+   LAWFLAG_CARTHEFT,     // "Grand theft auto"
+   LAWFLAG_CCFRAUD,      // "Credit card fraud"
+   LAWFLAG_THEFT,        // "Theft"
+   LAWFLAG_PROSTITUTION, // "Prostitution"
+   LAWFLAG_HIREILLEGAL,  // "Hiring illegal aliens" / "Hiring undocumented workers"
+   //LAWFLAG_GUNUSE,     // "Firing illegal weapons"
+   //LAWFLAG_GUNCARRY,   // "Carrying illegal weapons"
+   LAWFLAG_COMMERCE,     // "Electronic sabotage"
+   LAWFLAG_INFORMATION,  // "Hacking"
+   LAWFLAG_BURIAL,       // "Unlawful burial"
+   LAWFLAG_BREAKING,     // "Breaking and entering"
+   LAWFLAG_VANDALISM,    // "Vandalism"
+   LAWFLAG_RESIST,       // "Resisting arrest"
+   LAWFLAG_DISTURBANCE,  // "Disturbing the peace"
+   LAWFLAG_PUBLICNUDITY, // "Public nudity"
+   LAWFLAG_LOITERING,    // "Loitering"
+   LAWFLAGNUM
+};
 
 /// game variables
 
