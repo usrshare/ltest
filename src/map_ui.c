@@ -204,12 +204,9 @@ int updheader(struct t_map* map) {
 	return 0;
 }
 
-int statprintw(const char *fmt, ...) {
+int statvprintw(const char *fmt, va_list ap) {
 
-	va_list varglist;
-	va_start(varglist,fmt);
-	int r = vwprintw(statwindow,fmt,varglist);
-	va_end(varglist);
+	int r = vwprintw(statwindow,fmt,ap);
 	morecount++;
 	if (morecount >= (LINES-22)) {
 		int y,x;
@@ -226,6 +223,19 @@ int statprintw(const char *fmt, ...) {
 	}
 	wrefresh(statwindow);
 	return r;
+}
+
+int statprintw(const char *fmt, ...) {
+
+	va_list varglist;
+	va_start(varglist,fmt);
+	int r = statvprintw(fmt,varglist);
+	va_end(varglist);
+	return r;
+}
+
+int statattrset(int attrs) {
+    return wattrset(statwindow,attrs);
 }
 
 int describe_map_entity(struct t_map_entity* me, char* const restrict o_name, size_t strsize) {

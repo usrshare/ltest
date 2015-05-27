@@ -2,3 +2,8 @@
 #include "globals.h"
 
 int dbgmode;
+enum uimodes curui;
+enum gamemodes mode;
+
+short sitealarm;
+short sitealarmtimer;
