@@ -5,9 +5,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include "random.h"
 
-#include "weapon.h"
+#include "globals.h"
+#include "random.h"
 
 /*
    Copyright (c) 2002,2003,2004 by Tarn Adams                                         //
@@ -41,10 +41,22 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA   02111-1307   USA     
 
 enum AnimalGlosses
 {
-   ANIMALGLOSS_NONE,//IMPORTANT THAT THIS BE HERE AT ZERO
-   ANIMALGLOSS_TANK,
-   ANIMALGLOSS_ANIMAL,
-   ANIMALGLOSSNUM
+    ANIMALGLOSS_NONE,//IMPORTANT THAT THIS BE HERE AT ZERO
+    ANIMALGLOSS_TANK,
+    ANIMALGLOSS_ANIMAL,
+    ANIMALGLOSSNUM
+};
+
+enum creature_flags {
+    CREATUREFLAG_WHEELCHAIR = 1,
+    CREATUREFLAG_JUSTESCAPED = 2,
+    CREATUREFLAG_MISSING = 4,
+    CREATUREFLAG_KIDNAPPED = 8,
+    CREATUREFLAG_SLEEPER = 16,
+    CREATUREFLAG_ILLEGALALIEN = 32,
+    CREATUREFLAG_LOVESLAVE = 64,
+    CREATUREFLAG_BRAINWASHED = 128,
+    CREATUREFLAG_CONVERTED = 256,
 };
 
 enum entity_gender {
@@ -165,7 +177,25 @@ enum Alignment
     ALIGN_STALINIST
 };
 
-struct t_entity {
+enum CheckDifficulty
+{
+   DIFFICULTY_AUTOMATIC    = 1,
+   DIFFICULTY_VERYEASY     = 3,
+   DIFFICULTY_EASY         = 5,
+   DIFFICULTY_AVERAGE      = 7,
+   DIFFICULTY_CHALLENGING  = 9,
+   DIFFICULTY_HARD         = 11,
+   DIFFICULTY_FORMIDABLE   = 13,
+   DIFFICULTY_HEROIC       = 15,
+   DIFFICULTY_SUPERHEROIC  = 17,
+   DIFFICULTY_IMPOSSIBLE   = 19
+};
+
+struct t_weapon; //these types exist,
+struct t_armor;  //just saying.
+struct t_location;  //just saying.
+
+struct t_creature {
 
     uint32_t id;
 
@@ -199,20 +229,26 @@ struct t_entity {
     short blood;
 
     struct t_weapon* weapon;
-    void* armor;
+    struct t_armor* armor;
+    
+    struct t_location* location;
 
     int16_t juice;
     int32_t money;
 
-   char cantbluff;
+    char cantbluff;
     float infiltration;
     char animalgloss;
     short specialattack;
 
-    struct t_entity* prisoner;
+    struct t_creature* prisoner;
 
     char forceinc;
+    
+    int stunned;
     bool has_thrown_weapon;
+    
+    int flag;
 };
 
 #define RANDATTRS 7
@@ -220,7 +256,7 @@ struct t_entity {
 #define RANDWEAPONS 7
 #define RANDARMORS 3
 
-struct t_entity_generate_rules {
+struct t_creature_generate_rules {
 
     // this is a list of rules/limits the entity generator will have to obey.
     // its functionality roughly corresponds with the rules given in
@@ -252,41 +288,67 @@ struct t_entity_generate_rules {
 
 };
 
+#define SQUAD_NAMELEN 40
+#define SQUAD_MAXITEMS 60
+
+struct t_squad {
+    char name [SQUAD_NAMELEN];
+    struct t_creature *squad[6];
+    //struct t_activity activity;
+    int id;
+    //vector <Item*> loot;
+
+    char stance;
+};
+
+struct t_squad* activesquad;
+struct t_creature* encounter[ENCMAX];
+
+/// --- /// --- ///
+
 int random_gender_and_age(int* o_age, enum entity_gender* o_gender);
 
 //Creates a creature
-int creature_init(struct t_entity* o_entity, struct t_entity_generate_rules* genrules);
+int creature_init(struct t_creature* o_entity, struct t_creature_generate_rules* genrules);
 
 
 //Returns either a name, or ???
 const char* safe_name(const char* nameptr);
 
 //Writes a string that describes the entity (name / profession) into the memory stored
-int describe_entity(struct t_entity* me, char* const restrict o_name, size_t strsize);
+int describe_entity(struct t_creature* me, char* const restrict o_name, size_t strsize);
 
-const char* describe_entity_static(struct t_entity* me);
+const char* describe_entity_static(struct t_creature* me);
 
 //Gets the value of an attribute, according to all the changes caused by age, juice and health.
-int entity_get_attribute(struct t_entity* me, enum entity_attr attribute, bool usejuice);
+int entity_get_attribute(struct t_creature* me, enum entity_attr attribute, bool usejuice);
 
-int entity_get_skill(struct t_entity* me, enum entity_skill skill);
+int entity_get_skill(struct t_creature* me, enum entity_skill skill);
 
-struct t_weapon* get_weapon(struct t_entity* me);
-bool can_reload(struct t_entity* e);
+struct t_weapon* get_weapon(struct t_creature* me);
+bool can_reload(struct t_creature* e);
 
-const char* entity_heshe(struct t_entity* e,bool capitalize);
-const char* entity_hisher(struct t_entity* e,bool capitalize);
-const char* entity_himher(struct t_entity* e,bool capitalize);
+const char* entity_heshe(struct t_creature* e,bool capitalize);
+const char* entity_hisher(struct t_creature* e,bool capitalize);
+const char* entity_himher(struct t_creature* e,bool capitalize);
 
-struct t_entity* getChaseDriver(struct t_entity* e);
-struct t_vehicle* getChaseVehicle(struct t_entity* e);
+struct t_creature* getChaseDriver(struct t_creature* e);
+struct t_vehicle* getChaseVehicle(struct t_creature* e);
 
-int entity_attr_roll(struct t_entity* e,enum entity_attr attribute);
-int entity_skill_roll (struct t_entity* e, enum entity_skill skill);
+int entity_attr_roll(struct t_creature* e,enum entity_attr attribute);
+int entity_skill_roll (struct t_creature* e, enum entity_skill skill);
+bool entity_attr_check(struct t_creature* e, enum entity_attr attr, int difficulty);
+bool entity_skill_check(struct t_creature* e, enum entity_skill skill, int difficulty);
 
-void entity_train(struct t_entity* e, int trainedskill, int experience);
-void entity_train4(struct t_entity* e, int trainedskill, int experience, int upto);
+void entity_train(struct t_creature* e, int trainedskill, int experience);
+void entity_train4(struct t_creature* e, int trainedskill, int experience, int upto);
 
-int entity_count_weapons(struct t_entity* e);
+int entity_count_weapons(struct t_creature* e);
+
+void addjuice(struct t_creature* e, long juice, long cap);
+
+void entity_die(struct t_creature* e);
+
+bool enemy(struct t_creature* e);
 
 #endif

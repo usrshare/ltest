@@ -114,8 +114,8 @@ enum entity_types {
    ENTT_COUNT
 };
 
-const char* type_description (struct t_entity* e);
+const char* type_description (struct t_creature* e);
 
-extern struct t_entity_generate_rules type_rules[ENTT_COUNT];
+extern struct t_creature_generate_rules type_rules[ENTT_COUNT];
 
 #endif

@@ -131,7 +131,7 @@ typedef uint16_t (*actFunc)(struct t_map* map, struct t_map_entity* me);
 struct t_map_entity {
 	enum entitytypes type;
 	enum entityflags flags;
-	struct t_entity* ent;
+	struct t_creature* ent;
 	uint8_t e_id;
 	uint16_t x;
 	uint16_t y;
@@ -165,7 +165,7 @@ struct t_map {
 	struct coords spawn_points[SQUAD_MAX];
 
 	struct t_map_entity ent[MAX_ENTITIES];
-	struct t_entity temp_ent[MAX_ENTITIES]; //this stores a list of temporary entities for this map.
+	struct t_creature creat[MAX_ENTITIES]; //this stores a list of temporary entities for this map.
 						//these entities are either forgotten forever, or stored
 						//into a more permanent list (which doesn't exist yet)
 };

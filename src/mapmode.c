@@ -51,7 +51,7 @@ struct t_map_entity* next_empty_entity(struct t_map* map) {
 	return NULL;
 }
 
-struct t_entity* next_empty_temp_entity(struct t_map* map) {
+struct t_creature* next_empty_temp_entity(struct t_map* map) {
 	for (int i=0; i < MAX_ENTITIES; i++)
 		if (map->temp_ent[i].type == 0) return &(map->temp_ent[i]);
 
@@ -115,7 +115,7 @@ int space_taken(struct t_map* map, uint8_t x, uint8_t y) {
 	return 0;
 }
 
-struct t_map_entity* spawn_entity(struct t_map* map, enum entitytypes type, bool gen_creature, struct t_entity_generate_rules* genrules, enum spawnpos position, turnFunc tf, actFunc af) {
+struct t_map_entity* spawn_entity(struct t_map* map, enum entitytypes type, bool gen_creature, struct t_creature_generate_rules* genrules, enum spawnpos position, turnFunc tf, actFunc af) {
 
 	struct t_map_entity* newent = next_empty_entity(map);
 	if (newent == NULL) return NULL;
@@ -138,7 +138,7 @@ struct t_map_entity* spawn_entity(struct t_map* map, enum entitytypes type, bool
 
 	if (gen_creature) {
 
-	    struct t_entity* newcr = next_empty_temp_entity(map);
+	    struct t_creature* newcr = next_empty_temp_entity(map);
 	    if (newcr == NULL) return NULL;
 
 	    creature_init(newcr,genrules);

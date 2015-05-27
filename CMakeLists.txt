@@ -12,6 +12,7 @@ add_custom_target(tags
 include_directories (${CMAKE_SOURCE_DIR}/inc)
 
 add_executable (ltest
+		src/armor.c
 		src/fight.c
 		src/cpairs.c
 		src/entity.c
@@ -19,6 +20,7 @@ add_executable (ltest
 		src/entity_types.c
 		src/globals.c
 		src/item.c
+		src/location.c
 		src/main.c
 		src/map_actions.c
 		src/map_ai.c

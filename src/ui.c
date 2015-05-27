@@ -29,6 +29,10 @@ int g_printw (const char* fmt, ...) {
 	return r;
 }
 
+int g_addint (int val, void* log) {
+	return g_printw("%d",str);
+}
+
 int g_getkey() {
 	switch(curui) {
 		case UI_MAPMODE:
