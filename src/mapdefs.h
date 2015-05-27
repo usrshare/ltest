@@ -79,6 +79,7 @@ enum entitytypes {
 	ET_NONE = 0,
 	ET_PLAYER,
 	ET_CPU,
+	ET_LOOT,
 	ET_STATIC,
 	ET_COUNT
 };

@@ -38,6 +38,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA   02111-1307   USA     
 #include "entity_types.h"
 #include "location.h"
 
+#include "item.h"
 #include "armor.h"
 #include "weapon.h"
 
@@ -737,7 +738,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 
 		if(!alreadydead)
 		{
-		    entity_die(target);
+		    creature_die(target);
 
 		    if(t->align==-a->align) 
 			addjuice(a,5+t->juice/20,1000); // Instant juice
@@ -1831,53 +1832,53 @@ void specialattack(struct t_creature* a, struct t_creature* t, char *actual)
 
 
 /* destroys armor, masks, drops weapons based on severe damage */
-void severloot(struct t_creature* cr,vector<Item *> &loot)
+void severloot(struct t_creature* cr,struct t_loot* loot)
 {
     int armok=2;
     if((cr->wound[EB_ARM_RIGHT] & WOUND_NASTYOFF)||
 	    (cr->wound[EB_ARM_RIGHT] & WOUND_CLEANOFF)) armok--;
     if((cr->wound[EB_ARM_LEFT] & WOUND_NASTYOFF)||
 	    (cr->wound[EB_ARM_LEFT] & WOUND_CLEANOFF)) armok--;
-    if(cr.special[ESW_NECK]!=1) armok=0;
-    if(cr.special[ESW_UPPERSPINE]!=1) armok=0;
+    if(cr->special[ESW_NECK]!=1) armok=0;
+    if(cr->special[ESW_UPPERSPINE]!=1) armok=0;
 
     if(cr->weapon && armok==0)
     {
-	clearmessagearea();
+	//clearmessagearea();
 	g_attrset(CP_YELLOW);
 	//move(16,1);
 	g_addstr("The ", gamelog);
 	g_addstr(get_weapon_name(cr->weapon,1), gamelog);
 	g_addstr(" slips from", gamelog);
 	//move(17,1);
-	g_addstr(cr.name, gamelog);
+	g_addstr(describe_entity_static(cr), gamelog);
 	g_addstr("'s grasp.", gamelog);
 	g_addstr("\n",NULL);
 
 	g_getkey();
 
-	if(mode==GM_SITE) cr.drop_weapons_and_clips(&loot);
-	else cr.drop_weapons_and_clips(NULL);
+	if(mode==GM_SITE) drop_weapons_and_clips(cr,loot);
+	else drop_weapons_and_clips(cr,NULL);
     }
 
     if((((cr->wound[EB_BODY] & WOUND_CLEANOFF)||
 		    (cr->wound[EB_BODY] & WOUND_NASTYOFF))&&
-		cr->armor.covers(EB_BODY))||
+		cr->armor->type->covers[EB_BODY])||
 	    ((cr->wound[EB_HEAD] & WOUND_NASTYOFF)&&
-	     cr->armor.is_mask()))
+	     cr->armor->type->is_mask))
     {
-	clearmessagearea();
+	//clearmessagearea();
 	g_attrset(CP_YELLOW);
 	//move(16,1);
-	g_addstr(cr.name, gamelog);
+	g_addstr(describe_entity_static(cr), gamelog);
 	g_addstr("'s ", gamelog);
-	g_addstr(cr->armor.get_name(), gamelog);
+	g_addstr(cr->armor->type->name, gamelog);
 	g_addstr(" has been destroyed.", gamelog);
 	g_addstr("\n",NULL);
 
 	g_getkey();
 
-	cr.strip(NULL);
+	strip(cr,NULL);
     }
 }
 
@@ -1933,7 +1934,7 @@ void bloodblast(struct t_armor* armor)
     refresh();
 }
 
-
+void makeloot(struct t_creature* cr,struct t_loot* loot);
 
 /* kills the specified creature from the encounter, dropping loot */
 void delenc(short e,char loot)
@@ -1954,14 +1955,15 @@ void delenc(short e,char loot)
 
 
 /* generates the loot dropped by a creature when it dies */
-void makeloot(struct t_creature* cr,vector<Item *> &loot)
+void makeloot(struct t_creature* cr,struct t_loot* loot)
 {
-    cr->drop_weapons_and_clips(&loot);
-    cr->strip(&loot);
+    drop_weapons_and_clips(cr,loot);
+    strip(cr,loot);
 
     if(cr->money>0 && mode == GM_SITE)
     {
-	loot.push_back(new Money(cr.money));
+	struct t_item* money = find_empty_item(loot);
+	if (money) money = new_money(cr->money);
 	cr->money=0;
     }
 }
@@ -1972,10 +1974,10 @@ void makeloot(struct t_creature* cr,vector<Item *> &loot)
 void capturecreature(struct t_creature *t)
 {
     t->activity.type=ACTIVITY_NONE;
-    t->drop_weapons_and_clips(NULL);
+    drop_weapons_and_clips(t,NULL);
     //t.strip(NULL);
     struct t_armor* clothes=new_armor(armortype[ARMOR_CLOTHES]);
-    t->give_armor(clothes,NULL);
+    give_armor(t,clothes,NULL);
 
     freehostage(t,2); // situation 2 = no message; this may want to be changed to 0 or 1
     if(t->prisoner)
@@ -1991,7 +1993,7 @@ void capturecreature(struct t_creature *t)
 		sitetype==SITE_GOVERNMENT_COURTHOUSE)
 	{
 	    struct t_armor* prisoner=new_armor(armortype[ARMOR_PRISONER]);
-	    t->give_armor(prisoner,NULL);
+	    give_armor(t,prisoner,NULL);
 	}
 	if(sitetype==SITE_GOVERNMENT_PRISON)
 	{

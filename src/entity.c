@@ -509,7 +509,7 @@ int entity_count_weapons(struct t_creature* e) {
     return 0;
 }
 
-void entity_die(struct entity* e) {
+void creature_die(struct t_creature* e) {
 
    e->alive=0,e->blood=0;
 /*   if(e->id==uniqueCreatures.CEO().id)

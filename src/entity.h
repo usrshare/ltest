@@ -195,6 +195,72 @@ struct t_weapon; //these types exist,
 struct t_armor;  //just saying.
 struct t_location;  //just saying.
 
+enum Activity
+{
+   ACTIVITY_NONE,
+   ACTIVITY_VISIT,
+   ACTIVITY_HOSTAGETENDING,
+   ACTIVITY_TROUBLE,
+   ACTIVITY_GRAFFITI,
+   ACTIVITY_COMMUNITYSERVICE,
+   ACTIVITY_SELL_ART,
+   ACTIVITY_SELL_MUSIC,
+   ACTIVITY_SELL_TSHIRTS,
+   ACTIVITY_DONATIONS,
+   ACTIVITY_SELL_DRUGS,
+   ACTIVITY_PROSTITUTION,
+   ACTIVITY_POLLS,
+   ACTIVITY_CCFRAUD,
+   ACTIVITY_DOS_RACKET,
+   ACTIVITY_DOS_ATTACKS,
+   ACTIVITY_HACKING,
+   ACTIVITY_REPAIR_ARMOR,
+   ACTIVITY_MAKE_ARMOR,
+   ACTIVITY_STEALCARS,
+   ACTIVITY_WHEELCHAIR,
+   ACTIVITY_BURY,
+   ACTIVITY_WRITE_BLOG,
+   ACTIVITY_WRITE_LETTERS,
+   ACTIVITY_WRITE_GUARDIAN,
+   ACTIVITY_TEACH_POLITICS,
+   ACTIVITY_TEACH_FIGHTING,
+   ACTIVITY_TEACH_COVERT,
+   ACTIVITY_STUDY_DEBATING,
+   ACTIVITY_STUDY_MARTIAL_ARTS,
+   ACTIVITY_STUDY_DRIVING,
+   ACTIVITY_STUDY_PSYCHOLOGY,
+   ACTIVITY_STUDY_FIRST_AID,
+   ACTIVITY_STUDY_LAW,
+   ACTIVITY_STUDY_DISGUISE,
+   ACTIVITY_STUDY_SCIENCE,
+   ACTIVITY_STUDY_BUSINESS,
+   //ACTIVITY_STUDY_COOKING,
+   ACTIVITY_STUDY_GYMNASTICS,
+   ACTIVITY_STUDY_MUSIC,
+   ACTIVITY_STUDY_ART,
+   ACTIVITY_STUDY_TEACHING,
+   ACTIVITY_STUDY_WRITING,
+   ACTIVITY_CLINIC,
+   ACTIVITY_HEAL,
+   ACTIVITY_SLEEPER_LIBERAL,
+   ACTIVITY_SLEEPER_CONSERVATIVE,
+   ACTIVITY_SLEEPER_SPY,
+   ACTIVITY_SLEEPER_RECRUIT,
+   ACTIVITY_SLEEPER_SCANDAL,
+   ACTIVITY_SLEEPER_EMBEZZLE,
+   ACTIVITY_SLEEPER_STEAL,
+   ACTIVITY_SLEEPER_JOINLCS,
+   ACTIVITY_STUDY_LOCKSMITHING,
+   ACTIVITY_RECRUITING,
+   ACTIVITYNUM
+};
+
+
+struct activityst {
+    int type;
+    long arg, arg2;
+};
+
 struct t_creature {
 
     uint32_t id;
@@ -231,7 +297,11 @@ struct t_creature {
     struct t_weapon* weapon;
     struct t_armor* armor;
     
-    struct t_location* location;
+    int heat;
+    int location;
+    int worklocation;
+
+    struct activityst activity;
 
     int16_t juice;
     int32_t money;
@@ -347,7 +417,7 @@ int entity_count_weapons(struct t_creature* e);
 
 void addjuice(struct t_creature* e, long juice, long cap);
 
-void entity_die(struct t_creature* e);
+void creature_die(struct t_creature* e);
 
 bool enemy(struct t_creature* e);
 
