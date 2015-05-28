@@ -17,3 +17,20 @@ struct t_attackst* get_attack(struct t_weapon* w, bool force_ranged, bool force_
 	}
 	return NULL;
 }
+
+const char* wt_get_name(struct t_weapon_type* wt) {
+	return wt->name;
+}
+
+const char* wt_get_name_sub(struct t_weapon_type* wt, unsigned subtype) {
+
+	switch(subtype) {
+		case 1:
+			return (wt->name_sub_1 ? wt->name_sub_1 : wt_get_name(wt));
+		case 2:
+			return (wt->name_sub_2 ? wt->name_sub_2 : wt_get_name(wt));
+		case 0:
+		default:
+			return wt_get_name(wt);
+	}
+}
