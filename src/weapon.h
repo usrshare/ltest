@@ -44,6 +44,11 @@ struct t_weapon_type {
 	bool is_throwable;
 	bool auto_breaks_locks;
 	bool is_legal;
+
+	const char* name_sub_1;
+	const char* name_sub_2;
+	const char* shortname_sub_1;
+	const char* shortname_sub_2;
 };
 
 struct t_attackst {
@@ -113,5 +118,8 @@ const char* get_loaded_cliptypename(struct t_weapon* weapon);
 struct t_attackst* get_attack(struct t_weapon* w, bool force_ranged, bool force_melee, bool force_no_reload);
 
 const char* get_weapon_name(struct t_weapon* weapon, int what);
+
+const char* wt_get_name(struct t_weapon_type* wt);
+const char* wt_get_name_sub(struct t_weapon_type* wt, unsigned subtype);
 
 #endif

@@ -429,4 +429,9 @@ void creature_die(struct t_creature* e);
 
 bool enemy(struct t_creature* e);
 
+bool entity_can_reload(struct t_creature* e);
+
+struct t_weapon* entity_get_weapon (struct t_creature* e);
+struct t_armor* entity_get_armor (struct t_creature* e);
+
 #endif

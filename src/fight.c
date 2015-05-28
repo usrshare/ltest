@@ -152,7 +152,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
     else if(a->has_thrown_weapon) a->has_thrown_weapon = false;
 
     struct t_attackst* attack_used = NULL;
-    attack_used = get_attack(get_weapon(a),mode==GM_CHASECAR, force_melee, (force_melee || !can_reload(a))); 
+    attack_used = get_attack(entity_get_weapon(a),mode==GM_CHASECAR, force_melee, (force_melee || !entity_can_reload(a))); 
 
     //Force ranged if in a car.
     //No reload if force melee or unable to reload.
@@ -227,7 +227,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
     if(a->weapon && !attack_used->thrown)
     {
 	strcat(str," with a ");
-	strcat(str,get_weapon_name(a->weapon,1));
+	strcat(str,wt_get_name_sub(a->weapon->type,1));
     }
     strcat(str,"!");
     g_addstr(str, gamelog);
@@ -1639,16 +1639,16 @@ void specialattack(struct t_creature* a, struct t_creature* t, char *actual)
 	    }
 	    //No break. If the cop is a liberal it will do a musical attack instead.
 	default:
-	    if(has_musical_attack(a->weapon) || a->type==ET_COP)
+	    if(a->weapon->type->has_musical_attack || a->type==ET_COP)
 	    {
 		switch(randval(5))
 		{
 		    case 0:strcat(str,"plays a song for");break;
 		    case 1:strcat(str,"sings to");break;
-		    case 2:if(has_musical_attack(a->weapon))
+		    case 2:if(a->weapon->type->has_musical_attack)
 			   {
 			       strcat(str,"strums the ");
-			       strcat(str,get_weapon_name(a->weapon,0));
+			       strcat(str,wt_get_name_sub(a->weapon->type,0));
 			   }
 			   else // let's use a small enough instrument for anyone to carry in their pocket
 			       strcat(str,"blows a harmonica");
@@ -1968,6 +1968,28 @@ void makeloot(struct t_creature* cr,struct t_loot* loot)
     }
 }
 
+void drop_weapons_and_clips(struct t_creature* cr, struct t_loot* lootpile)
+{
+   cr->has_thrown_weapon=false;
+   if(cr->weapon)
+   {
+      if(lootpile) lootpile->push_back(weapon);
+      else delete weapon;
+      weapon=NULL;
+   }
+   while(len(extra_throwing_weapons))
+   {
+      if(lootpile) lootpile->push_back(extra_throwing_weapons.back());
+      else delete extra_throwing_weapons.back();
+      extra_throwing_weapons.pop_back();
+   }
+   while(len(clips))
+   {
+      if(lootpile) lootpile->push_back(clips.back());
+      else delete clips.back();
+      clips.pop_back();
+   }
+}
 
 
 /* abandoned liberal is captured by conservatives */
@@ -2403,7 +2425,7 @@ void autopromote(int loc)
 
 	if(conf)
 	{
-	    for(int pl=0;pl<len(pool);pl++)
+	    for(int pl=0;pl<POOLSIZE;pl++)
 	    {
 		if(pool[pl]->location!=loc) continue;
 		if(pool[pl]->alive&&pool[pl]->squadid==-1&&

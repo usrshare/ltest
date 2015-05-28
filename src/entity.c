@@ -10,6 +10,7 @@
 #include "ui.h"
 
 #include "armor.h"
+#include "weapon.h"
 
 #define MAXATTRIBUTE 99
 
@@ -596,7 +597,7 @@ void addjuice(struct t_creature* e, long juice, long cap) {
 
     // Pyramid scheme of juice trickling up the chain
     if(e->hireid!=-1)
-	for(int i=0;i<len(pool);i++)
+	for(int i=0;i<POOLSIZE;i++)
 	    if(pool[i]->id==e->hireid)
 	    {
 		addjuice(pool[i],e->juice/5,e->juice);
@@ -613,7 +614,7 @@ bool enemy(struct t_creature* e){
 	return true;
     else if(e->type==ET_COP && e->align==ALIGN_MODERATE)
     {
-	for(int i=0;i<len(pool);i++)
+	for(int i=0;i<POOLSIZE;i++)
 	    if(pool[i]==e)
 		return false;
 	return true;
@@ -691,14 +692,14 @@ int entity_skill_roll (struct t_creature* e, enum entity_skill skill) {
 	    // Skills that should depend on clothing:
 	case ES_STEALTH:
 	    {
-		float stealth = get_armor(e)->type->stealth_value;
-		for (int i=1; i < get_quality(get_armor(e));i++) stealth *= 0.8;
-		if (get_armor(e)->damaged) stealth *= 0.5;
+		float stealth = entity_get_armor(e)->type->stealth_value;
+		for (int i=1; i < entity_get_armor(e)->quality;i++) stealth *= 0.8;
+		if (entity_get_armor(e)->damaged) stealth *= 0.5;
 
 		return_value *= (int)stealth;
 		return_value /= 2;
 		// Shredded clothes get you no stealth.
-		if (get_quality(get_armor(e)) > get_armor(e)->type->quality_levels)
+		if (entity_get_armor(e)->quality > entity_get_armor(e)->type->quality_levels)
 		    return_value = 0;
 	    }
 	    break;
@@ -717,8 +718,8 @@ int entity_skill_roll (struct t_creature* e, enum entity_skill skill) {
 		else { if(uniformed==2) return_value>>=1; }
 
 		// Bloody, damaged clothing hurts disguise check
-		if(get_armor(e)->bloody) { return_value>>=1; }
-		if(get_armor(e)->damaged) { return_value>>=1; }
+		if(entity_get_armor(e)->bloody) { return_value>>=1; }
+		if(entity_get_armor(e)->damaged) { return_value>>=1; }
 
 		// Carrying corpses or having hostages is very bad for disguise
 		if(e->prisoner!=NULL) { return_value>>=2; break; }
@@ -752,4 +753,17 @@ bool entity_attr_check(struct t_creature* e, enum entity_attr attr, int difficul
 }
 bool entity_skill_check(struct t_creature* e, enum entity_skill skill, int difficulty) {
     return(entity_skill_roll(e,skill) >= difficulty);
+}
+
+struct t_weapon* entity_get_weapon (struct t_creature* e) {
+    return (e->weapon ? e->weapon : NULL); //replace with weapon_none
+}
+struct t_armor* entity_get_armor (struct t_creature* e) {
+    return (e->armor ? e->armor : NULL); //replace with armor_none
+}
+
+bool entity_can_reload(struct t_creature* e) {
+
+    // TODO clips.
+    return false;
 }

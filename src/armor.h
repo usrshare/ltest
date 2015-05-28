@@ -67,7 +67,7 @@ enum armortype {
     ARMOR_COUNT
 };
 
-extern struct t_armor_type armortypes[ARMOR_COUNT];
+extern const struct t_armor_type armortypes[ARMOR_COUNT];
 
 struct t_armor* get_armor(struct t_creature* e);
 
