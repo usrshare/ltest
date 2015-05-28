@@ -1,5 +1,6 @@
 #ifndef WEAPON_H
 #define WEAPON_H
+#include <stdbool.h>
 
 enum SpecialAttacks
 {
@@ -105,6 +106,8 @@ struct t_weapon {
 	char* loaded_cliptype;
 	int ammo;
 };
+
+#define MAX_ATTACKS 12
 
 const char* get_loaded_cliptypename(struct t_weapon* weapon);
 struct t_attackst* get_attack(struct t_weapon* w, bool force_ranged, bool force_melee, bool force_no_reload);

@@ -53,7 +53,7 @@ struct t_map_entity* next_empty_entity(struct t_map* map) {
 
 struct t_creature* next_empty_temp_entity(struct t_map* map) {
 	for (int i=0; i < MAX_ENTITIES; i++)
-		if (map->temp_ent[i].type == 0) return &(map->temp_ent[i]);
+		if (map->creat[i].type == 0) return &(map->creat[i]);
 
 	return NULL;
 }

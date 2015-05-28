@@ -1531,9 +1531,9 @@ void specialattack(struct t_creature* a, struct t_creature* t, char *actual)
 
     int attack=0;
     if(a->align!=1)
-	attack=entity_attr_roll(a,EA_WIS)+entity_get_attr(t,EA_WIS,false);
+	attack=entity_attr_roll(a,EA_WIS)+entity_get_attribute(t,EA_WIS,false);
     else if(a->align==1)
-	attack=entity_attr_roll(a,EA_HRT)+entity_get_attr(t,EA_HRT,false);
+	attack=entity_attr_roll(a,EA_HRT)+entity_get_attribute(t,EA_HRT,false);
 
     switch(a->type)
     {
@@ -1820,10 +1820,10 @@ void specialattack(struct t_creature* a, struct t_creature* t, char *actual)
 
     g_addstr("\n",NULL);
 
-    printparty();
+    /*printparty();
     if(mode==GM_CHASECAR||
 	    mode==GM_CHASEFOOT) printchaseencounter();
-    else printencounter();
+    else printencounter();*/
 
     g_getkey();
 
@@ -1941,7 +1941,7 @@ void delenc(short e,char loot)
 {
     //MAKE GROUND LOOT
     if(mode!=GM_SITE) loot=0;
-    if(loot) makeloot(encounter[e],groundloot);
+    //if(loot) makeloot(encounter[e],groundloot);
 
     //BURY IT
     for(int en=e;en<ENCMAX;en++)
@@ -1976,7 +1976,7 @@ void capturecreature(struct t_creature *t)
     t->activity.type=ACTIVITY_NONE;
     drop_weapons_and_clips(t,NULL);
     //t.strip(NULL);
-    struct t_armor* clothes=new_armor(armortype[ARMOR_CLOTHES]);
+    struct t_armor* clothes=new_armor(armortypes[ARMOR_CLOTHES]);
     give_armor(t,clothes,NULL);
 
     freehostage(t,2); // situation 2 = no message; this may want to be changed to 0 or 1
@@ -1992,7 +1992,7 @@ void capturecreature(struct t_creature *t)
 	if(sitetype==SITE_GOVERNMENT_PRISON||
 		sitetype==SITE_GOVERNMENT_COURTHOUSE)
 	{
-	    struct t_armor* prisoner=new_armor(armortype[ARMOR_PRISONER]);
+	    struct t_armor* prisoner=new_armor(armortypes[ARMOR_PRISONER]);
 	    give_armor(t,prisoner,NULL);
 	}
 	if(sitetype==SITE_GOVERNMENT_PRISON)
@@ -2386,7 +2386,7 @@ void autopromote(int loc)
 
     if(partyalive==6) return;
 
-    for(int pl=0;pl<len(pool);pl++)
+    for(int pl=0;pl<POOLSIZE;pl++)
     {
 	if(pool[pl]->location!=loc) continue;
 	if(pool[pl]->alive&&pool[pl]->align==1) libnum++;

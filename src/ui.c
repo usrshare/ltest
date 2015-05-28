@@ -9,7 +9,7 @@ int g_addstr (const char* str, void* log) {
 
 	switch(curui) {
 		case UI_MAPMODE:
-			return stat_addstr(str);
+			return statprintw("%s",str);
 	}
 }
 
@@ -22,7 +22,7 @@ int g_printw (const char* fmt, ...) {
 
 	switch(curui) {
 		case UI_MAPMODE:
-			return statvprintw(str);
+			return statvprintw(fmt,vargs);
 	}
 
 	va_end(vargs);
@@ -30,7 +30,7 @@ int g_printw (const char* fmt, ...) {
 }
 
 int g_addint (int val, void* log) {
-	return g_printw("%d",str);
+	return g_printw("%d",val);
 }
 
 int g_getkey() {
@@ -44,15 +44,15 @@ int g_getkey() {
 int g_attrset(int attrs) {
 	switch(curui) {
 		case UI_MAPMODE:
-			return statattrset(statwindow,attrs);
+			return statattrset(attrs);
 	}
 
 }
 
 char teststr[12];
 
-int tostring(int num) {
-	sprintf(teststr,12,"%d",num);
+const char* tostring(int num) {
+	snprintf(teststr,12,"%d",num);
 	return teststr;
 }
 
