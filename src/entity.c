@@ -7,10 +7,21 @@
 #include <string.h>
 #include "globals.h"
 #include "random.h"
+#include "ui.h"
+
+#include "armor.h"
 
 #define MAXATTRIBUTE 99
 
 uint32_t curcreatureid = 0;
+
+struct t_squad* activesquad;
+struct t_creature* encounter[ENCMAX];
+
+struct t_creature* pool[POOLSIZE];
+
+
+
 
 /*
 // Copyright (c) 2002,2003,2004 by Tarn Adams
@@ -42,6 +53,50 @@ uint32_t curcreatureid = 0;
 
 // this file based on creature/creature.cpp from Liberal Crime Squad
 
+enum entity_attr assoc_attr (enum entity_skill skill_type) {
+   // Initialize associated attribute
+   switch(skill_type)
+   {
+   case ES_CLUB:
+   case ES_AXE:
+   case ES_HEAVYWEAPONS:
+      return EA_STR;
+   case ES_HANDTOHAND:
+   case ES_KNIFE:
+   case ES_SWORD:
+   case ES_PISTOL:
+   case ES_RIFLE:
+   case ES_SMG:
+   case ES_SHOTGUN:
+   case ES_DRIVING:
+   case ES_STEALTH:
+   case ES_THROWING:
+   case ES_DODGE:
+      return EA_AGI;
+   case ES_DISGUISE:
+   case ES_SEDUCTION:
+   case ES_PERSUASION:
+      return EA_CHA;
+   case ES_ART:
+   case ES_MUSIC:
+      return EA_HRT;
+   case ES_RELIGION:
+   case ES_BUSINESS:
+   case ES_WRITING:
+   case ES_PSYCHOLOGY:
+   case ES_SECURITY:
+   case ES_TAILORING:
+   case ES_TEACHING:
+   case ES_FIRSTAID:
+   case ES_SCIENCE:
+   case ES_LAW:
+   case ES_COMPUTERS:
+   case ES_STREETSENSE:
+   default:
+      return EA_INT;
+   }
+};
+
 bool vrange(struct t_range* range) {
     if ((range->min == 0) && (range->max == 0)) return false;
     if (range->min > range->max) return false;
@@ -54,28 +109,28 @@ int creature_init(struct t_creature* o_entity, struct t_creature_generate_rules*
 
     if ((genrules == NULL) || (genrules->gender = EG_RANDOM) || !vrange(&genrules->age)) {
 	random_gender_and_age(&o_entity->age, &o_entity->gender_id); }
-		else {
-		if ((genrules) || vrange(&genrules->age)) {
-		o_entity->age = randrange(&genrules->age); } else o_entity->age = 18 + randval(40);
+    else {
+	if ((genrules) || vrange(&genrules->age)) {
+	    o_entity->age = randrange(&genrules->age); } else o_entity->age = 18 + randval(40);
 
 
-		enum entity_gender g_gender = genrules ? genrules->gender : EG_RANDOM;
+	enum entity_gender g_gender = genrules ? genrules->gender : EG_RANDOM;
 
-		switch (g_gender) {
-		case EG_MALE: o_entity->gender_id = EG_MALE; break;
-		case EG_FEMALE: o_entity->gender_id = EG_FEMALE; break;
-		case EG_WMPATRIARCH: o_entity->gender_id = EG_WMPATRIARCH; break; //will be replaced with male after the name is generated.
-		case EG_NEUTRAL:
-				     o_entity->gender_id = EG_NEUTRAL; o_entity->gender_bio = randbetween(EG_MALE,EG_FEMALE); break;
-		case EG_MBIAS:
-		o_entity->gender_id = (randval(100) < 75) ? EG_MALE : EG_FEMALE; break;
-		case EG_FBIAS:
-		o_entity->gender_id = (randval(100) < 75) ? EG_MALE : EG_FEMALE; break;
-		case EG_RANDOM:
-		default:
-		o_entity->gender_id = (randval(100) < 52) ? EG_FEMALE : EG_MALE; break; //52% females according to U.S. Census data
-		}
-		}
+	switch (g_gender) {
+	    case EG_MALE: o_entity->gender_id = EG_MALE; break;
+	    case EG_FEMALE: o_entity->gender_id = EG_FEMALE; break;
+	    case EG_WMPATRIARCH: o_entity->gender_id = EG_WMPATRIARCH; break; //will be replaced with male after the name is generated.
+	    case EG_NEUTRAL:
+				 o_entity->gender_id = EG_NEUTRAL; o_entity->gender_bio = randbetween(EG_MALE,EG_FEMALE); break;
+	    case EG_MBIAS:
+				 o_entity->gender_id = (randval(100) < 75) ? EG_MALE : EG_FEMALE; break;
+	    case EG_FBIAS:
+				 o_entity->gender_id = (randval(100) < 75) ? EG_MALE : EG_FEMALE; break;
+	    case EG_RANDOM:
+	    default:
+				 o_entity->gender_id = (randval(100) < 52) ? EG_FEMALE : EG_MALE; break; //52% females according to U.S. Census data
+	}
+    }
 
     if ((randval(100) < 1) && (o_entity->gender_bio == EG_RANDOM))
 	o_entity->gender_bio = randbetween(EG_NEUTRAL,EG_FEMALE); else o_entity->gender_bio = o_entity->gender_id; //will result in mismatches for 0.67% of cases.
@@ -103,7 +158,7 @@ int creature_init(struct t_creature* o_entity, struct t_creature_generate_rules*
     for(int w=0;w<EB_COUNT;w++)o_entity->wound[w]=0;
 
     for(int a=0;a<EA_COUNT;a++)o_entity->attributes[a]=1;
-    
+
     int attnum=32;
 
     if (genrules) {
@@ -128,13 +183,13 @@ int creature_init(struct t_creature* o_entity, struct t_creature_generate_rules*
 	if (vrange(&genrules->money)) o_entity->money = randrange(&genrules->money);
 
 	for (int i=0; i < RANDATTRS; i++)
-	   if (vrange(&genrules->attrlim[i])) o_entity->attributes[genrules->attrs[i]] = randrange(&genrules->attrlim[i]);
+	    if (vrange(&genrules->attrlim[i])) o_entity->attributes[genrules->attrs[i]] = randrange(&genrules->attrlim[i]);
 	for (int i=0; i < RANDSKILLS; i++)
-	   if (vrange(&genrules->skilllim[i])) o_entity->skills[genrules->skill[i]] = randrange(&genrules->skilllim[i]);
+	    if (vrange(&genrules->skilllim[i])) o_entity->skills[genrules->skill[i]] = randrange(&genrules->skilllim[i]);
 	if (vrange(&genrules->attrpts)) attnum = randrange(&genrules->attrpts); 
 
     }
-    
+
     while(attnum>0)
     {
 	int a=randval(EA_COUNT);
@@ -325,6 +380,8 @@ int entity_get_attribute(struct t_creature* me, enum entity_attr attribute, bool
 	    else if(age>70)ret-=2;
 	    else if(age>52)ret-=1;
 	    break;
+	default:
+	    break;
     }
 
     // Physical stats want to know: Are you paralyzed?
@@ -412,96 +469,100 @@ int entity_get_attribute(struct t_creature* me, enum entity_attr attribute, bool
     return ret;
 }
 
+int entity_get_skill(struct t_creature* me, enum entity_skill skill) {
+    return MIN(me->skills[skill], MAXATTRIBUTE);
+}
+
 const char* entity_heshe(struct t_creature* e,bool capitalize)
 {  // subject pronoun (nominative case)
-   switch(e->gender_id)
-   {
-   case EG_MALE: return capitalize?"He":"he";
-   case EG_FEMALE: return capitalize?"She":"she";
-   default: return capitalize?"Xe":"xe"; // Elite Liberal gender-neutral pronoun... it is pronounced "zee" rhyming with "he" and "she"
-   // see http://homepage.ntlworld.com/jonathan.deboynepollard/FGA/sex-neutral-pronouns.html (great reference on this)
-   // or http://en.wiktionary.org/wiki/xe or http://en.wikipedia.org/wiki/Gender-specific_and_gender-neutral_pronouns#Summary (wiki references)
-   // or http://genderneutralpronoun.wordpress.com/about/alice/xe/ (examples of it being used in text)
+    switch(e->gender_id)
+    {
+	case EG_MALE: return capitalize?"He":"he";
+	case EG_FEMALE: return capitalize?"She":"she";
+	default: return capitalize?"Xe":"xe"; // Elite Liberal gender-neutral pronoun... it is pronounced "zee" rhyming with "he" and "she"
+		 // see http://homepage.ntlworld.com/jonathan.deboynepollard/FGA/sex-neutral-pronouns.html (great reference on this)
+		 // or http://en.wiktionary.org/wiki/xe or http://en.wikipedia.org/wiki/Gender-specific_and_gender-neutral_pronouns#Summary (wiki references)
+		 // or http://genderneutralpronoun.wordpress.com/about/alice/xe/ (examples of it being used in text)
 
-   // full conjugation of "xe"/"xyr"/"xem" (the "x"es are pronounced like "z"s):
-   // subject prononoun (nominative case):          xe      (pronounced "zee" rhyming with "he" and "she")
-   // pronominal adjective (possessive determiner): xyr     (pronounced "zur" rhyming with "her")
-   // object pronoun (oblique case);                xem     (pronounced "zem" rhyming with "them")
-   // possessive pronoun:                           xyrs    (pronounced "zurz" rhyming with "hers")
-   // reflexive pronoun:                            xemself (pronounced "zemself" rhyming with "themself")
+		 // full conjugation of "xe"/"xyr"/"xem" (the "x"es are pronounced like "z"s):
+		 // subject prononoun (nominative case):          xe      (pronounced "zee" rhyming with "he" and "she")
+		 // pronominal adjective (possessive determiner): xyr     (pronounced "zur" rhyming with "her")
+		 // object pronoun (oblique case);                xem     (pronounced "zem" rhyming with "them")
+		 // possessive pronoun:                           xyrs    (pronounced "zurz" rhyming with "hers")
+		 // reflexive pronoun:                            xemself (pronounced "zemself" rhyming with "themself")
 
-   // public schools in Vancouver, British Columbia in Canada officially use these pronouns:
-   // http://news.nationalpost.com/2014/06/17/vancouver-school-boards-genderless-pronouns-not-likely-to-stick-if-history-is-any-indication/
-   }
+		 // public schools in Vancouver, British Columbia in Canada officially use these pronouns:
+		 // http://news.nationalpost.com/2014/06/17/vancouver-school-boards-genderless-pronouns-not-likely-to-stick-if-history-is-any-indication/
+    }
 }
 
 const char* entity_hisher(struct t_creature* e,bool capitalize)
 {  // pronominal adjective (possessive determiner)
-   switch(e->gender_id)
-   {
-   case EG_MALE: return capitalize?"His":"his";
-   case EG_FEMALE: return capitalize?"Her":"her";
-   default: return capitalize?"Xyr":"xyr"; // Elite Liberal gender-neutral pronoun... it is pronounced "zur" rhyming with "her"
-   // see http://homepage.ntlworld.com/jonathan.deboynepollard/FGA/sex-neutral-pronouns.html (great reference on this)
-   // or http://en.wiktionary.org/wiki/xyr or http://en.wikipedia.org/wiki/Gender-specific_and_gender-neutral_pronouns#Summary (wiki references)
-   // or http://genderneutralpronoun.wordpress.com/about/alice/xe/ (examples of it being used in text)
+    switch(e->gender_id)
+    {
+	case EG_MALE: return capitalize?"His":"his";
+	case EG_FEMALE: return capitalize?"Her":"her";
+	default: return capitalize?"Xyr":"xyr"; // Elite Liberal gender-neutral pronoun... it is pronounced "zur" rhyming with "her"
+		 // see http://homepage.ntlworld.com/jonathan.deboynepollard/FGA/sex-neutral-pronouns.html (great reference on this)
+		 // or http://en.wiktionary.org/wiki/xyr or http://en.wikipedia.org/wiki/Gender-specific_and_gender-neutral_pronouns#Summary (wiki references)
+		 // or http://genderneutralpronoun.wordpress.com/about/alice/xe/ (examples of it being used in text)
 
-   // the possessive pronoun is based on this pronominal adjective in all standard third-person pronouns (so "xyrs" is correct):
-   // his -> his, her -> hers, their -> theirs, and likewise xyr -> xyrs... just add "s" at the end if it doesn't already have an "s" at the end
-   }
+		 // the possessive pronoun is based on this pronominal adjective in all standard third-person pronouns (so "xyrs" is correct):
+		 // his -> his, her -> hers, their -> theirs, and likewise xyr -> xyrs... just add "s" at the end if it doesn't already have an "s" at the end
+    }
 }
 const char* entity_himher(struct t_creature* e,bool capitalize) {
-// object pronoun (oblique case)
-   switch(e->gender_id)
-   {
-   case EG_MALE: return capitalize?"Him":"him";
-   case EG_FEMALE: return capitalize?"Her":"her";
-   default: return capitalize?"Xem":"xem"; // Elite Liberal gender-neutral pronoun... it is pronounced "zem" rhyming with "them"
-   // see http://homepage.ntlworld.com/jonathan.deboynepollard/FGA/sex-neutral-pronouns.html (great reference on this)
-   // or http://en.wiktionary.org/wiki/xem or http://en.wikipedia.org/wiki/Gender-specific_and_gender-neutral_pronouns#Summary (wiki references)
-   // or http://genderneutralpronoun.wordpress.com/about/alice/xe/ (examples of it being used in text)
+    // object pronoun (oblique case)
+    switch(e->gender_id)
+    {
+	case EG_MALE: return capitalize?"Him":"him";
+	case EG_FEMALE: return capitalize?"Her":"her";
+	default: return capitalize?"Xem":"xem"; // Elite Liberal gender-neutral pronoun... it is pronounced "zem" rhyming with "them"
+		 // see http://homepage.ntlworld.com/jonathan.deboynepollard/FGA/sex-neutral-pronouns.html (great reference on this)
+		 // or http://en.wiktionary.org/wiki/xem or http://en.wikipedia.org/wiki/Gender-specific_and_gender-neutral_pronouns#Summary (wiki references)
+		 // or http://genderneutralpronoun.wordpress.com/about/alice/xe/ (examples of it being used in text)
 
-   // the reflexive pronoun is based on this object pronoun in all standard third-person pronouns (so "xemself" is correct):
-   // him -> himself, her -> herself, them -> themselves, it -> itself, one -> oneself, and likewise xem -> xemself... just add "self" unless plural in which case add "selves"
+		 // the reflexive pronoun is based on this object pronoun in all standard third-person pronouns (so "xemself" is correct):
+		 // him -> himself, her -> herself, them -> themselves, it -> itself, one -> oneself, and likewise xem -> xemself... just add "self" unless plural in which case add "selves"
 
-   // some people mistakenly use xyrself instead of xemself but this is wrong as it doesn't follow the pattern used by ALL standard third-person pronouns,
-   // instead following the first-and-second-person pronoun pattern (my -> myself, your -> yourself/yourselves, our -> ourselves, thy -> thyself, and likewise xyr -> xyrself)
-   }
+		 // some people mistakenly use xyrself instead of xemself but this is wrong as it doesn't follow the pattern used by ALL standard third-person pronouns,
+		 // instead following the first-and-second-person pronoun pattern (my -> myself, your -> yourself/yourselves, our -> ourselves, thy -> thyself, and likewise xyr -> xyrself)
+    }
 }
 
 struct t_creature* getChaseDriver(struct t_creature* e) {
     return NULL;
 }
-
 struct t_vehicle* getChaseVehicle(struct t_creature* e) {
     return NULL;
 }
 
-
+int entity_skill_cap(struct t_creature* e, enum entity_skill skill, bool use_juice) {
+    return entity_get_attribute(e,assoc_attr(skill),use_juice);
+}
 
 void entity_train(struct t_creature* e, int trainedskill, int experience) {
     return entity_train4(e,trainedskill,experience,MAXATTRIBUTE);
 }
-
 void entity_train4(struct t_creature* e, int trainedskill, int experience, int upto) {
-   // Do we allow animals to gain skills? Right now, yes
-   //if(animalgloss==ANIMALGLOSS_ANIMAL)return;
+    // Do we allow animals to gain skills? Right now, yes
+    //if(animalgloss==ANIMALGLOSS_ANIMAL)return;
 
-   // Don't give experience if already maxed out or requested to give none
-   if(skill_cap(trainedskill,true)<=skills[trainedskill].value || upto<=skills[trainedskill].value || experience==0)
-      return;
-   // Skill gain scaled by ability in the area
-   skill_experience[trainedskill]+=max(1,static_cast<int>(experience * skill_cap(trainedskill,false) / 6.0));
+    // Don't give experience if already maxed out or requested to give none
+    if(entity_get_attribute(e,assoc_attr(trainedskill),true)<=e->skills[trainedskill] || upto<=e->skills[trainedskill] || experience==0)
+	return;
+    // Skill gain scaled by ability in the area
+    e->skill_experience[trainedskill]+=max(1,(int)(experience * entity_skill_cap(e,trainedskill,false) / 6.0));
 
-   int abovenextlevel;
-   // only allow gaining experience on the new level if it doesn't put us over a level limit
-   if (skills[trainedskill].value >= (upto - 1) ||
-       skills[trainedskill].value >= (skill_cap(trainedskill,true) - 1))
-     abovenextlevel = 0;
-   else
-     abovenextlevel = 50 + 5*(1+skills[trainedskill].value); // enough skill points to get halfway through the next skill level
+    int abovenextlevel;
+    // only allow gaining experience on the new level if it doesn't put us over a level limit
+    if (e->skills[trainedskill] >= (upto - 1) ||
+	    e->skills[trainedskill] >= (entity_skill_cap(e,trainedskill,true) - 1))
+	abovenextlevel = 0;
+    else
+	abovenextlevel = 50 + 5*(1+e->skills[trainedskill]); // enough skill points to get halfway through the next skill level
 
-   skill_experience[trainedskill] = min(skill_experience[trainedskill], 100 + 10*skills[trainedskill].value + abovenextlevel);
+    e->skill_experience[trainedskill] = min(e->skill_experience[trainedskill], 100 + 10*e->skills[trainedskill] + abovenextlevel);
 
 }
 
@@ -511,210 +572,184 @@ int entity_count_weapons(struct t_creature* e) {
 
 void creature_die(struct t_creature* e) {
 
-   e->alive=0,e->blood=0;
-/*   if(e->id==uniqueCreatures.CEO().id)
-      uniqueCreatures.newCEO();
-   if(e->id==uniqueCreatures.President().id)
-   {
-      strcpy(oldPresidentName, execname[EXEC_PRESIDENT]);
-      promoteVP();
-      uniqueCreatures.newPresident();
-   } */
+    e->alive=0,e->blood=0;
+    /*   if(e->id==uniqueCreatures.CEO().id)
+	 uniqueCreatures.newCEO();
+	 if(e->id==uniqueCreatures.President().id)
+	 {
+	 strcpy(oldPresidentName, execname[EXEC_PRESIDENT]);
+	 promoteVP();
+	 uniqueCreatures.newPresident();
+	 } */
 }
-
 void addjuice(struct t_creature* e, long juice, long cap) {
-   
+
     if(juice==0) return;
 
-   // Check against cap
-   if((juice>0 && e->juice>=cap) ||
-      (juice<0 && e->juice<=cap))
-      return;
+    // Check against cap
+    if((juice>0 && e->juice>=cap) ||
+	    (juice<0 && e->juice<=cap))
+	return;
 
-   // Apply juice gain
-   e->juice+=juice;
+    // Apply juice gain
+    e->juice+=juice;
 
-   // Pyramid scheme of juice trickling up the chain
-   if(e->hireid!=-1)
-      for(int i=0;i<len(pool);i++)
-         if(pool[i]->id==e->hireid)
-         {
-            addjuice(*pool[i],juice/5,cr.juice);
-            break;
-         }
+    // Pyramid scheme of juice trickling up the chain
+    if(e->hireid!=-1)
+	for(int i=0;i<len(pool);i++)
+	    if(pool[i]->id==e->hireid)
+	    {
+		addjuice(pool[i],e->juice/5,e->juice);
+		break;
+	    }
 
-   // Bounds check
-   if(e->juice>1000)e->juice=1000;
-   if(e->juice<-50)e->juice=-50;
+    // Bounds check
+    if(e->juice>1000)e->juice=1000;
+    if(e->juice<-50)e->juice=-50;
 
 }
-
 bool enemy(struct t_creature* e){
-   if(e->align==ALIGN_CONSERVATIVE)
-      return true;
-   else if(e->type==ET_COP && e->align==ALIGN_MODERATE)
-   {
-      for(int i=0;i<len(pool);i++)
-         if(pool[i]==e)
-            return false;
-      return true;
-   }
-   else return false;
+    if(e->align==ALIGN_CONSERVATIVE)
+	return true;
+    else if(e->type==ET_COP && e->align==ALIGN_MODERATE)
+    {
+	for(int i=0;i<len(pool);i++)
+	    if(pool[i]==e)
+		return false;
+	return true;
+    }
+    else return false;
 }
 
 int entity_attr_roll(struct t_creature* e,enum entity_attr attribute){
-   int return_value = roll_check(entity_get_attribute(e,attribute,true));
-   // Roll on the attribute value
-   return return_value;
+    int return_value = roll_check(entity_get_attribute(e,attribute,true));
+    // Roll on the attribute value
+    return return_value;
 }
 int entity_skill_roll (struct t_creature* e, enum entity_skill skill) {
-   int pseudoskill = 0;
-   // Handle Pseudoskills
-   if (skill < 0)
-   {
-      switch (skill)
-      {
-      default:
-         g_setattr(CP_YELLOW);
-         g_addstr("-=ILLEGAL SKILL ROLL=-", gamelog);
-         g_getkey();
-         break;
-      case PSEUDOSKILL_ESCAPEDRIVE:
-      case PSEUDOSKILL_DODGEDRIVE:
-         pseudoskill = skill;   // Remember the details.
-         skill = SKILL_DRIVING; // Base skill is driving.
-         break;
-      }
-   }
-   // Take skill strength
-   int skill_value = skills[skill].value;
-   // plus the skill's associate attribute
-   int attribute_value = get_attribute(skills[skill].get_attribute(),true);
+    int pseudoskill = 0;
+    // Handle Pseudoskills
+    if (skill < 0)
+    {
+	switch (skill)
+	{
+	    default:
+		g_attrset(CP_YELLOW);
+		g_addstr("-=ILLEGAL SKILL ROLL=-", gamelog);
+		g_getkey();
+		break;
+	    case ES_P_ESCAPEDRIVE:
+	    case ES_P_DODGEDRIVE:
+		pseudoskill = skill;   // Remember the details.
+		skill = ES_DRIVING; // Base skill is driving
+		break;
+	}
+    }
+    // Take skill strength
+    int skill_value = e->skills[skill];
+    // plus the skill's associate attribute
+    int attribute_value = get_attribute(e,assoc_att(skill));
 
-   int adjusted_attribute_value;
-   switch(skill)
-   {
-   // most attributes get halved when applied to skills, capped by relative skill level...
-   default:
-      adjusted_attribute_value = MIN(attribute_value/2, skill_value+3);
-      break;
-   // ...and some may be so specialized that they ignore attributes, instead counting skill double
-   case SKILL_SECURITY:
-      adjusted_attribute_value = skill_value;
-      break;
-   }
+    int adjusted_attribute_value;
+    switch(skill)
+    {
+	// most attributes get halved when applied to skills, capped by relative skill level...
+	default:
+	    adjusted_attribute_value = MIN(attribute_value/2, skill_value+3);
+	    break;
+	    // ...and some may be so specialized that they ignore attributes, instead counting skill double
+	case ES_SECURITY:
+	    adjusted_attribute_value = skill_value;
+	    break;
+    }
 
-   Vehicle* v = getChaseVehicle(*this);
-   switch(pseudoskill)
-   {
-      case PSEUDOSKILL_ESCAPEDRIVE:
-         if (v != NULL)
-         {
-            skill_value = v->modifieddriveskill(skill_value+adjusted_attribute_value); // combine values and modify by vehicle stats
-            adjusted_attribute_value = 0;
-         }
-         else
-         {
-            skill_value = adjusted_attribute_value = 0; // Can't drive without a car
-         }
-         break;
-      case PSEUDOSKILL_DODGEDRIVE:
-         if (v != NULL)
-         {
-            skill_value = v->modifieddodgeskill(skill_value+adjusted_attribute_value); // combine values and modify by vehicle stats
-            adjusted_attribute_value = 0;
-         }
-         else
-         {
-            skill_value = adjusted_attribute_value = 0; // Can't drive without a car
-         }
-         break;
-   }
-   // add the adjusted attribute and skill to get the adjusted skill total
-   // that will be rolled on
-   int return_value = roll_check(skill_value + adjusted_attribute_value);
+    // add the adjusted attribute and skill to get the adjusted skill total
+    // that will be rolled on
+    int return_value = roll_check(skill_value + adjusted_attribute_value);
 
-   // Special skill handling
-   switch(skill)
-   {
-   // Skills that cannot be used if zero skill:
-   case SKILL_PSYCHOLOGY:
-   case SKILL_LAW:
-   case SKILL_SECURITY:
-   case SKILL_COMPUTERS:
-   case SKILL_MUSIC:
-   case SKILL_ART:
-   case SKILL_RELIGION:
-   case SKILL_SCIENCE:
-   case SKILL_BUSINESS:
-   case SKILL_TEACHING:
-   case SKILL_FIRSTAID:
-      if(skills[skill].value == 0)
-      {
-         return_value = 0; // Automatic failure
-         break;
-      }
-      break;
-   // Skills that should depend on clothing:
-   case SKILL_STEALTH:
-      {
-         float stealth = get_armor().get_stealth_value();
-         for (int i=1; i < get_armor().get_quality();i++) stealth *= 0.8;
-         if (get_armor().is_damaged()) stealth *= 0.5;
+    // Special skill handling
+    switch(skill)
+    {
+	// Skills that cannot be used if zero skill:
+	case ES_PSYCHOLOGY:
+	case ES_LAW:
+	case ES_SECURITY:
+	case ES_COMPUTERS:
+	case ES_MUSIC:
+	case ES_ART:
+	case ES_RELIGION:
+	case ES_SCIENCE:
+	case ES_BUSINESS:
+	case ES_TEACHING:
+	case ES_FIRSTAID:
+	    if(e->skills[skill] == 0)
+	    {
+		return_value = 0; // Automatic failure
+		break;
+	    }
+	    break;
+	    // Skills that should depend on clothing:
+	case ES_STEALTH:
+	    {
+		float stealth = get_armor(e)->type->stealth_value;
+		for (int i=1; i < get_quality(get_armor(e));i++) stealth *= 0.8;
+		if (get_armor(e)->damaged) stealth *= 0.5;
 
-         return_value *= static_cast<int>(stealth);
-         return_value /= 2;
-         // Shredded clothes get you no stealth.
-         if (get_armor().get_quality() > get_armor().get_quality_levels())
-            return_value = 0;
-      }
-      break;
-   case SKILL_SEDUCTION:
-   case SKILL_PERSUASION:
-      break;
-   // Unique disguise handling
-   case SKILL_DISGUISE:
-      {
-         // Check for appropriate uniform
-         char uniformed = hasdisguise(*this);
+		return_value *= (int)stealth;
+		return_value /= 2;
+		// Shredded clothes get you no stealth.
+		if (get_quality(get_armor(e)) > get_armor(e)->type->quality_levels)
+		    return_value = 0;
+	    }
+	    break;
+	case ES_SEDUCTION:
+	case ES_PERSUASION:
+	    break;
+	    // Unique disguise handling
+	case ES_DISGUISE:
+	    {
+		// Check for appropriate uniform
+		char uniformed = hasdisguise(e);
 
-         // Ununiformed disguise checks automatically fail
-         if(!uniformed) { return_value = 0; break; }
-         // reduce effectiveness for 'partial' uniforms (police uniforms when trespassing)
-         else { if(uniformed==2) return_value>>=1; }
+		// Ununiformed disguise checks automatically fail
+		if(!uniformed) { return_value = 0; break; }
+		// reduce effectiveness for 'partial' uniforms (police uniforms when trespassing)
+		else { if(uniformed==2) return_value>>=1; }
 
-         // Bloody, damaged clothing hurts disguise check
-         if(get_armor().is_bloody()) { return_value>>=1; }
-         if(get_armor().is_damaged()) { return_value>>=1; }
+		// Bloody, damaged clothing hurts disguise check
+		if(get_armor(e)->bloody) { return_value>>=1; }
+		if(get_armor(e)->damaged) { return_value>>=1; }
 
-         // Carrying corpses or having hostages is very bad for disguise
-         if(prisoner!=NULL) { return_value>>=2; break; }
-      }
-   }
-   #ifdef SHOWMECHANICS
-   addstr(8,1," SkillRoll(");
-   addstr(Skill::get_name(skill));
-   addstr(", Skill Value ");
-   addstr(skills[skill].value);
-   addstr(", ");
-   if(return_value==0)
-      addstr("automatic failure");
-   else
-   {
-      addstr("Adjusted Attribute Value ");
-      addstr(adjusted_attribute_value);
-      addstr(", Outcome of ");
-      addstr(return_value);
-   }
-   addstr(")");
+		// Carrying corpses or having hostages is very bad for disguise
+		if(e->prisoner!=NULL) { return_value>>=2; break; }
+	    }
+	default:
+	    break;
+    }
+#ifdef SHOWMECHANICS
+    addstr(8,1," SkillRoll(");
+    addstr(Skill::get_name(skill));
+    addstr(", Skill Value ");
+    addstr(skills[skill].value);
+    addstr(", ");
+    if(return_value==0)
+	addstr("automatic failure");
+    else
+    {
+	addstr("Adjusted Attribute Value ");
+	addstr(adjusted_attribute_value);
+	addstr(", Outcome of ");
+	addstr(return_value);
+    }
+    addstr(")");
 
-   getkey();
-   #endif
-   return return_value;
+    getkey();
+#endif
+    return return_value;
 }
 bool entity_attr_check(struct t_creature* e, enum entity_attr attr, int difficulty) {
-   return(entity_attr_roll(e,attr) >= difficulty);
+    return(entity_attr_roll(e,attr) >= difficulty);
 }
 bool entity_skill_check(struct t_creature* e, enum entity_skill skill, int difficulty) {
-   return(entity_skill_roll(e,skill) >= difficulty);
+    return(entity_skill_roll(e,skill) >= difficulty);
 }

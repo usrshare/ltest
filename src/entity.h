@@ -261,12 +261,14 @@ struct activityst {
     long arg, arg2;
 };
 
+
 struct t_creature {
 
     uint32_t id;
 
     uint8_t attributes[EA_COUNT]; //attributes
     uint16_t skills[ES_COUNT]; //skills
+    int skill_experience[ES_COUNT];
 
     char firstname[32];   // current first name (liberal)
     char o_firstname[32]; // original first name (conservative)
@@ -317,6 +319,8 @@ struct t_creature {
     
     int stunned;
     bool has_thrown_weapon;
+   
+    int crimes_suspected[LAWFLAGNUM];
     
     int flag;
 };
@@ -371,17 +375,21 @@ struct t_squad {
     char stance;
 };
 
-struct t_squad* activesquad;
-struct t_creature* encounter[ENCMAX];
+extern struct t_squad* activesquad;
+extern struct t_creature* encounter[ENCMAX];
+
+#define POOLSIZE 1024
+
+extern struct t_creature* pool[POOLSIZE];
 
 /// --- /// --- ///
+
+enum entity_attr assoc_attr (enum entity_skill skill_type);
 
 int random_gender_and_age(int* o_age, enum entity_gender* o_gender);
 
 //Creates a creature
 int creature_init(struct t_creature* o_entity, struct t_creature_generate_rules* genrules);
-
-
 //Returns either a name, or ???
 const char* safe_name(const char* nameptr);
 

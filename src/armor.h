@@ -10,6 +10,7 @@ struct t_armor_type {
 	int durability;
 	bool has_fireprotection;
         int quality_levels;
+	int stealth_value;
 	bool covers[EB_COUNT];
 	bool is_mask;
 };
@@ -67,5 +68,7 @@ enum armortype {
 };
 
 extern struct t_armor_type armortypes[ARMOR_COUNT];
+
+struct t_armor* get_armor(struct t_creature* e);
 
 #endif

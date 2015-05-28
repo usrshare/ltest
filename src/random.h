@@ -12,7 +12,7 @@ struct t_range {
 int randval(int max);
 int randrange(struct t_range* range);
 int randbetween(int min, int max);
-char* pickrandom(const char* array[]);
+const char* pickrandom(const char* array[]);
 
 int xdx(int dice, int sides);
 

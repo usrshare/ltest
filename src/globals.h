@@ -167,12 +167,20 @@ enum Lawflags
 
 extern short law[LAWNUM];
 
-extern char* slogan;
+extern char slogan[80];
 
 /// end game variables
 
 #define RNG_SIZE 4
 #define SQUAD_MAX 6
 #define ENCMAX 18
+
+#define MIN(a,b) ((a) < (b) ? (a) : (b))
+
+// functions
+
+int min(int a, int b);
+int max(int a, int b);
+
 
 #endif

@@ -41,3 +41,13 @@ char slogan[80];
 
 extern short law[LAWNUM];
 short law[LAWNUM];
+
+// small functions
+
+int min(int a, int b) {
+    return (a < b ? a : b);
+}
+
+int max(int a, int b) {
+    return (a > b ? a : b);
+}
