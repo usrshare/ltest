@@ -1934,7 +1934,7 @@ void bloodblast(struct t_armor* armor)
     refresh();
 }
 
-void makeloot(struct t_creature* cr,struct t_loot* loot);
+void makeloot(struct t_creature* cr,struct t_item* loot);
 
 /* kills the specified creature from the encounter, dropping loot */
 void delenc(short e,char loot)
@@ -1955,7 +1955,7 @@ void delenc(short e,char loot)
 
 
 /* generates the loot dropped by a creature when it dies */
-void makeloot(struct t_creature* cr,struct t_loot* loot)
+void makeloot(struct t_creature* cr,struct t_item* loot)
 {
     drop_weapons_and_clips(cr,loot);
     strip(cr,loot);
@@ -1968,7 +1968,7 @@ void makeloot(struct t_creature* cr,struct t_loot* loot)
     }
 }
 
-void drop_weapons_and_clips(struct t_creature* cr, struct t_loot* lootpile)
+void drop_weapons_and_clips(struct t_creature* cr, struct t_item* lootpile)
 {
    cr->has_thrown_weapon=false;
    if(cr->weapon)
@@ -1977,6 +1977,7 @@ void drop_weapons_and_clips(struct t_creature* cr, struct t_loot* lootpile)
       else delete weapon;
       weapon=NULL;
    }
+
    while(len(extra_throwing_weapons))
    {
       if(lootpile) lootpile->push_back(extra_throwing_weapons.back());

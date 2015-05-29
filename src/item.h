@@ -9,7 +9,19 @@ enum t_itemtypes {
 	IT_LOOT,
 	IT_MONEY,
 	IT_OTHER,
+	IT_COUNT
 };
+
+bool it_stackable[IT_COUNT] = {
+	0, //IT_NONE
+	0, //IT_WEAPON
+	0, //IT_ARMOR
+	1, //IT_CLIP
+	1, //IT_LOOT
+	1, //IT_MONEY
+	0, //IT_OTHER
+};
+
 
 extern const char* itemtypenames[];
 
@@ -25,13 +37,14 @@ struct t_item {
 	// points to appropriate struct for one of the other itemtypes.
 };
 
-#define MAX_ITEMS_PER_LOOT 16
+#define INVENTORY_SIZE 40
 
-struct t_loot {
-	struct t_item i[MAX_ITEMS_PER_LOOT];
-	
-};
+//inventories are defined as arrays of items. obviously.
 
-struct t_item* find_empty_item(struct t_loot* loot);
+struct t_item* inv_find_empty(struct t_item* inv);
+int inv_size(struct t_item* inv);
+int inv_add(struct t_item* inv, struct t_item* item);
+int inv_pop(struct t_item* inv, struct t_item* o_item);
+int inv_del(struct t_item* inv_item);
 
 #endif
