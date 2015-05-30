@@ -63,7 +63,7 @@ const char* get_weapon_name_sub (struct t_item* w, unsigned subtype) {
 
 const struct t_weapon_type* w_type( struct t_item* weapon) {
 
-	if (weapon->type != IT_WEAPON) return NULL;
+	if (weapon->type != IT_WEAPON) return &weapontypes[WT_NONE];
 	return &weapontypes[weapon->itemtypeid];
 
 	return NULL;
