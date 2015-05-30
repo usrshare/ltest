@@ -7,7 +7,7 @@ const struct t_armor_type armortypes[ARMOR_COUNT] = {
 };
 
 const struct t_armor_type* a_type(struct t_item* armor) {
-	if (armor->type != IT_ARMOR) return NULL;
+	if (armor->type != IT_ARMOR) return &armortypes[ARMOR_NONE];
 	return &armortypes[armor->itemtypeid];
 }
 
