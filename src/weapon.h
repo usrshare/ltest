@@ -13,8 +13,11 @@ enum SpecialAttacks
 };
 
 struct t_clip_type {
+	int type;
 	const char* name;
 	const char* shortname;
+	int ammo;
+	int fencevalue;
 };
 
 struct t_attackst {
@@ -155,7 +158,6 @@ enum clip_types {
 		CT_ASSAULT,
 		CT_GASOLINE,
 		CT_DRUM,
-		CT_MOLOTOV,
 		CT_BUCKSHOT,
 		CT_COUNT,
 };
