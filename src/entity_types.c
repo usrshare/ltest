@@ -27,10 +27,12 @@ const char* type_description (struct t_creature* e) {
 		case ET_WORKER_SERVANT: return "Servant";
 		case ET_WORKER_JANITOR: return "Janitor";
 		case ET_WORKER_SWEATSHOP: return "Sweatshop Worker";
-		case ET_WORKER_FACTORY_NONUNION: return "Nonunion Worker";
+		case ET_WORKER_FACTORY_NONUNION:
+		if (e->align >= ALIGN_LIBERAL) return "New Union Worker"; else return "Nonunion Worker";
 		case ET_WORKER_FACTORY_CHILD: return "Child Worker";
 		case ET_WORKER_SECRETARY: return "Secretary";
-		case ET_WORKER_FACTORY_UNION: return "Factory Worker";
+		case ET_WORKER_FACTORY_UNION:
+		if (e->align <= ALIGN_CONSERVATIVE) return "Ex-Union Worker"; else return "Factory Worker";
 		case ET_LANDLORD: return "Landlord";
 		case ET_TEENAGER: return "Teenager";
 		case ET_COP: return "Police Officer";
@@ -39,8 +41,10 @@ const char* type_description (struct t_creature* e) {
 		case ET_FIREFIGHTER: return "Firefighter";
 		case ET_EDUCATOR: return "Educator";
 		case ET_GANGUNIT: return "Police Gang Unit";
-		case ET_JUDGE_LIBERAL: return "Liberal Judge";
-		case ET_JUDGE_CONSERVATIVE: return "Hangin' Judge";
+		case ET_JUDGE_LIBERAL:
+		if (e->align <= ALIGN_CONSERVATIVE) return "Jaded Liberal Judge"; else return "Liberal Judge";
+		case ET_JUDGE_CONSERVATIVE:
+		if (e->align >= ALIGN_LIBERAL) return "Enlightened Judge"; else return "Hangin' Judge";
 		case ET_AGENT: return "Agent";
 		case ET_SECRET_SERVICE: return "Secret Service";
 		case ET_RADIOPERSONALITY: return "Radio Personality";

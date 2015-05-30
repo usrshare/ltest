@@ -269,7 +269,7 @@ struct t_creature {
     enum entity_gender gender_id; // gender identity (liberal)
 
     int squadid;
-    int hireid;
+    uint32_t hireid;
 
     int age;
     int birthday_month;
@@ -277,6 +277,7 @@ struct t_creature {
 
     bool exists;
     char align;
+    char orig_align;
     bool alive;
     short type;
 
@@ -426,7 +427,7 @@ struct t_item* entity_get_armor (struct t_creature* e);
 bool can_reload(struct t_creature* e);
 
 void creature_conservatize( struct t_creature *cr);
-void creature_liberalize(struct t_creature *cr,bool rename);
+void creature_liberalize(struct t_creature *cr);
 
 void entity_drop_weapon(struct t_creature* e, struct t_item* loot);
 void creature_strip(struct t_creature* cr, struct t_item* lootpile);
