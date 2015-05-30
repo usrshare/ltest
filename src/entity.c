@@ -21,9 +21,6 @@ struct t_creature* encounter[ENCMAX];
 
 struct t_creature* pool[POOLSIZE];
 
-
-
-
 /*
 // Copyright (c) 2002,2003,2004 by Tarn Adams
 // Copyright (c) 2015 usr_share
@@ -649,7 +646,7 @@ int entity_skill_roll (struct t_creature* e, enum entity_skill skill) {
     // Take skill strength
     int skill_value = e->skills[skill];
     // plus the skill's associate attribute
-    int attribute_value = get_attribute(e,assoc_att(skill));
+    int attribute_value = entity_get_attribute(e,assoc_attr(skill),1);
 
     int adjusted_attribute_value;
     switch(skill)
@@ -692,14 +689,14 @@ int entity_skill_roll (struct t_creature* e, enum entity_skill skill) {
 	    // Skills that should depend on clothing:
 	case ES_STEALTH:
 	    {
-		float stealth = entity_get_armor(e)->type->stealth_value;
-		for (int i=1; i < entity_get_armor(e)->quality;i++) stealth *= 0.8;
-		if (entity_get_armor(e)->damaged) stealth *= 0.5;
+		float stealth = a_type(entity_get_armor(e))->stealth_value;
+		for (int i=1; i < armor_get_quality(entity_get_armor(e));i++) stealth *= 0.8;
+		if (entity_get_armor(e)->a_flags & AD_DAMAGED) stealth *= 0.5;
 
 		return_value *= (int)stealth;
 		return_value /= 2;
 		// Shredded clothes get you no stealth.
-		if (entity_get_armor(e)->quality > entity_get_armor(e)->type->quality_levels)
+		if (armor_get_quality(entity_get_armor(e)) > a_type(entity_get_armor(e))->quality_levels)
 		    return_value = 0;
 	    }
 	    break;
@@ -718,8 +715,8 @@ int entity_skill_roll (struct t_creature* e, enum entity_skill skill) {
 		else { if(uniformed==2) return_value>>=1; }
 
 		// Bloody, damaged clothing hurts disguise check
-		if(entity_get_armor(e)->bloody) { return_value>>=1; }
-		if(entity_get_armor(e)->damaged) { return_value>>=1; }
+		if(entity_get_armor(e)->a_flags & AD_BLOODY) { return_value>>=1; }
+		if(entity_get_armor(e)->a_flags & AD_DAMAGED) { return_value>>=1; }
 
 		// Carrying corpses or having hostages is very bad for disguise
 		if(e->prisoner!=NULL) { return_value>>=2; break; }
@@ -755,15 +752,74 @@ bool entity_skill_check(struct t_creature* e, enum entity_skill skill, int diffi
     return(entity_skill_roll(e,skill) >= difficulty);
 }
 
-struct t_weapon* entity_get_weapon (struct t_creature* e) {
+struct t_item* entity_get_weapon (struct t_creature* e) {
     return (e->weapon ? e->weapon : NULL); //replace with weapon_none
 }
-struct t_armor* entity_get_armor (struct t_creature* e) {
+struct t_item* entity_get_armor (struct t_creature* e) {
     return (e->armor ? e->armor : NULL); //replace with armor_none
 }
 
 bool entity_can_reload(struct t_creature* e) {
+    
+    //this is a very very unfinished version of this function.
+    //first, we need a good list of clips and which weapons support which clips.
+    //only then can this function be done properly.
 
-    // TODO clips.
+    for (int i=0; i < INVENTORY_SIZE; i++)
+	if (e->inventory[i].type == IT_CLIP) return true;
     return false;
+}
+
+//why was "conservatise" spelled with an S, yet "liberalize" with a Z? I guess British English is more conservative or something.
+
+/* turns a creature into a conservative */
+void creature_conservatize( struct t_creature *cr){
+
+    if(cr->align==ALIGN_LIBERAL && cr->juice>0)cr->juice=0;
+
+   cr->align=ALIGN_CONSERVATIVE;
+
+   /*
+   switch(cr.type)
+   {
+   case CREATURE_WORKER_FACTORY_UNION:
+      strcpy(cr.name,"Ex-Union Worker");
+      break;
+   case CREATURE_JUDGE_LIBERAL:
+      strcpy(cr.name,"Jaded Liberal Judge");
+      break;
+   }
+   */
+}
+
+/* turns a creature into a liberal */
+void creature_liberalize(struct t_creature *cr,bool rename){
+   if(cr->align==ALIGN_CONSERVATIVE && cr->juice>0)cr->juice=0;
+
+   cr->align=ALIGN_LIBERAL;
+
+   /*
+   if(cr->id == uniqueCreatures.CEO().id)
+      uniqueCreatures.newCEO();
+
+   if(rename)
+      switch(cr.type)
+      {
+      case CREATURE_WORKER_FACTORY_NONUNION:
+         strcpy(cr.name,"New Union Worker");
+         break;
+//    case CREATURE_JUDGE_CONSERVATIVE:
+//       strcpy(cr.name,"Enlightened Judge");
+//       break;
+      }
+      */
+}
+
+void creature_strip(struct t_creature* cr, struct t_item* lootpile) {
+    
+    cr->armor = NULL;
+
+    if (lootpile) inv_join(lootpile,cr->inventory);
+    inv_clear(cr->inventory);
+
 }
