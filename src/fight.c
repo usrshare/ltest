@@ -37,6 +37,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA   02111-1307   USA     
 #include "entity.h"
 #include "entity_types.h"
 #include "location.h"
+#include "mapmode.h"
 
 #include "item.h"
 #include "armor.h"
@@ -1806,7 +1807,7 @@ void specialattack(struct t_creature* a, struct t_creature* t, char *actual)
 		g_addstr(" has turned Liberal!", gamelog);
 		t->stunned=0;
 
-		creature_liberalize(t,0);
+		creature_liberalize(t);
 		t->infiltration/=2;
 		t->flag|=CREATUREFLAG_CONVERTED;
 		t->cantbluff=0;

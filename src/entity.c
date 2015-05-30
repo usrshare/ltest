@@ -176,6 +176,7 @@ int creature_init(struct t_creature* o_entity, struct t_creature_generate_rules*
 	if (align > ALIGN_ELITELIBERAL) align = ALIGN_ELITELIBERAL;
 
 	o_entity->align = align;
+	o_entity->orig_align = align;
 
 	if (vrange(&genrules->juice)) o_entity->juice = randrange(&genrules->juice);
 	if (vrange(&genrules->money)) o_entity->money = randrange(&genrules->money);
@@ -775,44 +776,20 @@ bool entity_can_reload(struct t_creature* e) {
 /* turns a creature into a conservative */
 void creature_conservatize( struct t_creature *cr){
 
-    if(cr->align==ALIGN_LIBERAL && cr->juice>0)cr->juice=0;
-
+   if(cr->align==ALIGN_LIBERAL && cr->juice>0)cr->juice=0;
    cr->align=ALIGN_CONSERVATIVE;
-
-   /*
-   switch(cr.type)
-   {
-   case CREATURE_WORKER_FACTORY_UNION:
-      strcpy(cr.name,"Ex-Union Worker");
-      break;
-   case CREATURE_JUDGE_LIBERAL:
-      strcpy(cr.name,"Jaded Liberal Judge");
-      break;
-   }
-   */
 }
 
 /* turns a creature into a liberal */
-void creature_liberalize(struct t_creature *cr,bool rename){
+void creature_liberalize(struct t_creature *cr){
    if(cr->align==ALIGN_CONSERVATIVE && cr->juice>0)cr->juice=0;
 
    cr->align=ALIGN_LIBERAL;
 
    /*
    if(cr->id == uniqueCreatures.CEO().id)
-      uniqueCreatures.newCEO();
+      uniqueCreatures.newCEO(); */
 
-   if(rename)
-      switch(cr.type)
-      {
-      case CREATURE_WORKER_FACTORY_NONUNION:
-         strcpy(cr.name,"New Union Worker");
-         break;
-//    case CREATURE_JUDGE_CONSERVATIVE:
-//       strcpy(cr.name,"Enlightened Judge");
-//       break;
-      }
-      */
 }
 
 void creature_strip(struct t_creature* cr, struct t_item* lootpile) {
