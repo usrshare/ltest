@@ -1,6 +1,8 @@
 #ifndef ITEM_H
 #define ITEM_H
 
+#include <stdbool.h>
+
 enum t_itemtypes {
 	IT_NONE = 0,
 	IT_WEAPON,
@@ -12,16 +14,7 @@ enum t_itemtypes {
 	IT_COUNT
 };
 
-bool it_stackable[IT_COUNT] = {
-	0, //IT_NONE
-	0, //IT_WEAPON
-	0, //IT_ARMOR
-	1, //IT_CLIP
-	1, //IT_LOOT
-	1, //IT_MONEY
-	0, //IT_OTHER
-};
-
+extern bool it_stackable[IT_COUNT];
 
 extern const char* itemtypenames[];
 
@@ -29,9 +22,19 @@ struct t_item {
 
 	enum t_itemtypes type;
 
-	long number_;
-	long itemtypeid_;
-	int itemcount;
+	long number;
+	long itemtypeid;
+
+	union {
+		int itemcount;
+		int value; //for cash
+	};
+	
+	union {
+		int item_hp; //damage status for armor, ammo for weapons/clips?
+		int ammo; //alternative name.
+		int a_flags; //for armors.
+	};
 
 	void* itemdetails;
 	// points to appropriate struct for one of the other itemtypes.
@@ -45,6 +48,11 @@ struct t_item* inv_find_empty(struct t_item* inv);
 int inv_size(struct t_item* inv);
 int inv_add(struct t_item* inv, struct t_item* item);
 int inv_pop(struct t_item* inv, struct t_item* o_item);
-int inv_del(struct t_item* inv_item);
+int inv_del(struct t_item* inv, struct t_item* todel, int count);
 
+int inv_join(struct t_item* inv_to, struct t_item* inv_from);
+int inv_clear(struct t_item* inv);
+
+
+int new_money(struct t_item* inv, int value);
 #endif

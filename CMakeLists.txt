@@ -13,11 +13,11 @@ include_directories (${CMAKE_SOURCE_DIR}/inc)
 
 add_executable (ltest
 		src/armor.c
-		src/fight.c
 		src/cpairs.c
 		src/entity.c
 		src/entity_name.c
 		src/entity_types.c
+		src/fight.c
 		src/globals.c
 		src/item.c
 		src/location.c

@@ -47,11 +47,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA   02111-1307   USA     
 
 ///--- forward declaration
 
-void armordamage(struct t_armor* armor,int bp, int damamount); //forward decl
+void armordamage(struct t_item* armor,int bp, int damamount); //forward decl
 void adddeathmessage(struct t_creature* cr);
-void bloodblast(struct t_armor* armor);
+void bloodblast(struct t_item* armor);
 char incapacitated(struct t_creature* a,char noncombat,char* printed);
 void healthmodroll(int *aroll,struct t_creature* a);
+void drop_weapons_and_clips(struct t_creature* cr, struct t_item* lootpile);
+void freehostage(struct t_creature* cr,char situation);
 
 ///---
 
@@ -152,7 +154,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
     else if(a->has_thrown_weapon) a->has_thrown_weapon = false;
 
     struct t_attackst* attack_used = NULL;
-    attack_used = get_attack(entity_get_weapon(a),mode==GM_CHASECAR, force_melee, (force_melee || !entity_can_reload(a))); 
+    attack_used = get_attack(a->weapon,mode==GM_CHASECAR, force_melee, (force_melee || !entity_can_reload(a))); 
 
     //Force ranged if in a car.
     //No reload if force melee or unable to reload.
@@ -227,7 +229,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
     if(a->weapon && !attack_used->thrown)
     {
 	strcat(str," with a ");
-	strcat(str,wt_get_name_sub(a->weapon->type,1));
+	strcat(str,wt_get_name_sub(w_type(a->weapon),1));
     }
     strcat(str,"!");
     g_addstr(str, gamelog);
@@ -1335,12 +1337,13 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 	}
     }
 
+    /*
     for(;thrownweapons>0;thrownweapons--)
     {
 	if(a->has_thrown_weapon)
 	    ready_another_throwing_weapon(a);
-	drop_weapon(a,NULL);
-    }
+	entity_drop_weapon(a,NULL);
+    }*/
 
     *actual=1;
     return;
@@ -1377,7 +1380,7 @@ void healthmodroll(int *aroll,struct t_creature* a)
 void damagemod(struct t_creature *t,char *damtype,int *damamount,
 	char hitlocation,char armorpenetration,int mod,int extraarmor)
 {
-    int armor=get_armor_value(t->armor->type,hitlocation);
+    int armor=armor_get_value(t->armor,hitlocation);
 
     if(t->animalgloss==ANIMALGLOSS_TANK)
     {
@@ -1387,8 +1390,8 @@ void damagemod(struct t_creature *t,char *damtype,int *damamount,
 
 
     //if(t->armor.get_quality()>1)
-    armor-=t->armor->quality-1;
-    if(t->armor->damaged)
+    armor-=armor_get_quality(t->armor)-1;
+    if(t->armor->a_flags & AD_DAMAGED)
 	armor-=1;
 
     if(armor<0) armor=0; // Possible from second-rate clothes
@@ -1410,10 +1413,10 @@ void damagemod(struct t_creature *t,char *damtype,int *damamount,
     else if(mod>=0) *damamount=(int)((float)(*damamount) * (1.0f + 0.2f*mod));
 
     // Firefighter's bunker gear reduces fire damage by 3/4
-    if((*damtype & WOUND_BURNED) && t->armor->type->has_fireprotection)
+    if((*damtype & WOUND_BURNED) && a_type(t->armor)->has_fireprotection)
     {
 	// Damaged gear isn't as effective as undamaged gear
-	if(t->armor->damaged)
+	if(t->armor->a_flags & AD_DAMAGED)
 	    *damamount>>=1; // Only half as much damage reduction
 	else
 	    *damamount>>=2; // Full damage reduction
@@ -1639,16 +1642,16 @@ void specialattack(struct t_creature* a, struct t_creature* t, char *actual)
 	    }
 	    //No break. If the cop is a liberal it will do a musical attack instead.
 	default:
-	    if(a->weapon->type->has_musical_attack || a->type==ET_COP)
+	    if(w_type(a->weapon)->has_musical_attack || a->type==ET_COP)
 	    {
 		switch(randval(5))
 		{
 		    case 0:strcat(str,"plays a song for");break;
 		    case 1:strcat(str,"sings to");break;
-		    case 2:if(a->weapon->type->has_musical_attack)
+		    case 2:if(w_type(a->weapon)->has_musical_attack)
 			   {
 			       strcat(str,"strums the ");
-			       strcat(str,wt_get_name_sub(a->weapon->type,0));
+			       strcat(str,wt_get_name_sub(w_type(a->weapon),0));
 			   }
 			   else // let's use a small enough instrument for anyone to carry in their pocket
 			       strcat(str,"blows a harmonica");
@@ -1754,7 +1757,7 @@ void specialattack(struct t_creature* a, struct t_creature* t, char *actual)
 		    {
 			encounter[e]=t;
 			encounter[e]->exists=1;
-			if(a->align==-1)conservatise(encounter[e]);
+			if(a->align==-1)creature_conservatize(encounter[e]);
 			encounter[e]->cantbluff=2;
 			encounter[e]->squadid=-1;
 			break;
@@ -1803,7 +1806,7 @@ void specialattack(struct t_creature* a, struct t_creature* t, char *actual)
 		g_addstr(" has turned Liberal!", gamelog);
 		t->stunned=0;
 
-		liberalize(t);
+		creature_liberalize(t,0);
 		t->infiltration/=2;
 		t->flag|=CREATUREFLAG_CONVERTED;
 		t->cantbluff=0;
@@ -1832,7 +1835,7 @@ void specialattack(struct t_creature* a, struct t_creature* t, char *actual)
 
 
 /* destroys armor, masks, drops weapons based on severe damage */
-void severloot(struct t_creature* cr,struct t_loot* loot)
+void severloot(struct t_creature* cr,struct t_item* loot)
 {
     int armok=2;
     if((cr->wound[EB_ARM_RIGHT] & WOUND_NASTYOFF)||
@@ -1848,7 +1851,7 @@ void severloot(struct t_creature* cr,struct t_loot* loot)
 	g_attrset(CP_YELLOW);
 	//move(16,1);
 	g_addstr("The ", gamelog);
-	g_addstr(get_weapon_name(cr->weapon,1), gamelog);
+	g_addstr(get_weapon_name_sub(cr->weapon,1), gamelog);
 	g_addstr(" slips from", gamelog);
 	//move(17,1);
 	g_addstr(describe_entity_static(cr), gamelog);
@@ -1863,39 +1866,39 @@ void severloot(struct t_creature* cr,struct t_loot* loot)
 
     if((((cr->wound[EB_BODY] & WOUND_CLEANOFF)||
 		    (cr->wound[EB_BODY] & WOUND_NASTYOFF))&&
-		cr->armor->type->covers[EB_BODY])||
+		a_type(cr->armor)->covers[EB_BODY])||
 	    ((cr->wound[EB_HEAD] & WOUND_NASTYOFF)&&
-	     cr->armor->type->is_mask))
+	     a_type(cr->armor)->is_mask))
     {
 	//clearmessagearea();
 	g_attrset(CP_YELLOW);
 	//move(16,1);
 	g_addstr(describe_entity_static(cr), gamelog);
 	g_addstr("'s ", gamelog);
-	g_addstr(cr->armor->type->name, gamelog);
+	g_addstr(a_type(cr->armor)->name, gamelog);
 	g_addstr(" has been destroyed.", gamelog);
 	g_addstr("\n",NULL);
 
 	g_getkey();
 
-	strip(cr,NULL);
+	creature_strip(cr,NULL);
     }
 }
 
 
 
 /* damages the selected armor if it covers the body part specified */
-void armordamage(struct t_armor* armor,int bp, int damamount)
+void armordamage(struct t_item* armor,int bp, int damamount)
 {
-    if(armor->type->covers[bp] && (randval(armor->type->durability) < damamount))
+    if(a_type(armor)->covers[bp] && (randval(a_type(armor)->durability) < damamount))
     {
-	if (armor->damaged)
+	if (armor->a_flags & AD_DAMAGED)
 	{
-	    armor_decrease_quality(armor,randval(armor->type->durability) < randval(damamount)/armor->quality ? 1:0);
+	    armor_decrease_quality(armor,randval(a_type(armor)->durability) < randval(damamount)/armor_get_quality(armor) ? 1:0);
 	}
 	else
 	{
-	    armor->damaged |= true;
+	    armor->a_flags |= AD_DAMAGED;
 	}
     }
 }
@@ -1903,11 +1906,11 @@ void armordamage(struct t_armor* armor,int bp, int damamount)
 
 
 /* blood explosions */
-void bloodblast(struct t_armor* armor)
+void bloodblast(struct t_item* armor)
 {
     //GENERAL
     if(armor!=NULL)
-	armor->bloody |= true;
+	armor->a_flags |= AD_BLOODY;
 
     if(mode!=GM_SITE)
 	return;
@@ -1919,14 +1922,14 @@ void bloodblast(struct t_armor* armor)
     {
 	if(activesquad->squad[p]==NULL) continue;
 	if(!randval(2))
-	    activesquad->squad[p]->armor->bloody |= true;
+	    activesquad->squad[p]->armor->a_flags |= AD_BLOODY;
     }
 
     for(int e=0;e<ENCMAX;e++)
     {
 	if(!encounter[e]->exists) continue;
 	if(!randval(2))
-	    encounter[e]->armor->bloody |= true;
+	    encounter[e]->armor->a_flags |= AD_BLOODY;
     }
 
     //REFRESH THE SCREEN
@@ -1958,38 +1961,21 @@ void delenc(short e,char loot)
 void makeloot(struct t_creature* cr,struct t_item* loot)
 {
     drop_weapons_and_clips(cr,loot);
-    strip(cr,loot);
+    creature_strip(cr,loot);
 
     if(cr->money>0 && mode == GM_SITE)
     {
-	struct t_item* money = find_empty_item(loot);
-	if (money) money = new_money(cr->money);
-	cr->money=0;
+	new_money(loot,cr->money); cr->money=0;
     }
 }
 
 void drop_weapons_and_clips(struct t_creature* cr, struct t_item* lootpile)
 {
    cr->has_thrown_weapon=false;
-   if(cr->weapon)
-   {
-      if(lootpile) lootpile->push_back(weapon);
-      else delete weapon;
-      weapon=NULL;
-   }
 
-   while(len(extra_throwing_weapons))
-   {
-      if(lootpile) lootpile->push_back(extra_throwing_weapons.back());
-      else delete extra_throwing_weapons.back();
-      extra_throwing_weapons.pop_back();
-   }
-   while(len(clips))
-   {
-      if(lootpile) lootpile->push_back(clips.back());
-      else delete clips.back();
-      clips.pop_back();
-   }
+   if (cr->weapon) { inv_add(lootpile, cr->weapon); cr->weapon = NULL; }
+   //inv_join(lootpile, cr->extra_throwing_weapons);
+   //inv_join(lootpile, cr->clips);
 }
 
 
@@ -1999,8 +1985,9 @@ void capturecreature(struct t_creature *t)
     t->activity.type=ACTIVITY_NONE;
     drop_weapons_and_clips(t,NULL);
     //t.strip(NULL);
-    struct t_armor* clothes=new_armor(armortypes[ARMOR_CLOTHES]);
-    give_armor(t,clothes,NULL);
+    struct t_item clothes;
+    new_armor(&armortypes[ARMOR_CLOTHES],&clothes);
+    give_armor(t,&clothes);
 
     freehostage(t,2); // situation 2 = no message; this may want to be changed to 0 or 1
     if(t->prisoner)
@@ -2015,8 +2002,9 @@ void capturecreature(struct t_creature *t)
 	if(sitetype==SITE_GOVERNMENT_PRISON||
 		sitetype==SITE_GOVERNMENT_COURTHOUSE)
 	{
-	    struct t_armor* prisoner=new_armor(armortypes[ARMOR_PRISONER]);
-	    give_armor(t,prisoner,NULL);
+	    struct t_item prisoner;
+	    new_armor(&armortypes[ARMOR_PRISONER], &prisoner);
+	    give_armor(t,&prisoner);
 	}
 	if(sitetype==SITE_GOVERNMENT_PRISON)
 	{
@@ -2026,8 +2014,9 @@ void capturecreature(struct t_creature *t)
 		t->crimes_suspected[i]=0;
 	}
     }
-    else
-	t->location = find_police_station(cursite);
+    else {
+	//t->location = find_police_station(cursite);
+    }
 
     t->squadid=-1;
 }
@@ -2101,7 +2090,7 @@ char incapacitated(struct t_creature *a,char noncombat,char* printed)
 	a->forceinc=0;
 	if(noncombat)
 	{
-	    clearmessagearea();
+	    //clearmessagearea();
 	    g_attrset(CP_WHITE);
 
 	    //move(16,1);
@@ -2401,7 +2390,7 @@ void adddeathmessage(struct t_creature* cr)
 
 
 /* pushes people into the current squad (used in a siege) */
-void autopromote(int loc)
+/*void autopromote(int loc)
 {
     if(!activesquad) return;
 
@@ -2440,4 +2429,73 @@ void autopromote(int loc)
 	    }
 	}
     }
+}*/
+
+/* hostage freed due to host unable to haul */
+void freehostage(struct t_creature* cr,char situation)
+{
+   if(cr->prisoner==NULL)return;
+
+   if(cr->prisoner->alive)
+   {
+      if(situation==0)
+      {
+         if(cr->prisoner->squadid==-1) g_addstr(" and a hostage is freed", gamelog);
+         else
+         {
+            g_addstr(" and ", gamelog);
+            g_addstr(describe_entity_static(cr->prisoner), gamelog);
+            if(cr->prisoner->flag & CREATUREFLAG_JUSTESCAPED) g_addstr(" is recaptured", gamelog);
+            else g_addstr(" is captured", gamelog);
+         }
+         g_addstr("\n",NULL); //New line.
+      }
+      else if(situation==1)
+      {
+         g_attrset(CP_WHITE);
+         if(cr->prisoner->squadid==-1) g_addstr("A hostage escapes!", gamelog);
+         else
+         {
+            g_addstr(describe_entity_static(cr->prisoner), gamelog);
+            if(cr->prisoner->flag & CREATUREFLAG_JUSTESCAPED) g_addstr(" is recaptured.", gamelog);
+            else g_addstr(" is captured.", gamelog);
+         }
+         g_addstr("\n",NULL); //New line.
+      }
+      else if(situation==2)
+      {
+              //Don't print anything.
+      }
+
+      if(cr->prisoner->squadid==-1)
+      {
+         for(int e=0;e<ENCMAX;e++)
+         {
+            if(encounter[e]->exists==0)
+            {
+               encounter[e]=cr->prisoner;
+               encounter[e]->exists=1;
+               creature_conservatize(encounter[e]);
+               break;
+            }
+         }
+         free(cr->prisoner);
+      }
+      else capturecreature(cr->prisoner);
+   }
+   else
+   {
+      if(cr->prisoner->squadid!=-1)
+      {
+         //removesquadinfo(cr->prisoner);
+         creature_die(cr->prisoner);
+         cr->prisoner->location=-1;
+      }
+   }
+
+   cr->prisoner=NULL;
+
+   if(situation==1)
+   {
+   }
 }
