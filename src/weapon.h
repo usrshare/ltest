@@ -108,6 +108,7 @@ struct t_weapon_type {
 	const char* shortname_sub_2;
 };
 enum weapon_types {
+	WT_CIVILIAN = -1,
 	WT_NONE = 0,
 	WT_REVOLVER_38,
 	WT_REVOLVER_44,

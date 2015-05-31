@@ -62,6 +62,8 @@ enum armordmgflags {
 #define AD_QUALITY 7 //quality mask
 
 enum armortype {
+	ARMOR_NAKED = -2, //for generation only
+	ARMOR_CIVILIAN = -1, //for generation only
 	ARMOR_NONE,
 	ARMOR_ARMYARMOR,
 	ARMOR_MILITARY,
