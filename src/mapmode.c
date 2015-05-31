@@ -228,7 +228,7 @@ int mapmode() {
 	struct t_map_entity* players[PLAYERS_COUNT];
 	
 	for (int i=0; i < PLAYERS_COUNT; i++) {
-		players[i] = spawn_entity(&map1,ET_PLAYER,false,NULL,SF_DEFAULT,player_turnFunc,player_actFunc);
+		players[i] = spawn_entity(&map1,ET_PLAYER,true,&type_rules[ET_HIPPIE],SF_DEFAULT,player_turnFunc,player_actFunc); //temporary entity
 		if (players[i]) {
 		players[i]->flags |= EF_ALWAYSVISIBLE;
 		players[i]->e_id = i;
