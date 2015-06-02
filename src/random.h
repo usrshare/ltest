@@ -15,5 +15,6 @@ int randbetween(int min, int max);
 const char* pickrandom(const char* array[]);
 
 int xdx(int dice, int sides);
+int roll_check(int skill);
 
 #endif

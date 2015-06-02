@@ -18,4 +18,6 @@ struct t_map_entity* spawn_entity(struct t_map* map, enum entitytypes type, bool
 int kill_entity(struct t_map_entity* ent);
 
 int mapmode();
+
+char hasdisguise(struct t_creature* cr, struct t_map_entity* mcr);
 #endif
