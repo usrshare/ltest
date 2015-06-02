@@ -1863,7 +1863,7 @@ void severloot(struct t_creature* cr,struct t_loot* loot)
 
     if((((cr->wound[EB_BODY] & WOUND_CLEANOFF)||
 		    (cr->wound[EB_BODY] & WOUND_NASTYOFF))&&
-		cr->armor->type->covers[EB_BODY])||
+		    cr->armor->type->covers[EB_BODY])||
 	    ((cr->wound[EB_HEAD] & WOUND_NASTYOFF)&&
 	     cr->armor->type->is_mask))
     {
