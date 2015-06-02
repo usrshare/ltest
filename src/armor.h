@@ -5,12 +5,32 @@
 
 #include "entity.h"
 
+struct t_protection {
+	int body;
+	int head;
+	int arms;
+	int legs;
+};
+
+#define APPRWEAPONS 7
+
 struct t_armor_type {
 	const char* name;
+	const char* shortname;
+	int make_difficulty;
+	int make_price;
+	bool deathsquad_legality;
+	bool can_get_bloody;
+	bool can_get_damaged;
+	struct t_protection armor;
+	struct t_protection body_covering;
 	int durability;
 	bool has_fireprotection;
         int quality_levels;
 	int stealth_value;
+	int professionalism;
+	int conceal_weapon_size;
+	int appropriate_weapon[APPRWEAPONS];
 	bool covers[EB_COUNT];
 	bool is_mask;
 };
