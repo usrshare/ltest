@@ -10,6 +10,9 @@
 #include "random.h"
 #include "map_ui.h"
 
+#include "location.h"
+#include "armor.h"
+
 #include <stdarg.h>
 #include <string.h> //memset
 
@@ -225,7 +228,7 @@ int mapmode() {
 	struct t_map_entity* players[PLAYERS_COUNT];
 	
 	for (int i=0; i < PLAYERS_COUNT; i++) {
-		players[i] = spawn_entity(&map1,ET_PLAYER,false,NULL,SF_DEFAULT,player_turnFunc,player_actFunc);
+		players[i] = spawn_entity(&map1,ET_PLAYER,true,&type_rules[ET_HIPPIE],SF_DEFAULT,player_turnFunc,player_actFunc); //temporary entity
 		if (players[i]) {
 		players[i]->flags |= EF_ALWAYSVISIBLE;
 		players[i]->e_id = i;
@@ -265,4 +268,313 @@ int mapmode() {
 
 	map_ui_free(&map1);
 	return 0;
+}
+
+char hasdisguise(struct t_creature* cr, struct t_map_entity* mcr) {
+   short type = -1;
+   if(cursite>=0)type = location[cursite]->type;
+   char uniformed=0;
+
+   // Never uniformed in battle colors
+   //if(activesquad->stance==SQUADSTANCE_BATTLECOLORS)
+   //   return 0;
+
+   if(location[cursite]->siege.siege)
+   {
+      switch(location[cursite]->siege.siegetype)
+      {
+         case SIEGE_CIA:
+         {
+            if(a_type(cr->armor)->type == ARMOR_BLACKSUIT)uniformed=1;
+            if(a_type(cr->armor)->type == ARMOR_BLACKDRESS)uniformed=1;
+            break;
+         }
+         case SIEGE_CORPORATE:
+         {
+            if(a_type(cr->armor)->type == ARMOR_MILITARY)uniformed=1;
+            if(a_type(cr->armor)->type == ARMOR_ARMYARMOR)uniformed=1;
+            if(a_type(cr->armor)->type == ARMOR_SEALSUIT)uniformed=1;
+            break;
+         }
+         case SIEGE_HICKS:
+         {
+            if(a_type(cr->armor)->type == ARMOR_CLOTHES)uniformed=2;
+            if(a_type(cr->armor)->type == ARMOR_OVERALLS)uniformed=1;
+            if(a_type(cr->armor)->type == ARMOR_WIFEBEATER)uniformed=1;
+            break;
+         }
+         case SIEGE_CCS:
+         {
+            // CCS has trained in anticipation of this tactic
+            // There is no fooling them
+            // (They pull this shit all the time in their own sieges)
+            uniformed=0;
+            break;
+         }
+         case SIEGE_POLICE:
+         {
+            if(a_type(cr->armor)->type == ARMOR_SWATARMOR&&
+               location[cursite]->siege.escalationstate==0)uniformed=1;
+            if(a_type(cr->armor)->type == ARMOR_MILITARY&&
+               location[cursite]->siege.escalationstate>0)uniformed=1;
+            if(a_type(cr->armor)->type == ARMOR_ARMYARMOR&&
+               location[cursite]->siege.escalationstate>0)uniformed=1;
+            if(a_type(cr->armor)->type == ARMOR_SEALSUIT&&
+               location[cursite]->siege.escalationstate>0)uniformed=1;
+            break;
+         }
+         case SIEGE_FIREMEN:
+         {
+            if(a_type(cr->armor)->type == ARMOR_BUNKERGEAR)uniformed=1;
+            break;
+         }
+      }
+   }
+   else
+   {
+      if(((cr->armor != NULL)||cr->animalgloss==ANIMALGLOSS_ANIMAL)
+         &&a_type(cr->armor)->type != ARMOR_HEAVYARMOR)uniformed=1;
+
+      switch(type)
+      {
+
+         case SITE_INDUSTRY_WAREHOUSE:
+         case SITE_RESIDENTIAL_SHELTER:
+            uniformed=1;
+            break;
+         case SITE_LABORATORY_COSMETICS:
+         case SITE_LABORATORY_GENETIC:
+            if(curmap->sq[(mcr->y) * MAP_WIDTH + (mcr->x)].type == TT_RESTRICTED_SPACE)
+            {
+               uniformed=0;
+               if(a_type(cr->armor)->type == ARMOR_LABCOAT)uniformed=1;
+               if(a_type(cr->armor)->type == ARMOR_SECURITYUNIFORM)uniformed=(location[cursite]->highsecurity?1:2);
+            }
+            break;
+         case SITE_GOVERNMENT_POLICESTATION:
+            if(curmap->sq[(mcr->y) * MAP_WIDTH + (mcr->x)].type == TT_RESTRICTED_SPACE)
+            {
+               uniformed=0;
+               if(a_type(cr->armor)->type == ARMOR_POLICEUNIFORM)uniformed=1;
+               if(a_type(cr->armor)->type == ARMOR_POLICEARMOR)uniformed=1;
+               if(law[LAW_POLICEBEHAVIOR]==-2 && law[LAW_DEATHPENALTY]==-2 &&
+                  a_type(cr->armor)->type == ARMOR_DEATHSQUADUNIFORM)uniformed=1;
+               if(a_type(cr->armor)->type == ARMOR_SWATARMOR)uniformed=(location[cursite]->highsecurity?1:2);
+            }
+            break;
+         case SITE_GOVERNMENT_WHITE_HOUSE:
+            if(curmap->sq[(mcr->y) * MAP_WIDTH + (mcr->x)].type == TT_RESTRICTED_SPACE)
+            {
+               uniformed=0;
+               if(a_type(cr->armor)->type == ARMOR_BLACKSUIT)uniformed=1;
+               if(a_type(cr->armor)->type == ARMOR_BLACKDRESS)uniformed=1;
+               if(a_type(cr->armor)->type == ARMOR_CHEAPSUIT)uniformed=1;
+               if(a_type(cr->armor)->type == ARMOR_CHEAPDRESS)uniformed=1;
+               if(a_type(cr->armor)->type == ARMOR_EXPENSIVESUIT)uniformed=1;
+               if(a_type(cr->armor)->type == ARMOR_EXPENSIVEDRESS)uniformed=1;
+               if(a_type(cr->armor)->type == ARMOR_MILITARY)uniformed=1;
+               if(a_type(cr->armor)->type == ARMOR_ARMYARMOR)uniformed=1;
+               if(a_type(cr->armor)->type == ARMOR_SEALSUIT)uniformed=1;
+            }
+            break;
+         case SITE_GOVERNMENT_COURTHOUSE:
+            if(curmap->sq[(mcr->y) * MAP_WIDTH + (mcr->x)].type == TT_RESTRICTED_SPACE)
+            {
+               uniformed=0;
+               if(a_type(cr->armor)->type == ARMOR_BLACKROBE)uniformed=1;
+               if(a_type(cr->armor)->type == ARMOR_BLACKSUIT)uniformed=1;
+               if(a_type(cr->armor)->type == ARMOR_BLACKDRESS)uniformed=1;
+               if(a_type(cr->armor)->type == ARMOR_CHEAPSUIT)uniformed=1;
+               if(a_type(cr->armor)->type == ARMOR_CHEAPDRESS)uniformed=1;
+               if(a_type(cr->armor)->type == ARMOR_EXPENSIVESUIT)uniformed=1;
+               if(a_type(cr->armor)->type == ARMOR_EXPENSIVEDRESS)uniformed=1;
+               if(a_type(cr->armor)->type == ARMOR_POLICEUNIFORM)uniformed=1;
+               if(a_type(cr->armor)->type == ARMOR_POLICEARMOR)uniformed=1;
+               if(law[LAW_POLICEBEHAVIOR]==-2 && law[LAW_DEATHPENALTY]==-2 &&
+                  a_type(cr->armor)->type == ARMOR_DEATHSQUADUNIFORM)uniformed=1;
+               if(a_type(cr->armor)->type == ARMOR_SWATARMOR)uniformed=(location[cursite]->highsecurity?1:2);
+            }
+            break;
+         case SITE_GOVERNMENT_PRISON:
+            if(curmap->sq[(mcr->y) * MAP_WIDTH + (mcr->x)].type == TT_RESTRICTED_SPACE)
+            {
+               uniformed=0;
+               if(law[LAW_POLICEBEHAVIOR]==-2 && law[LAW_DEATHPENALTY]==-2)
+               {
+                  if(a_type(cr->armor)->type == ARMOR_LABCOAT)uniformed=1;
+               }
+               else if(a_type(cr->armor)->type == ARMOR_PRISONGUARD)uniformed=1;
+               if(a_type(cr->armor)->type == ARMOR_PRISONER)uniformed=1;
+            }
+            break;
+         case SITE_GOVERNMENT_ARMYBASE:
+            if(curmap->sq[(mcr->y) * MAP_WIDTH + (mcr->x)].type == TT_RESTRICTED_SPACE)
+            {
+               uniformed=0;
+               if(a_type(cr->armor)->type == ARMOR_MILITARY)uniformed=1;
+               if(a_type(cr->armor)->type == ARMOR_ARMYARMOR)uniformed=1;
+               if(a_type(cr->armor)->type == ARMOR_SEALSUIT)uniformed=1;
+            }
+            break;
+         case SITE_GOVERNMENT_INTELLIGENCEHQ:
+            if(curmap->sq[(mcr->y) * MAP_WIDTH + (mcr->x)].type == TT_RESTRICTED_SPACE)
+            {
+               uniformed=0;
+               if(a_type(cr->armor)->type == ARMOR_BLACKSUIT)uniformed=1;
+               if(a_type(cr->armor)->type == ARMOR_BLACKDRESS)uniformed=1;
+            }
+            break;
+         case SITE_GOVERNMENT_FIRESTATION:
+            if(curmap->sq[(mcr->y) * MAP_WIDTH + (mcr->x)].type == TT_RESTRICTED_SPACE)
+            {
+               uniformed=0;
+               if(a_type(cr->armor)->type == ARMOR_BUNKERGEAR)uniformed=1;
+               if(a_type(cr->armor)->type == ARMOR_WORKCLOTHES)uniformed=1;
+               if(a_type(cr->armor)->type == ARMOR_OVERALLS)uniformed=1;
+               if(location[cursite]->highsecurity)
+               {
+                  if(a_type(cr->armor)->type == ARMOR_POLICEUNIFORM)uniformed=1;
+                  if(a_type(cr->armor)->type == ARMOR_POLICEARMOR)uniformed=1;
+                  if(law[LAW_POLICEBEHAVIOR]==-2 && law[LAW_DEATHPENALTY]==-2 &&
+                     a_type(cr->armor)->type == ARMOR_DEATHSQUADUNIFORM)uniformed=1;
+                  if(a_type(cr->armor)->type == ARMOR_SWATARMOR)uniformed=1;
+               }
+            }
+            break;
+         case SITE_BUSINESS_BANK:
+            if(curmap->sq[(mcr->y) * MAP_WIDTH + (mcr->x)].type == TT_RESTRICTED_SPACE)
+            {
+               uniformed=0;
+               if(a_type(cr->armor)->type == ARMOR_CHEAPSUIT)uniformed=1;
+               if(a_type(cr->armor)->type == ARMOR_EXPENSIVESUIT)uniformed=1;
+               if(a_type(cr->armor)->type == ARMOR_SECURITYUNIFORM)uniformed=1;
+               if(a_type(cr->armor)->type == ARMOR_POLICEUNIFORM)uniformed=1;
+               if(a_type(cr->armor)->type == ARMOR_POLICEARMOR)uniformed=1;
+               if(law[LAW_POLICEBEHAVIOR]==-2 && law[LAW_DEATHPENALTY]==-2 &&
+                  a_type(cr->armor)->type == ARMOR_DEATHSQUADUNIFORM)uniformed=1;
+               if(a_type(cr->armor)->type == ARMOR_SWATARMOR)uniformed=(location[cursite]->highsecurity?1:2);
+               if(location[cursite]->highsecurity)
+               {
+                  if(a_type(cr->armor)->type == ARMOR_CIVILIANARMOR)uniformed=1;
+               }
+            }
+            break;
+         case SITE_BUSINESS_CIGARBAR:
+            uniformed=0;
+            if(a_type(cr->armor)->type == ARMOR_EXPENSIVESUIT)uniformed=1;
+            if(a_type(cr->armor)->type == ARMOR_CHEAPSUIT)uniformed=1;
+            if(a_type(cr->armor)->type == ARMOR_EXPENSIVEDRESS)uniformed=1;
+            if(a_type(cr->armor)->type == ARMOR_CHEAPDRESS)uniformed=1;
+            if(a_type(cr->armor)->type == ARMOR_BLACKSUIT)uniformed=1;
+            if(a_type(cr->armor)->type == ARMOR_BLACKDRESS)uniformed=1;
+            break;
+         case SITE_INDUSTRY_SWEATSHOP:
+            uniformed=0;
+            if(a_type(cr->armor) == NULL) uniformed=1;
+            if(a_type(cr->armor)->type == ARMOR_SECURITYUNIFORM)uniformed=1;
+            break;
+         case SITE_INDUSTRY_POLLUTER:
+            uniformed=0;
+            if(a_type(cr->armor)->type == ARMOR_WORKCLOTHES)uniformed=1;
+            if(a_type(cr->armor)->type == ARMOR_HARDHAT)uniformed=1;
+            if(location[cursite]->highsecurity)
+            {
+               if(a_type(cr->armor)->type == ARMOR_SECURITYUNIFORM)uniformed=1;
+            }
+            break;
+         case SITE_INDUSTRY_NUCLEAR:
+            if(curmap->sq[(mcr->y) * MAP_WIDTH + (mcr->x)].type == TT_RESTRICTED_SPACE)
+            {
+               uniformed=0;
+               if(a_type(cr->armor)->type == ARMOR_LABCOAT)uniformed=1;
+               if(a_type(cr->armor)->type == ARMOR_SECURITYUNIFORM)uniformed=1;
+               if(a_type(cr->armor)->type == ARMOR_CIVILIANARMOR)uniformed=1;
+               if(a_type(cr->armor)->type == ARMOR_HARDHAT)uniformed=1;
+            }
+            break;
+         case SITE_CORPORATE_HEADQUARTERS:
+            uniformed=0;
+            if(a_type(cr->armor)->type == ARMOR_EXPENSIVESUIT)uniformed=1;
+            if(a_type(cr->armor)->type == ARMOR_CHEAPSUIT)uniformed=1;
+            if(a_type(cr->armor)->type == ARMOR_SECURITYUNIFORM)uniformed=1;
+            if(a_type(cr->armor)->type == ARMOR_EXPENSIVEDRESS)uniformed=1;
+            if(a_type(cr->armor)->type == ARMOR_CHEAPDRESS)uniformed=1;
+            break;
+         case SITE_CORPORATE_HOUSE:
+            uniformed=0;
+            if(a_type(cr->armor)->type == ARMOR_EXPENSIVESUIT)uniformed=1;
+            if(a_type(cr->armor)->type == ARMOR_EXPENSIVEDRESS)uniformed=1;
+            if(a_type(cr->armor)->type == ARMOR_SECURITYUNIFORM)uniformed=1;
+            if(a_type(cr->armor)->type == ARMOR_SERVANTUNIFORM)uniformed=1;
+            if(location[cursite]->highsecurity)
+            {
+               if(a_type(cr->armor)->type == ARMOR_MILITARY)uniformed=1;
+               if(a_type(cr->armor)->type == ARMOR_ARMYARMOR)uniformed=1;
+               if(a_type(cr->armor)->type == ARMOR_SEALSUIT)uniformed=1;
+            }
+            break;
+         case SITE_MEDIA_AMRADIO:
+            if(curmap->sq[(mcr->y) * MAP_WIDTH + (mcr->x)].type == TT_RESTRICTED_SPACE)
+            {
+               uniformed=0;
+               if(a_type(cr->armor)->type == ARMOR_SECURITYUNIFORM)uniformed=1;
+               if(a_type(cr->armor)->type == ARMOR_EXPENSIVESUIT)uniformed=1;
+               if(a_type(cr->armor)->type == ARMOR_CHEAPSUIT)uniformed=1;
+               if(a_type(cr->armor)->type == ARMOR_EXPENSIVEDRESS)uniformed=1;
+               if(a_type(cr->armor)->type == ARMOR_CHEAPDRESS)uniformed=1;
+            }
+            break;
+         case SITE_MEDIA_CABLENEWS:
+            if(curmap->sq[(mcr->y) * MAP_WIDTH + (mcr->x)].type == TT_RESTRICTED_SPACE)
+            {
+               uniformed=0;
+               if(a_type(cr->armor)->type == ARMOR_SECURITYUNIFORM)uniformed=1;
+               if(a_type(cr->armor)->type == ARMOR_EXPENSIVESUIT)uniformed=1;
+               if(a_type(cr->armor)->type == ARMOR_EXPENSIVEDRESS)uniformed=1;
+            }
+            break;
+         case SITE_RESIDENTIAL_TENEMENT:
+         case SITE_RESIDENTIAL_APARTMENT:
+         case SITE_RESIDENTIAL_APARTMENT_UPSCALE:
+            if(curmap->sq[(mcr->y) * MAP_WIDTH + (mcr->x)].type == TT_RESTRICTED_SPACE)uniformed=0;
+            break;
+         default:
+            break;
+      }
+   }
+
+   if(!uniformed)
+   {
+      if(a_type(cr->armor)->type == ARMOR_POLICEUNIFORM)uniformed=2;
+      if(a_type(cr->armor)->type == ARMOR_POLICEARMOR)uniformed=2;
+      if(law[LAW_POLICEBEHAVIOR]==-2 && law[LAW_DEATHPENALTY]==-2 &&
+         a_type(cr->armor)->type == ARMOR_DEATHSQUADUNIFORM)uniformed=2;
+      if(location[cursite]->highsecurity &&
+         a_type(cr->armor)->type == ARMOR_SWATARMOR)uniformed=2;
+// Loop over adjacent locations to check if fire is anywhere in sight?
+// Or perhaps have a site fire alarm? - Nick
+     /*
+      if((curmap->sq[(mcr->y) * MAP_WIDTH + (mcr->x)].type & SITEBLOCK_FIRE_START ||
+          curmap->sq[(mcr->y) * MAP_WIDTH + (mcr->x)].type & SITEBLOCK_FIRE_END ||
+          curmap->sq[(mcr->y) * MAP_WIDTH + (mcr->x)].type & SITEBLOCK_FIRE_PEAK) &&
+          a_type(cr->armor)->type == ARMOR_BUNKERGEAR)uniformed=1;
+	  */
+   }
+   
+   if(uniformed)
+   {
+      int qlmax = a_type(cr->armor)->quality_levels;
+      int ql = armor_get_quality(cr->armor) + (cr->armor->a_flags & AD_DAMAGED);
+      if (ql > qlmax)  // Shredded clothes are obvious
+      {
+         uniformed = 0;
+      }else if ((ql-1) *2 > qlmax) // poor clothes make a poor disguise
+      {
+         uniformed++;
+      }
+      if (uniformed >2)
+         uniformed = 0;
+   }
+
+   return uniformed;
 }

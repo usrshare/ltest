@@ -2,6 +2,7 @@
 #define ENTITY_TYPES_H
 #include "entity.h"
 
+
 // Based on Liberal Crime Squad's creature/creature.h file.
 
 enum entity_types {

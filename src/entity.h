@@ -8,6 +8,7 @@
 
 #include "globals.h"
 #include "random.h"
+#include "item.h"
 
 /*
    Copyright (c) 2002,2003,2004 by Tarn Adams                                         //
@@ -39,8 +40,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA   02111-1307   USA     
 
 // this file based on creature/creature.h from Liberal Crime Squad
 
-enum AnimalGlosses
-{
+enum AnimalGlosses{
     ANIMALGLOSS_NONE,//IMPORTANT THAT THIS BE HERE AT ZERO
     ANIMALGLOSS_TANK,
     ANIMALGLOSS_ANIMAL,
@@ -122,12 +122,10 @@ enum entity_attr {
     EA_HRT, //heart
     EA_COUNT, 
 };
-
 struct t_vmax {
     uint16_t val;
     uint16_t max;
 };
-
 enum entity_skill {
     ES_P_ESCAPEDRIVE = -2,
     ES_P_DODGEDRIVE,
@@ -167,8 +165,7 @@ enum entity_skill {
 
 extern char* entitytypesstr[];
 
-enum Alignment
-{
+enum Alignment{
     ALIGN_ARCHCONSERVATIVE = -2,
     ALIGN_CONSERVATIVE,
     ALIGN_MODERATE,
@@ -176,9 +173,7 @@ enum Alignment
     ALIGN_ELITELIBERAL,
     ALIGN_STALINIST
 };
-
-enum CheckDifficulty
-{
+enum CheckDifficulty{
    DIFFICULTY_AUTOMATIC    = 1,
    DIFFICULTY_VERYEASY     = 3,
    DIFFICULTY_EASY         = 5,
@@ -191,12 +186,9 @@ enum CheckDifficulty
    DIFFICULTY_IMPOSSIBLE   = 19
 };
 
-struct t_weapon; //these types exist,
-struct t_armor;  //just saying.
 struct t_location;  //just saying.
 
-enum Activity
-{
+enum Activity{
    ACTIVITY_NONE,
    ACTIVITY_VISIT,
    ACTIVITY_HOSTAGETENDING,
@@ -254,14 +246,10 @@ enum Activity
    ACTIVITY_RECRUITING,
    ACTIVITYNUM
 };
-
-
 struct activityst {
     int type;
     long arg, arg2;
 };
-
-
 struct t_creature {
 
     uint32_t id;
@@ -281,7 +269,7 @@ struct t_creature {
     enum entity_gender gender_id; // gender identity (liberal)
 
     int squadid;
-    int hireid;
+    uint32_t hireid;
 
     int age;
     int birthday_month;
@@ -289,16 +277,22 @@ struct t_creature {
 
     bool exists;
     char align;
+    char orig_align;
     bool alive;
     short type;
 
     unsigned char wound[EB_COUNT];
     char special[ESW_COUNT];
     short blood;
-
-    struct t_weapon* weapon;
-    struct t_armor* armor;
     
+    struct t_item inventory[INVENTORY_SIZE];
+
+    // these two pointers should only point to NULL or entries in inventory!
+    struct t_item* weapon;
+    struct t_item* armor;
+
+   
+
     int heat;
     int location;
     int worklocation;
@@ -403,9 +397,6 @@ int entity_get_attribute(struct t_creature* me, enum entity_attr attribute, bool
 
 int entity_get_skill(struct t_creature* me, enum entity_skill skill);
 
-struct t_weapon* get_weapon(struct t_creature* me);
-bool can_reload(struct t_creature* e);
-
 const char* entity_heshe(struct t_creature* e,bool capitalize);
 const char* entity_hisher(struct t_creature* e,bool capitalize);
 const char* entity_himher(struct t_creature* e,bool capitalize);
@@ -431,7 +422,13 @@ bool enemy(struct t_creature* e);
 
 bool entity_can_reload(struct t_creature* e);
 
-struct t_weapon* entity_get_weapon (struct t_creature* e);
-struct t_armor* entity_get_armor (struct t_creature* e);
+struct t_item* entity_get_weapon (struct t_creature* e);
+struct t_item* entity_get_armor (struct t_creature* e);
+bool can_reload(struct t_creature* e);
 
+void creature_conservatize( struct t_creature *cr);
+void creature_liberalize(struct t_creature *cr);
+
+void entity_drop_weapon(struct t_creature* e, struct t_item* loot);
+void creature_strip(struct t_creature* cr, struct t_item* lootpile);
 #endif

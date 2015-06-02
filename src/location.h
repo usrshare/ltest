@@ -10,6 +10,23 @@
 struct t_location_type {
 };
 
+#define SIEGEFLAG_UNIT BIT1
+#define SIEGEFLAG_TRAP BIT2
+#define SIEGEFLAG_HEAVYUNIT BIT3
+#define SIEGEFLAG_UNIT_DAMAGED BIT4
+
+enum SiegeTypes
+{
+   SIEGE_POLICE,
+   SIEGE_CIA,
+   SIEGE_HICKS,
+   SIEGE_CORPORATE,
+   SIEGE_CCS,
+   SIEGE_FIREMEN,
+   SIEGE_ORG,
+   SIEGENUM
+};
+
 struct siegest
 {
 	char siege;
@@ -30,17 +47,7 @@ struct siegest
 	short timeuntilfiremen;
 };
 
-const struct siegest siegest_def = {
-	.siege = 0,
-	.siegetype = -1,
-	.underattack = 0,
-	.escalationstate = 0,
-	.timeuntillocated = -1,
-	.timeuntilcorps = -1,
-	.timeuntilcia = -1,
-	.timeuntilccs = -1,
-	.timeuntilfiremen = -1,
-};
+extern const struct siegest siegest_def;
 
 enum SiteTypes
 {
