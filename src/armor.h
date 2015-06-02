@@ -34,6 +34,7 @@ struct t_armor_type {
 	int appropriate_weapon[APPRWEAPONS];
 	bool covers[EB_COUNT];
 	bool is_mask;
+	int fencevalue;
 
 	int armor_body;
 	int armor_head;
