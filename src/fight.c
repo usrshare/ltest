@@ -780,7 +780,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 		    strcat(str," BLOWING IT APART!");
 		else if(w==EB_BODY && target->wound[EB_BODY] & WOUND_NASTYOFF)
 		    strcat(str," BLOWING IT IN HALF!");
-		else strcat(str,attack_used->hit_punctuation);
+		else strcat(str,hit_punctuation(attack_used));
 		//move(17,1);
 		//set_color(COLOR_WHITE,COLOR_BLACK,1);
 		if(goodguyattack) g_attrset(CP_GREEN);
@@ -805,7 +805,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 	    {
 		if(target->wound[w] & WOUND_CLEANOFF) strcat(str," CUTTING IT OFF!");
 		else if(target->wound[w] & WOUND_NASTYOFF) strcat(str," BLOWING IT OFF!");
-		else strcat(str,attack_used->hit_punctuation);
+		else strcat(str,hit_punctuation(attack_used));
 
 		if(target->wound[w] & WOUND_NASTYOFF) bloodblast(target->armor);
 
