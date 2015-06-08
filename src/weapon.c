@@ -1,8 +1,14 @@
 #include "weapon.h"
 
+#include "entity.h"
 #include <stdlib.h>
 
 const struct t_weapon_type weapontypes [WT_COUNT] = {
+	{ .name = "Unarmed", .shortname = "None",
+	.is_suspicious = 0, .can_threaten_hostages = 0,
+	.protects_against_kidnapping = 0, .size = 0,
+	.attacks = {{.skill = ES_HANDTOHAND, .accuracy_bonus = 0, .strength_min = 5, .strength_max = 10, .bruises = true, .priority = 1}},
+	},
 
 };
 
@@ -109,6 +115,10 @@ const char* get_weapon_name_sub (struct t_item* w, unsigned subtype) {
 	return wt_get_name_sub(w_type(w),subtype);
 }
 
+
+const char* hit_punctuation(const struct t_attackst* attack) {
+	return (attack->hit_punctuation ? attack->hit_punctuation : ".");
+}
 
 const struct t_weapon_type* w_type( struct t_item* weapon) {
 

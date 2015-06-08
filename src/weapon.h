@@ -89,7 +89,7 @@ struct t_weapon_type {
 	int get_legality;
 	float get_bashstrengthmod;
 	bool is_suspicious;
-	int get_size;
+	int size;
 	bool can_graffiti;
 	bool uses_ammo;
 	//bool acceptable_ammo(const Item& c);
@@ -176,4 +176,6 @@ const char* get_weapon_name_sub (struct t_item* w, unsigned subtype);
 
 const char* wt_get_name(const struct t_weapon_type* wt);
 const char* wt_get_name_sub(const struct t_weapon_type* wt, unsigned subtype);
+
+const char* hit_punctuation(const struct t_attackst* attack);
 #endif
