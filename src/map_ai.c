@@ -8,6 +8,8 @@
 
 #include "globals.h"
 
+#include "fight.h"
+
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -431,7 +433,7 @@ uint16_t player_turnFunc(struct t_map* map, struct t_map_entity* me) {
 
 	if (!(me->aidata)) return 0;
 	
-	do_fov(map,me,25,FA_WIDE,me->aidata->viewarr,NULL);	
+	do_fov(map,me,25,FA_FULL,me->aidata->viewarr,NULL);	
 	draw_map(map, me,1,dbgmode ? 1 : 0, dbgmode ? 1 : 0,1);
 	
 	return 0;
@@ -440,7 +442,7 @@ uint16_t player_actFunc(struct t_map* map, struct t_map_entity* me) {
 
 	if (!(me->aidata)) return 0;
 	
-	do_fov(map,me,25,FA_WIDE,me->aidata->viewarr,NULL);	
+	do_fov(map,me,25,FA_FULL,me->aidata->viewarr,NULL);	
 	draw_map(map, me,1,dbgmode ? 1 : 0, dbgmode ? 1 : 0,1);
 	
 	int pch = mapgetch();
@@ -517,9 +519,11 @@ uint16_t player_actFunc(struct t_map* map, struct t_map_entity* me) {
 				  uint8_t dy = me->y + movediff[dir][1];
 				  me->aidata->viewdir = dir; 
 				  struct t_map_entity* enemy = find_entity(map,dx,dy);
-				  if ((enemy) && (enemy->aidata) && (enemy->aidata->alert_state == 0)) {
-					  kill_entity(enemy); r = 16;
-				  } else {statprintw("You can't disable an alerted enemy.\n"); r = 4;}
+				  if ((enemy) && (enemy->ent)) {
+				      int actual;
+				      attack(me->ent,enemy->ent,0,&actual,0);
+				      if (actual) r = 16;
+				  } else {statprintw("Incorrect spot.\n"); r = 4;}
 
 				  break; }
 
@@ -527,7 +531,7 @@ uint16_t player_actFunc(struct t_map* map, struct t_map_entity* me) {
 			  r = 1;
 	}
 
-	do_fov(map,me,25,FA_WIDE,me->aidata->viewarr,NULL);	
+	do_fov(map,me,25,FA_FULL,me->aidata->viewarr,NULL);	
 	draw_map(map, me,1,dbgmode ? 1 : 0, dbgmode ? 1 : 0,0);
 	
 	if (r < 0) { nc_beep(); return 0;} else return r;
