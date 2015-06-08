@@ -83,7 +83,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 		    mode==GM_CHASEFOOT) printchaseencounter();
 	    else printencounter();
 
-	    g_getkey();
+	    //g_getkey();
 	}
 
 	a.forceinc=1;
@@ -147,7 +147,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 		||mode==GM_CHASEFOOT) printchaseencounter();
 	else printencounter();
 
-	g_getkey();
+	//g_getkey();
 
 	return;
     }*/
@@ -236,7 +236,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
     g_addstr(str, gamelog);
     g_addstr("\n",NULL);
 
-    g_getkey();
+    //g_getkey();
 
     if(goodguyattack) g_attrset(CP_GREEN);
     else g_attrset(CP_RED);
@@ -643,7 +643,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 	    //move(16,1);
 	    g_addstr_f("(ATK %d, DEF %d, DAMMOD %d, DAMAGE %d, AP %d)",aroll,droll,mod,damamount,armorpiercing);
 
-	    g_getkey();
+	    ////g_getkey();
 	}
 #endif
 	// Bullets caught by armor should bruise instead of poke holes.
@@ -685,7 +685,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 
 			addjuice(target,10,1000);//Instant juice!! Way to take the bullet!!
 
-			g_getkey();
+			////g_getkey();
 
 			break;
 		    }
@@ -788,7 +788,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 		g_addstr(str, gamelog);
 		g_addstr("\n",NULL);
 
-		g_getkey();
+		////g_getkey();
 
 		if(!alreadydead)
 		{
@@ -796,7 +796,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 		    //clearmessagearea();
 		    adddeathmessage(target);
 
-		    g_getkey();
+		    ////g_getkey();
 
 		    //if(target->prisoner!=NULL) freehostage(t,1);
 		}
@@ -822,7 +822,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 			mode==GM_CHASEFOOT) printchaseencounter();
 		else printencounter();*/
 
-		g_getkey();
+		////g_getkey();
 
 		//SPECIAL WOUNDS
 		if(!(target->wound[w] & (WOUND_CLEANOFF|WOUND_NASTYOFF))&&
@@ -871,7 +871,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 				    else g_addstr("'s face is removed!", gamelog);
 				    g_addstr("\n",NULL);
 
-				    g_getkey();
+				    ////g_getkey();
 
 				    target->special[ESW_RIGHTEYE]=0;
 				    target->special[ESW_LEFTEYE]=0;
@@ -915,7 +915,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 				    else g_addstr("knocked out!", gamelog);
 				    g_addstr("\n",NULL);
 
-				    g_getkey();
+				    ////g_getkey();
 
 				    target->special[ESW_TEETH]-=teethminus;
 				}
@@ -932,7 +932,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 				    else g_addstr("'s right eye is removed!", gamelog);
 				    g_addstr("\n",NULL);
 
-				    g_getkey();
+				    ////g_getkey();
 
 				    target->special[ESW_RIGHTEYE]=0;
 				    if(target->blood>50)target->blood=50;
@@ -950,7 +950,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 				    else g_addstr("'s left eye is removed!", gamelog);
 				    g_addstr("\n",NULL);
 
-				    g_getkey();
+				    ////g_getkey();
 
 				    target->special[ESW_LEFTEYE]=0;
 				    if(target->blood>50)target->blood=50;
@@ -968,7 +968,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 				    else g_addstr("'s tongue is removed!", gamelog);
 				    g_addstr("\n",NULL);
 
-				    g_getkey();
+				    ////g_getkey();
 
 				    target->special[ESW_TONGUE]=0;
 				    if(target->blood>50)target->blood=50;
@@ -986,7 +986,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 				    else g_addstr("'s nose is removed!", gamelog);
 				    g_addstr("\n",NULL);
 
-				    g_getkey();
+				    ////g_getkey();
 
 				    target->special[ESW_NOSE]=0;
 				    if(target->blood>50)target->blood=50;
@@ -1001,7 +1001,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 				    else g_addstr("'s neck is broken!", gamelog);
 				    g_addstr("\n",NULL);
 
-				    g_getkey();
+				    ////g_getkey();
 
 				    target->special[ESW_NECK]=0;
 				    if(target->blood>20)target->blood=20;
@@ -1027,7 +1027,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 				    else g_addstr("'s upper spine is broken!", gamelog);
 				    g_addstr("\n",NULL);
 
-				    g_getkey();
+				    ////g_getkey();
 
 				    target->special[ESW_UPPERSPINE]=0;
 				    if(target->blood>20) target->blood=20;
@@ -1042,7 +1042,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 				    else g_addstr("'s lower spine is broken!", gamelog);
 				    g_addstr("\n",NULL);
 
-				    g_getkey();
+				    ////g_getkey();
 
 				    target->special[ESW_LOWERSPINE]=0;
 				    if(target->blood>20) target->blood=20;
@@ -1058,7 +1058,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 				    else g_addstr("'s right lung is punctured!", gamelog);
 				    g_addstr("\n",NULL);
 
-				    g_getkey();
+				    ////g_getkey();
 
 				    target->special[ESW_RIGHTLUNG]=0;
 				    if(target->blood>20) target->blood=20;
@@ -1074,7 +1074,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 				    else g_addstr("'s left lung is punctured!", gamelog);
 				    g_addstr("\n",NULL);
 
-				    g_getkey();
+				    ////g_getkey();
 
 				    target->special[ESW_LEFTLUNG]=0;
 				    if(target->blood>20) target->blood=20;
@@ -1090,7 +1090,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 				    else g_addstr("'s heart is punctured!", gamelog);
 				    g_addstr("\n",NULL);
 
-				    g_getkey();
+				    ////g_getkey();
 
 				    target->special[ESW_HEART]=0;
 				    if(target->blood>3) target->blood=3;
@@ -1106,7 +1106,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 				    else g_addstr("'s liver is punctured!", gamelog);
 				    g_addstr("\n",NULL);
 
-				    g_getkey();
+				    ////g_getkey();
 
 				    target->special[ESW_LIVER]=0;
 				    if(target->blood>50) target->blood=50;
@@ -1122,7 +1122,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 				    else g_addstr("'s stomach is punctured!", gamelog);
 				    g_addstr("\n",NULL);
 
-				    g_getkey();
+				    ////g_getkey();
 
 				    target->special[ESW_STOMACH]=0;
 				    if(target->blood>50) target->blood=50;
@@ -1138,7 +1138,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 				    else g_addstr("'s right kidney is punctured!", gamelog);
 				    g_addstr("\n",NULL);
 
-				    g_getkey();
+				    ////g_getkey();
 
 				    target->special[ESW_RIGHTKIDNEY]=0;
 				    if(target->blood>50) target->blood=50;
@@ -1154,7 +1154,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 				    else g_addstr("'s left kidney is punctured!", gamelog);
 				    g_addstr("\n",NULL);
 
-				    g_getkey();
+				    //g_getkey();
 
 				    target->special[ESW_LEFTKIDNEY]=0;
 				    if(target->blood>50) target->blood=50;
@@ -1170,7 +1170,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 				    else g_addstr("'s spleen is punctured!", gamelog);
 				    g_addstr("\n",NULL);
 
-				    g_getkey();
+				    //g_getkey();
 
 				    target->special[ESW_SPLEEN]=0;
 				    if(target->blood>50) target->blood=50;
@@ -1208,7 +1208,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 				    else g_addstr("broken!", gamelog);
 				    g_addstr("\n",NULL);
 
-				    g_getkey();
+				    //g_getkey();
 
 				    target->special[ESW_RIBS]-=ribminus;
 				}
@@ -1235,7 +1235,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 		    mode==GM_CHASEFOOT) printchaseencounter();
 	    else printencounter();*/
 
-	    g_getkey();
+	    //g_getkey();
 	}
     }
     else
@@ -1252,7 +1252,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 	    g_addstr(str, gamelog);
 	    g_addstr("\n",NULL);
 
-	    g_getkey();
+	    //g_getkey();
 
 	    goodguyattack = !goodguyattack;
 	    char actual_dummy;
@@ -1334,7 +1334,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 		    mode==GM_CHASEFOOT) printchaseencounter();
 	    else printencounter();*/
 
-	    g_getkey();
+	    //g_getkey();
 	}
     }
 
@@ -1829,7 +1829,7 @@ void specialattack(struct t_creature* a, struct t_creature* t, char *actual)
 	    mode==GM_CHASEFOOT) printchaseencounter();
     else printencounter();*/
 
-    g_getkey();
+    //g_getkey();
 
     return;
 }
@@ -1859,7 +1859,7 @@ void severloot(struct t_creature* cr,struct t_item* loot)
 	g_addstr("'s grasp.", gamelog);
 	g_addstr("\n",NULL);
 
-	g_getkey();
+	//g_getkey();
 
 	if(mode==GM_SITE) drop_weapons_and_clips(cr,loot);
 	else drop_weapons_and_clips(cr,NULL);
@@ -1880,7 +1880,7 @@ void severloot(struct t_creature* cr,struct t_item* loot)
 	g_addstr(" has been destroyed.", gamelog);
 	g_addstr("\n",NULL);
 
-	g_getkey();
+	//g_getkey();
 
 	creature_strip(cr,NULL);
     }
