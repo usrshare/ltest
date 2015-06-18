@@ -93,6 +93,9 @@ int check_conditions(struct t_map* map) {
 	for (int i=0; i < MAX_ENTITIES; i++) {
 		struct t_map_entity* e = &map->ent[i];
 		if (e->type == ET_PLAYER) living_players++;
+
+
+		if ((e->ent) && (!e->ent->alive)) kill_entity(e);
 	}
 
 	if (living_players == 0) return 0;
@@ -146,6 +149,8 @@ struct t_map_entity* spawn_entity(struct t_map* map, enum entitytypes type, bool
 
 	    creature_init(newcr,genrules);
 	    newent->ent = newcr;
+
+	    if (newent->type == ET_PLAYER) newent->ent->name_known = 1;
 	}
 
 	switch(position) {
@@ -205,9 +210,9 @@ int kill_entity(struct t_map_entity* ent) {
 	ent->type = ET_NONE;
 
 	struct t_map_ai_data* ai = ent->aidata;
-	ent->aidata = NULL;
 	ent->turn = ent->act = NULL;
-	memset(ai,0,sizeof(struct t_map_ai_data));
+	if (ai) memset(ai,0,sizeof(struct t_map_ai_data));
+	ent->aidata = NULL;
 	return 0;
 }
 

@@ -224,6 +224,7 @@ int creature_init(struct t_creature* o_entity, struct t_creature_generate_rules*
     o_entity->special[ESW_LOWERSPINE]=1;
 
     o_entity->blood = 100;
+    o_entity->alive = true;
 
     return 0;
 }
@@ -596,7 +597,7 @@ void addjuice(struct t_creature* e, long juice, long cap) {
     // Pyramid scheme of juice trickling up the chain
     if(e->hireid!=-1)
 	for(int i=0;i<POOLSIZE;i++)
-	    if(pool[i]->id==e->hireid)
+	    if((pool[i]) && (pool[i]->id==e->hireid))
 	    {
 		addjuice(pool[i],e->juice/5,e->juice);
 		break;
