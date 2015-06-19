@@ -651,7 +651,7 @@ int recurse_grow(struct t_map* map, int x, int y, int w, int h, enum directions 
 	find_next_area(&x_ccw,&y_ccw,w,h,ccwDir(growdir));
 	find_next_area(&x_cw,&y_cw,w,h,cwDir(growdir));
 
-	struct rect o_f, o_ccw, o_cw;
+	struct rect o_f = {0,0,0,0}, o_ccw = {0,0,0,0}, o_cw= {0,0,0,0};
 
 	int grow_f, grow_ccw, grow_cw;
 

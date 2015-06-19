@@ -13,7 +13,9 @@ enum aitasks {
 	AIT_PLEASE_LEAVE, // asking the target to leave the area
 	AIT_CHECKING_OUT,
 	AIT_PURSUING,   // when the AI sees the target directly
-	AIT_LOOKING_FOR,// and whenn doesn't.
+	AIT_ATTACKING,
+	AIT_LOOKING_FOR,// and when it doesn't.
+	AIT_FLEEING,
 };
 
 struct t_map_ai_data {
