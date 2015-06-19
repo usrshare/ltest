@@ -5,6 +5,70 @@
 
 #include <math.h>
 #include <stdlib.h>
+
+int los_default_cb(struct t_map* map, uint8_t x, uint8_t y, void* param) {
+
+    if (tflags[map->sq[y * MAP_WIDTH + x].type] & TF_SOLID) return 1;
+    return 0;
+}
+
+int lineofsight(struct t_map* map, uint8_t sx, uint8_t sy, uint8_t tx, uint8_t ty, los_cb cb, void* cbparam) {
+
+    // this function draws a line from (sx,sy) to (tx,ty), calls the callback
+    // function with the x and y values and returns the highest value
+    // it encountered.
+
+    int dx = (tx - sx);
+    int dy = (ty - sy);
+
+    int ix = dx ? (dx / abs(dx)) : 0;
+    int iy = dy ? (dy / abs(dy)) : 0;
+
+    dx = abs(dx) << 1; dy = abs(dy) << 1;
+
+    int maxres = 0;
+    
+    if (dx >= dy) {
+
+	int error = (dy - (dx >> 1));
+
+	while (sx != tx) {
+
+	    if ((error >= 0) && (error || (ix > 0)))
+	    {
+		error -= dx;
+		sy += iy;
+	    }
+
+	    error += dy;
+	    sx += ix;
+
+	    maxres = cb(map,sx,sy,cbparam);
+	}
+
+    } else {
+	
+	int error = (dx - (dy >> 1));
+	
+	while (sy != ty) {
+
+	    if ((error >= 0) && (error || (iy > 0)))
+	    {
+		error -= dy;
+		sx += ix;
+	    }
+
+	    error += dx;
+	    sy += iy;
+
+	    maxres = cb(map,sx,sy,cbparam);
+	}
+    }
+
+    return maxres;
+}
+
+
 int vispass(struct t_map* map, uint8_t x, uint8_t y) {
 
 	return !(tflags[map->sq[y * MAP_WIDTH + x].type] & TF_BLOCKS_VISION);

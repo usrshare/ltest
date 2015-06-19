@@ -84,9 +84,9 @@ int draw_map(struct t_map* map, struct t_map_entity* persp, bool show_fov, bool 
 			
 			switch (tilevis) {
 				case 1: tileflags = CP_BLUE; break;
-				case 2: tileflags = CP_DARKGRAY; break;
+				case 2: tileflags = CP_WHITE; break;
 				case 3:
-				case 4:	tileflags = CP_WHITE; break;
+				case 4:	tileflags = CP_WHITE | A_BOLD; break;
 				default: break;
 			}
 

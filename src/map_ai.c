@@ -246,7 +246,7 @@ uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
 	memset(visible_ent,0,sizeof(struct t_map_entity*) * entities_sz);
 	find_visible_entities(map, me->aidata->viewarr, visible_ent, entities_sz);
 
-	uint8_t dx, dy;
+	uint8_t dx = 255, dy = 255;
 
 	if (me->aidata->target == NULL) {
 
@@ -287,7 +287,7 @@ uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
 				
 			if (me->aidata->task >= AIT_CHECKING_OUT) {
 			me->aidata->alert_state = 50;
-			me->aidata->task = AIT_PURSUING; }
+			me->aidata->task = AIT_ATTACKING; }
 
 			dx = me->aidata->target->x; dy = me->aidata->target->y;
 
@@ -407,6 +407,16 @@ uint16_t enemy_actFunc(struct t_map* map, struct t_map_entity* me) {
 			if ( (me->aidata->viewarr[ dy * MAP_WIDTH + dx ] == 3) && (find_entity(map,dx,dy) == NULL) ) { me->aidata->alert_state = 0; me->aidata->task = AIT_PATROLLING;}
 			break;
 
+		case AIT_ATTACKING:
+
+			if (can_attack(map,me,me->aidata->target)) {
+			    char actual;
+			    attack(me,me->aidata->target,0,&actual,false);
+			    break;
+			}
+
+			//if can't attack, pursue.
+
 		case AIT_PURSUING:
 
 			md = plot_follow(me->x,me->y,me->aidata->pathprev);
@@ -416,6 +426,7 @@ uint16_t enemy_actFunc(struct t_map* map, struct t_map_entity* me) {
 				md = face_square(me->x,me->y,dx,dy);
 				if (md < MD_COUNT) { me->aidata->viewdir = md; r++; } }
 			break;
+
 		case AIT_LOOKING_FOR:
 			
 			md = plot_follow(me->x,me->y,me->aidata->pathprev);

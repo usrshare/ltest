@@ -125,14 +125,13 @@ bool can_attack(struct t_map* map, struct t_map_entity* a, struct t_map_entity* 
     if ((dx > 1) || (dy > 1)) melee_allowed = 0; //melee can only go so far.
     
     //TODO if no line of sight between a and t, ranged_allowed = 0;
+    if (lineofsight(map,a->x,a->y,t->x,t->y,los_default_cb,NULL) > 0) ranged_allowed = 0;
 
     if ((!melee_allowed == 0) && (!ranged_allowed)) return false;
 
     const struct t_attackst* att = get_attack(a->ent->weapon, !melee_allowed, !ranged_allowed, 0);
 
     if (att) return true; else return false;
-
-
 
 }
 
@@ -247,6 +246,7 @@ int mapmode() {
 
     memset(&(map1.sq), 0, sizeof(struct t_square) * MAP_WIDTH * MAP_HEIGHT); 
     memset(&(map1.ent), 0, sizeof(struct t_map_entity) * MAX_ENTITIES); 
+    memset(&(map1.creat), 0, sizeof(struct t_creature) * MAX_ENTITIES); 
     memset(aient, 0, sizeof(struct t_map_ai_data) * MAX_AI_ENTITIES); 
 
     map1.alert_state = 0; map1.alert_time = 0;
@@ -267,7 +267,7 @@ int mapmode() {
 	}
     }
 
-#define ENEMIES_COUNT 16
+#define ENEMIES_COUNT 1
 
     struct t_map_entity* enemies[ENEMIES_COUNT];
 
