@@ -411,7 +411,8 @@ uint16_t enemy_actFunc(struct t_map* map, struct t_map_entity* me) {
 
 			if (can_attack(map,me,me->aidata->target)) {
 			    char actual;
-			    attack(me,me->aidata->target,0,&actual,false);
+			    attack(me->ent,me->aidata->target->ent,0,&actual,false);
+			    r = 16;
 			    break;
 			}
 
@@ -531,7 +532,7 @@ uint16_t player_actFunc(struct t_map* map, struct t_map_entity* me) {
 				  me->aidata->viewdir = dir; 
 				  struct t_map_entity* enemy = find_entity(map,dx,dy);
 				  if ((enemy) && (enemy->ent)) {
-				      int actual;
+				      char actual;
 				      attack(me->ent,enemy->ent,0,&actual,0);
 				      if (actual) r = 16;
 				  } else {statprintw("Incorrect spot.\n"); r = 4;}

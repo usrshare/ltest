@@ -267,7 +267,7 @@ int mapmode() {
 	}
     }
 
-#define ENEMIES_COUNT 1
+#define ENEMIES_COUNT 3
 
     struct t_map_entity* enemies[ENEMIES_COUNT];
 
@@ -293,7 +293,7 @@ int mapmode() {
 	turn_n++;
 	if (map1.alert_time > 0) map1.alert_time--; if ((map1.alert_time == 0) && (map1.alert_state > 0)) map1.alert_state--;
 	for (int i = 0; i < MAX_ENTITIES; i++) {
-	    if ((map1.ent[i].aidata) && (map1.ent[i].aidata->timer > 0)) map1.ent[i].aidata->timer--; }
+	    if ((map1.ent[i].type != ET_NONE) && (map1.ent[i].aidata) && (map1.ent[i].aidata->timer > 0)) map1.ent[i].aidata->timer--; }
     } while (loop);
 
     map_ui_free(&map1);
