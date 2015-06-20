@@ -296,6 +296,9 @@ int mapmode() {
 	    if ((map1.ent[i].type != ET_NONE) && (map1.ent[i].aidata) && (map1.ent[i].aidata->timer > 0)) map1.ent[i].aidata->timer--; }
     } while (loop);
 
+    statprintw("Your entire squad has been eliminated. Game over, I guess.\n");
+    mapgetch();
+
     map_ui_free(&map1);
     return 0;
 }
