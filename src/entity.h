@@ -351,7 +351,8 @@ struct t_creature_generate_rules {
     struct t_range attrpts; //attribute points. 32 is default.
 
     short weapons[RANDWEAPONS];
-    struct t_range ammo[RANDWEAPONS];
+    short number_weapons[RANDWEAPONS];
+    short number_clips[RANDWEAPONS];
     short armors[RANDARMORS];
 
 
