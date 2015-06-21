@@ -73,6 +73,45 @@ const struct t_weapon_type weapontypes [WT_COUNT] = {
 	{.priority = 2, .strength_min = 6, .strength_max = 12, .attack_description = "swings at", .skill = ES_CLUB, .random_damage = 25, .fixed_damage = 5, .bruises = 1},
 	},
 	},
+	{ .name  = "M4 Carbine", .shortname = "M4",
+	.can_take_hostages = 1, .is_threatening = 1,
+	.legality = -2, .fencevalue = 400,
+	.bashstrengthmod = 125, .size = 15,
+	.attacks = {
+	{.priority = 1, .ranged = true, .attack_description = "shoots at", .skill = ES_RIFLE, .ammotype = CT_ASSAULT, .random_damage = 221, .fixed_damage = 10, .shoots = 1, .bleeding = 1, .damages_armor = 1, .armorpiercing = 7, .accuracy_bonus = 2, .number_attacks = 3, .successive_attacks_difficulty = 3, .critical = {.chance = 100, .hits_required = 3, .severtype = WOUND_NASTYOFF, } },
+	{.priority = 2, .strength_min = 6, .strength_max = 12, .attack_description = "swings at", .skill = ES_CLUB, .random_damage = 25, .fixed_damage = 5, .bruises = 1}, },
+	},
+	{ .name  = "M16", .shortname = "M16",
+	.can_take_hostages = 1, .is_threatening = 1,
+	.legality = -2, .fencevalue = 500,
+	.bashstrengthmod = 125, .size = 15,
+	.attacks = {
+	{.priority = 1, .ranged = true, .attack_description = "shoots at", .skill = ES_RIFLE, .ammotype = CT_ASSAULT, .random_damage = 251, .fixed_damage = 10, .shoots = 1, .bleeding = 1, .damages_armor = 1, .armorpiercing = 7, .number_attacks = 3, .successive_attacks_difficulty = 3, .critical = {.chance = 100, .hits_required = 3, .severtype = WOUND_NASTYOFF, } },
+	{.priority = 2, .strength_min = 6, .strength_max = 12, .attack_description = "swings at", .skill = ES_CLUB, .random_damage = 21, .fixed_damage = 5, .bruises = 1}, },
+	},
+	{ .name  = "M249 Machine Gun", .shortname = "M249",
+	.can_take_hostages = 1, .is_threatening = 1,
+	.legality = -2, .fencevalue = 1500,
+	.bashstrengthmod = 125, .size = 15,
+	.attacks = {
+	{.priority = 1, .ranged = true, .attack_description = "shoots at", .skill = ES_HEAVYWEAPONS, .ammotype = CT_DRUM, .random_damage = 301, .fixed_damage = 10, .shoots = 1, .bleeding = 1, .damages_armor = 1, .armorpiercing = 7, .number_attacks = 5, .accuracy_bonus = 5 /*spray and pray*/, .successive_attacks_difficulty = 3, .critical = {.chance = 100, .hits_required = 3, .severtype = WOUND_NASTYOFF, } },
+	{.priority = 2, .strength_min = 8, .strength_max = 14, .attack_description = "swings at", .skill = ES_CLUB, .random_damage = 21, .fixed_damage = 5, .bruises = 1}, },
+	},
+	{. name = "Molotov Bomb", .shortname = "Molotov",
+	.is_threatening = 1,
+	.fencevalue = 0,
+	.size = 15,
+	.attacks = {{.priority = 1, .ranged = true, .thrown = true, .attack_description = "hurls a molotov at", .hit_description = "exploding", .always_describe_hit = 1, .skill = ES_THROWING, .random_damage = 101, .fixed_damage = 25, .burns = true, .damages_armor = true, .armorpiercing = 7, .no_damage_reduction_for_limbs_chance = 33, .fire = {.chance_causes_debris = 100, .chance = 100}}},
+	},
+	{ .name  = "MP5 SMG", .shortname = "MP5",
+	.can_take_hostages = 1, .is_threatening = 1,
+	.legality = -2, .fencevalue = 450,
+	.size = 10,
+	.attacks = {
+	{.priority = 1, .ranged = true, .attack_description = "shoots at", .skill = ES_SMG, .ammotype = CT_SMG, .random_damage = 181, .fixed_damage = 10, .shoots = 1, .bleeding = 1, .damages_armor = 1, .armorpiercing = 4, .number_attacks = 3, .accuracy_bonus = 2, .successive_attacks_difficulty = 3,},
+	{.priority = 2, .strength_min = 5, .strength_max = 10, .attack_description = "swings at", .skill = ES_CLUB, .random_damage = 21, .fixed_damage = 5, .bruises = 1}, },
+	},
+
 };
 
 const struct t_clip_type cliptypes [CT_COUNT] = {
@@ -146,7 +185,7 @@ const struct t_attackst* get_attack(struct t_item* w, bool force_ranged, bool fo
 		if(force_ranged&&!attacks[i].ranged) continue;
 		if(force_melee&&attacks[i].ranged) continue;
 		if(force_no_reload&&attacks[i].uses_ammo&&!w->ammo) continue;
-		if(attacks[i].uses_ammo&&attacks[i].ammotype!=(c_type(w->itemdetails))&&w->ammo) continue;
+		if(attacks[i].uses_ammo&&attacks[i].ammotype!=(w->itemtypeid)&&w->ammo) continue;
 		if (attacks[i].priority == 0) continue;
 		return &attacks[i];
 	}

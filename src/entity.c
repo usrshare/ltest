@@ -205,6 +205,14 @@ int creature_init(struct t_creature* o_entity, struct t_creature_generate_rules*
     random_first_name(o_entity->firstname,o_entity->gender_id);
     random_last_name(o_entity->lastname,o_entity->align == ALIGN_ARCHCONSERVATIVE,o_entity->gender_id);
 
+    int wi=0; int wn=0;
+
+    while ((wi < RANDWEAPONS) && (genrules->weapons[wi])) {
+	wn++; wi++; }
+
+    wi = randval(wn);
+    
+
     o_entity->special[ESW_TEETH]=TOOTHNUM;
     o_entity->special[ESW_RIGHTEYE]=1;
     o_entity->special[ESW_LEFTEYE]=1;
