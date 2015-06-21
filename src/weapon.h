@@ -12,101 +12,6 @@ enum SpecialAttacks
 	ATTACKNUM
 };
 
-struct t_clip_type {
-	int type;
-	const char* name;
-	const char* shortname;
-	int ammo;
-	int fencevalue;
-};
-
-struct t_attackst {
-	//attackst(MCD_STR xmlchar*);
-	int priority;
-	bool ranged;
-	bool thrown;
-	struct t_clip_type* ammotype;
-	bool uses_ammo;
-	char* attack_description;
-	char* hit_description;
-	bool always_describe_hit;
-	bool can_backstab;
-	char* hit_punctuation;
-	int skill;
-	int accuracy_bonus;
-	int number_attacks;
-	int successive_attacks_difficulty;
-	int strength_min;
-	int strength_max;
-	int random_damage;
-	int fixed_damage;
-	bool bruises;
-	bool tears;
-	bool cuts;
-	bool burns;
-	bool shoots;
-	bool bleeding;
-	int severtype;
-	bool damages_armor;
-	int armorpiercing;
-	int no_damage_reduction_for_limbs_chance;
-
-	struct criticalst
-	{
-		//criticalst();
-		int chance;
-		int hits_required;
-		int random_damage;
-		bool random_damage_defined;
-		int fixed_damage;
-		bool fixed_damage_defined;
-		int severtype;
-		bool severtype_defined;
-	} critical;
-
-	struct firest
-	{
-		//firest();   
-		int chance;
-		int chance_causes_debris;
-	} fire;
-
-};
-
-#define MAX_ATTACKS 3
-
-struct t_weapon_type {
-
-	const char* name;
-	const char* shortname;
-	long fencevalue;
-	bool can_take_hostages;
-	bool is_threatening;
-	bool can_threaten_hostages;
-	bool protects_against_kidnapping;
-	bool has_musical_attack;
-	bool is_instrument;
-	int get_legality;
-	float get_bashstrengthmod;
-	bool is_suspicious;
-	int size;
-	bool can_graffiti;
-	bool uses_ammo;
-	//bool acceptable_ammo(const Item& c);
-	//bool acceptable_ammo(const Clip& c);
-	//bool acceptable_ammo(const ClipType& c);
-	bool is_ranged;
-	bool is_throwable;
-	bool auto_breaks_locks;
-	bool is_legal;
-	
-	struct t_attackst attacks[MAX_ATTACKS];
-
-	const char* name_sub_1;
-	const char* name_sub_2;
-	const char* shortname_sub_1;
-	const char* shortname_sub_2;
-};
 enum weapon_types {
 	WT_CIVILIAN = -1,
 	WT_NONE = 0,
@@ -161,6 +66,98 @@ enum clip_types {
 		CT_DRUM,
 		CT_BUCKSHOT,
 		CT_COUNT,
+};
+
+struct t_clip_type {
+	int type;
+	const char* name;
+	const char* shortname;
+	int ammo;
+	int fencevalue;
+};
+
+struct t_attackst {
+	//attackst(MCD_STR xmlchar*);
+	int priority;
+	bool ranged;
+	bool thrown;
+	enum clip_types ammotype;
+	bool uses_ammo;
+	char* attack_description;
+	char* hit_description;
+	bool always_describe_hit;
+	bool can_backstab;
+	char* hit_punctuation;
+	int skill;
+	int accuracy_bonus;
+	int number_attacks;
+	int successive_attacks_difficulty;
+	int strength_min;
+	int strength_max;
+	int random_damage;
+	int fixed_damage;
+	bool bruises;
+	bool tears;
+	bool cuts;
+	bool burns;
+	bool shoots;
+	bool bleeding;
+	int severtype;
+	bool damages_armor;
+	int armorpiercing;
+	int no_damage_reduction_for_limbs_chance;
+
+	struct criticalst
+	{
+		//criticalst();
+		int chance;
+		int hits_required;
+		int random_damage;
+		int fixed_damage;
+		int severtype;
+	} critical;
+
+	struct firest
+	{
+		//firest();   
+		int chance;
+		int chance_causes_debris;
+	} fire;
+
+};
+
+#define MAX_ATTACKS 3
+
+struct t_weapon_type {
+
+	const char* name;
+	const char* shortname;
+	long fencevalue;
+	bool can_take_hostages;
+	bool is_threatening;
+	bool can_threaten_hostages;
+	bool protects_against_kidnapping;
+	bool has_musical_attack;
+	bool is_instrument;
+	int legality;
+	float bashstrengthmod;
+	bool is_suspicious;
+	int size;
+	bool can_graffiti;
+	bool uses_ammo;
+	//bool acceptable_ammo(const Item& c);
+	//bool acceptable_ammo(const Clip& c);
+	//bool acceptable_ammo(const ClipType& c);
+	bool is_ranged;
+	bool is_throwable;
+	bool auto_breaks_locks;
+	
+	struct t_attackst attacks[MAX_ATTACKS];
+
+	const char* name_sub_1;
+	const char* name_sub_2;
+	const char* shortname_sub_1;
+	const char* shortname_sub_2;
 };
 extern const struct t_weapon_type weapontypes [WT_COUNT];
 extern const struct t_clip_type cliptypes [CT_COUNT];

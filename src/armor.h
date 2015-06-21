@@ -127,6 +127,8 @@ bool armor_type_covers(const struct t_armor_type* t, int bodypart);
 int get_armor_type_value(const struct t_armor_type* t, int bodypart);
 int armor_get_value(struct t_item* armor, int bodypart);
 
+bool armor_decrease_quality(struct t_item* armor, int decrease);
+
 int armor_get_quality(struct t_item* armor);
 void armor_set_quality(struct t_item* armor, int quality);
 

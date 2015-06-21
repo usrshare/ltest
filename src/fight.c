@@ -154,8 +154,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 
     else if(a->has_thrown_weapon) a->has_thrown_weapon = false;
 
-    struct t_attackst* attack_used = NULL;
-    attack_used = get_attack(a->weapon,mode==GM_CHASECAR, force_melee, (force_melee || !entity_can_reload(a))); 
+    const struct t_attackst* attack_used = get_attack(a->weapon,mode==GM_CHASECAR, force_melee, (force_melee || !entity_can_reload(a))); 
 
     //Force ranged if in a car.
     //No reload if force melee or unable to reload.
@@ -560,11 +559,11 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 	    if(bursthits >= attack_used->critical.hits_required
 		    && randval(100) < attack_used->critical.chance)
 	    {
-		if(attack_used->critical.random_damage_defined)
+		if(attack_used->critical.random_damage != 0)
 		    random=attack_used->critical.random_damage;
-		if(attack_used->critical.fixed_damage_defined)
+		if(attack_used->critical.fixed_damage != 0)
 		    fixed=attack_used->critical.fixed_damage;
-		if(attack_used->critical.severtype_defined)
+		if(attack_used->critical.severtype != 0)
 		    severtype=attack_used->critical.severtype;
 	    }
 	    while(bursthits > 0)
