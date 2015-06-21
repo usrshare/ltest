@@ -103,6 +103,7 @@ enum entity_specialwounds{
 #define TOOTHNUM 32
 
 enum entity_wounds {
+    WOUND_NONE=0,
     WOUND_SHOT=1,
     WOUND_CUT=2,
     WOUND_BRUISED=4,

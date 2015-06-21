@@ -791,19 +791,13 @@ int random_last_name(char* dest, bool archcon,enum entity_gender gender) {
 
 	const char* randname;
 	
-	switch(use_archcon) {
-		case 0:
+	if(use_archcon) {
 			if ((unsigned int)randval(arraylen(regular_last_names) + arraylen(gender_dependent_last_names)) > arraylen(regular_last_names)) use_gender = 1;
 			randname = use_gender ? gender_dependent_last_names[randval(arraylen(gender_dependent_last_names))][gender_col] : regular_last_names[randval(arraylen(regular_last_names))];
-			break;
-		case 1:
+	} else {
 			if ((unsigned int)randval(arraylen(archconservative_last_names) + arraylen(gender_dependent_archcon_last_names)) > arraylen(archconservative_last_names)) use_gender = 1;
 			randname = use_gender ? gender_dependent_archcon_last_names[randval(arraylen(gender_dependent_archcon_last_names))][gender_col] : archconservative_last_names[randval(arraylen(archconservative_last_names))];
-			break;
-		
-
 	}
-
 
 	randname = use_archcon ? archconservative_last_names[randval(arraylen(archconservative_last_names))] : regular_last_names[randval(arraylen(regular_last_names))];
 		
