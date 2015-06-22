@@ -98,15 +98,17 @@ int draw_map(struct t_map* map, struct t_map_entity* persp, bool show_fov, bool 
 				if (map->ent[i].type == ET_NONE) continue;
 		
 				int ex = map->ent[i].x; int ey = map->ent[i].y;
-				if ((map->ent[i].type != ET_PLAYER) && (map->ent[i].aidata) && (persp->aidata->viewarr[ey * (MAP_WIDTH) + ex] >= 3) && (persp->aidata->viewarr[iy * MAP_WIDTH + ix] >= 3) ) {
+				if ((map->ent[i].type != ET_PLAYER) && (map->ent[i].aidata) && (persp->aidata->viewarr[ey * (MAP_WIDTH) + ex] >= 3) && (map->ent[i].aidata->viewarr[iy * MAP_WIDTH + ix] >= 3) ) {
 					
 					switch (map->ent[i].aidata->task) {
 						case AIT_WORKING: fovcolor = CP_GREEN; break;
 						case AIT_PATROLLING: fovcolor = CP_CYAN; break;
 						case AIT_CHECKING_OUT:
 						case AIT_PLEASE_LEAVE: fovcolor = CP_YELLOW; break;
-						case AIT_PURSUING: fovcolor = CP_RED; break;
-						case AIT_LOOKING_FOR: fovcolor = CP_PURPLE; break;
+						case AIT_PURSUING:
+						case AIT_ATTACKING: fovcolor = CP_RED; break;
+						case AIT_FLEEING: fovcolor = CP_PURPLE; break;
+						case AIT_LOOKING_FOR: fovcolor = CP_YELLOW; break;
 					}
 				}
 			} }
