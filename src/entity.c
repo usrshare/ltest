@@ -210,7 +210,10 @@ int creature_init(struct t_creature* o_entity, struct t_creature_generate_rules*
     while ((wi < RANDWEAPONS) && (genrules->weapons[wi])) {
 	wn++; wi++; }
 
+    if (wn) {
+    
     wi = randval(wn);
+    }
     
 
     o_entity->special[ESW_TEETH]=TOOTHNUM;
