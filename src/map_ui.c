@@ -10,6 +10,7 @@
 
 WINDOW* topwindow;
 WINDOW* headerwindow;
+WINDOW* msgwindow;
 WINDOW* statwindow;
 WINDOW* mapwindow;
 
@@ -84,9 +85,9 @@ int draw_map(struct t_map* map, struct t_map_entity* persp, bool show_fov, bool 
 			
 			switch (tilevis) {
 				case 1: tileflags = CP_BLUE; break;
-				case 2: tileflags = CP_WHITE; break;
-				case 3:
-				case 4:	tileflags = CP_WHITE | A_BOLD; break;
+				case 2: tileflags = CP_DARKGRAY; break;
+				case 3: tileflags = CP_WHITE; break;
+				case 4:	tileflags = CP_WHITE; break;
 				default: break;
 			}
 
@@ -175,7 +176,7 @@ int mapgetch() {
 	morecount = 0;
 
 	getsyx(y,x);
-	int m = wmove(headerwindow,0,COLS-2);
+	int m = wmove(msgwindow,0,COLS-1);
 	if (m == ERR) beep();
 
 	int c = getch();
@@ -206,38 +207,60 @@ int updheader(struct t_map* map) {
 	return 0;
 }
 
-int statvprintw(const char *fmt, va_list ap) {
+int msgaddstr(char *string) {
 
-	int r = vwprintw(statwindow,fmt,ap);
-	morecount++;
-	if (morecount >= (LINES-22)) {
-		int y,x;
+	int y,x;
+
+	char* thisline = strtok(string,"\n");    
+
+	int lines=0;
+
+	while (thisline != NULL) {
+
+	    if (morecount >= 1) {
 		getsyx(y,x);
-		wmove(statwindow,LINES-22,COLS-7);
-		wattron(statwindow,A_REVERSE);
-		wprintw(statwindow,"(more)");
-		wattroff(statwindow,A_REVERSE);
-		wmove(statwindow,LINES-22,0);
-		wrefresh(statwindow);
+		wmove(msgwindow,0,COLS-6);
+		wattron(msgwindow,A_REVERSE);
+		wprintw(msgwindow,"(more)");
+		wattroff(msgwindow,A_REVERSE);
+		wmove(msgwindow,0,COLS-1);
+		wrefresh(msgwindow);
 		mapgetch();
 		setsyx(y,x);
 		morecount = 0;
+	    }
+	    
+	    wclear(msgwindow);
+	    mvwaddstr(msgwindow,0,0,thisline);
+	    wmove(msgwindow,0,0);
+	    
+	    thisline = strtok(NULL,"\n");
+	    morecount++;
 	}
-	wrefresh(statwindow);
+}
+
+int msgvprintw(const char *fmt, va_list ap) {
+
+	char outtext[1024];
+
+	int r = vsnprintf(outtext,1024,fmt,ap);
+
+	msgaddstr(outtext);
+
 	return r;
 }
 
-int statprintw(const char *fmt, ...) {
+int msgprintw(const char *fmt, ...) {
 
 	va_list varglist;
 	va_start(varglist,fmt);
-	int r = statvprintw(fmt,varglist);
+	int r = msgvprintw(fmt,varglist);
 	va_end(varglist);
 	return r;
 }
 
-int statattrset(int attrs) {
-    return wattrset(statwindow,attrs);
+int msgattrset(int attrs) {
+    return wattrset(msgwindow,attrs);
 }
 
 int describe_map_entity(struct t_map_entity* me, char* const restrict o_name, size_t strsize) {
@@ -245,7 +268,7 @@ int describe_map_entity(struct t_map_entity* me, char* const restrict o_name, si
 }
 
 
-int statsay(struct t_map_entity* me, const char* fmt, ...) {
+int msgsay(struct t_map_entity* me, const char* fmt, ...) {
 
 	char my_description[66];
 	char outstr[1024];
@@ -257,13 +280,13 @@ int statsay(struct t_map_entity* me, const char* fmt, ...) {
 	int r = vsnprintf(outstr,1024,fmt,varglist);
 	va_end(varglist);
 	
-	return statprintw("%.66s: %.1024s",my_description,outstr);
+	return msgprintw("%.66s: %.1024s",my_description,outstr);
 }
 
 enum movedirections askdir() {
 	
-	wprintw(statwindow,"Please specify a direction: [yuhjklbn]>");
-	wrefresh(statwindow);
+	msgprintw("Please specify a direction: [yuhjklbn]>");
+	wrefresh(msgwindow);
 	
 	enum movedirections r = MD_COUNT;
 	
@@ -271,9 +294,8 @@ enum movedirections askdir() {
 
 	while (go_on) {
 	echo();
-	int c = wgetch(statwindow);
+	int c = mapgetch();
 	noecho();
-	wprintw(statwindow,"\n");
 	switch(c) {
 		case 'h':
 		case 'H':
@@ -301,8 +323,8 @@ enum movedirections askdir() {
 		r = MD_SOUTHEAST; go_on = 0;break;
 		default:
 		beep();
-		wprintw(statwindow,"Invalid direction. Please choose [yuhjklbn]>");
-		wrefresh(statwindow);
+		msgprintw("Invalid direction. Please choose [yuhjklbn]>");
+		wrefresh(msgwindow);
 	}
 
 	}
@@ -313,6 +335,9 @@ enum movedirections askdir() {
 int update_ui (struct t_map* map) {
 	wrefresh(headerwindow);
 	wrefresh(statwindow);
+	wrefresh(msgwindow);
+	wmove(msgwindow,0,COLS-1);
+	wrefresh(msgwindow);
 
 	return 0;
 }
@@ -322,17 +347,20 @@ int map_ui_init(struct t_map* map) {
 	mapwindow = newwin(20,COLS,LINES-20,0);
 	
 	topwindow = newwin(LINES-20,COLS,0,0);
-	headerwindow = subwin(topwindow,1,COLS,0,0);
+	headerwindow = subwin(topwindow,1,COLS,LINES-21,0);
 
 	updheader(map);
 	
-	statwindow = subwin(topwindow,LINES-21,COLS,1,0);
+	msgwindow = subwin(topwindow,1,COLS,0,0);
+	if (msgwindow == 0) return 1;
+	//scrollok(msgwindow,1);
+
+	statwindow = subwin(topwindow,LINES-22,COLS,1,0);
 	if (statwindow == 0) return 1;
-	scrollok(statwindow,1);
 
-	keypad(statwindow,1);
+	keypad(msgwindow,1);
 
-	wmove(statwindow,0,0);
+	wmove(msgwindow,0,0);
 
 	return 0;
 }
@@ -340,6 +368,7 @@ int map_ui_init(struct t_map* map) {
 int map_ui_free(struct t_map* map) {
 
 	delwin(mapwindow);
+	delwin(msgwindow);
 	delwin(statwindow);
 	delwin(headerwindow);
 	delwin(topwindow);

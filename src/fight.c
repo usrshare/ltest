@@ -222,9 +222,8 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
     strcat(str," ");
     strcat(str,describe_entity_static(t));
     //move(16,1);
-    g_addstr(str, gamelog);
 
-    strcpy(str,"");
+    //strcpy(str,"");
 
     if(a->weapon && !attack_used->thrown)
     {

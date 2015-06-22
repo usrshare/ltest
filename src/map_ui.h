@@ -9,8 +9,8 @@ int draw_map(struct t_map* map, struct t_map_entity* persp, bool show_fov, bool 
 int mapgetch();
 int nc_beep(void);
 int updheader();
-int statprintw(const char *fmt, ...);
-int statsay(struct t_map_entity* me,const char *fmt, ...);
+int msgprintw(const char *fmt, ...);
+int msgsay(struct t_map_entity* me,const char *fmt, ...);
 enum movedirections askdir();
 
 int update_ui (struct t_map* map);
