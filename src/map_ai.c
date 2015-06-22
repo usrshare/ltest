@@ -340,11 +340,11 @@ uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
 		case AIT_PLEASE_LEAVE:
 			switch(me->aidata->timer) {
 				case 60:
-				statsay(me,"Please leave the restricted area.\n"); break;
+				msgsay(me,"Please leave the restricted area.\n"); break;
 				case 30:
-				statsay(me,"I repeat: please leave the restricted area.\n"); break;
+				msgsay(me,"I repeat: please leave the restricted area.\n"); break;
 				case 15:
-				statsay(me,"This is the last warning. If you don't leave this area, I'll use force.\n"); break;
+				msgsay(me,"This is the last warning. If you don't leave this area, I'll use force.\n"); break;
 			}
 			break;
 
@@ -503,11 +503,11 @@ uint16_t player_actFunc(struct t_map* map, struct t_map_entity* me) {
 			break;
 
 		case 'q':
-			statprintw("A really long sequence of text. 1\n");
-			statprintw("A really long sequence of text. 2\n");
-			statprintw("A really long sequence of text. 3\n");
-			statprintw("A really long sequence of text. 4\n");
-			statprintw("A really long sequence of text. 5\n");
+			msgprintw("A really long sequence of text. 1\n");
+			msgprintw("A really long sequence of text. 2\n");
+			msgprintw("A really long sequence of text. 3\n");
+			msgprintw("A really long sequence of text. 4\n");
+			msgprintw("A really long sequence of text. 5\n");
 			break;
 
 		case 'o': {
@@ -535,7 +535,7 @@ uint16_t player_actFunc(struct t_map* map, struct t_map_entity* me) {
 				      char actual;
 				      attack(me->ent,enemy->ent,0,&actual,0);
 				      if (actual) r = 16;
-				  } else {statprintw("Incorrect spot.\n"); r = 4;}
+				  } else {msgprintw("Incorrect spot.\n"); r = 4;}
 
 				  break; }
 
