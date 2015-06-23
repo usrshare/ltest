@@ -140,7 +140,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 	}
 	//move(16,1);
 	g_addstr(str, gamelog);
-	g_addstr("\n",NULL);
+	//g_addstr("\n",NULL);
 
 	printparty();
 	if(mode==GM_CHASECAR
@@ -232,7 +232,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
     }
     strcat(str,"!");
     g_addstr(str, gamelog);
-    g_addstr("\n",NULL);
+    //g_addstr("\n",NULL);
 
     //g_getkey();
 
@@ -679,7 +679,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 			g_addstr(describe_entity_static(t), gamelog);
 			if(!t->alive) g_addstr("'s corpse", gamelog);
 			g_addstr("!", gamelog);
-			g_addstr("\n",NULL);
+			//g_addstr("\n",NULL);
 
 			addjuice(target,10,1000);//Instant juice!! Way to take the bullet!!
 
@@ -784,7 +784,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 		if(goodguyattack) g_attrset(CP_GREEN);
 		else g_attrset(CP_RED);
 		g_addstr(str, gamelog);
-		g_addstr("\n",NULL);
+		//g_addstr("\n",NULL);
 
 		////g_getkey();
 
@@ -812,7 +812,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 		//move(17,1);
 		//set_color(COLOR_WHITE,COLOR_BLACK,1);
 		g_addstr(str, gamelog);
-		g_addstr("\n",NULL);
+		//g_addstr("\n",NULL);
 
 		//printparty();
 		/*
@@ -867,7 +867,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 				    else if(damtype & WOUND_TORN)g_addstr("'s face is torn off!", gamelog);
 				    else if(damtype & WOUND_CUT)g_addstr("'s face is cut away!", gamelog);
 				    else g_addstr("'s face is removed!", gamelog);
-				    g_addstr("\n",NULL);
+				    //g_addstr("\n",NULL);
 
 				    ////g_getkey();
 
@@ -911,7 +911,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 				    else if(damtype & WOUND_TORN)g_addstr("gouged out!", gamelog);
 				    else if(damtype & WOUND_CUT)g_addstr("cut out!", gamelog);
 				    else g_addstr("knocked out!", gamelog);
-				    g_addstr("\n",NULL);
+				    //g_addstr("\n",NULL);
 
 				    ////g_getkey();
 
@@ -928,7 +928,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 				    else if(damtype & WOUND_TORN)g_addstr("'s right eye is torn out!", gamelog);
 				    else if(damtype & WOUND_CUT)g_addstr("'s right eye is poked out!", gamelog);
 				    else g_addstr("'s right eye is removed!", gamelog);
-				    g_addstr("\n",NULL);
+				    //g_addstr("\n",NULL);
 
 				    ////g_getkey();
 
@@ -946,7 +946,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 				    else if(damtype & WOUND_TORN)g_addstr("'s left eye is torn out!", gamelog);
 				    else if(damtype & WOUND_CUT)g_addstr("'s left eye is poked out!", gamelog);
 				    else g_addstr("'s left eye is removed!", gamelog);
-				    g_addstr("\n",NULL);
+				    //g_addstr("\n",NULL);
 
 				    ////g_getkey();
 
@@ -964,7 +964,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 				    else if(damtype & WOUND_TORN)g_addstr("'s tongue is torn out!", gamelog);
 				    else if(damtype & WOUND_CUT)g_addstr("'s tongue is cut off!", gamelog);
 				    else g_addstr("'s tongue is removed!", gamelog);
-				    g_addstr("\n",NULL);
+				    //g_addstr("\n",NULL);
 
 				    ////g_getkey();
 
@@ -982,7 +982,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 				    else if(damtype & WOUND_TORN)g_addstr("'s nose is torn off!", gamelog);
 				    else if(damtype & WOUND_CUT)g_addstr("'s nose is cut off!", gamelog);
 				    else g_addstr("'s nose is removed!", gamelog);
-				    g_addstr("\n",NULL);
+				    //g_addstr("\n",NULL);
 
 				    ////g_getkey();
 
@@ -997,7 +997,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 				    g_addstr(describe_entity_static(target), gamelog);
 				    if(damtype & WOUND_SHOT)g_addstr("'s neck bones are shattered!", gamelog);
 				    else g_addstr("'s neck is broken!", gamelog);
-				    g_addstr("\n",NULL);
+				    //g_addstr("\n",NULL);
 
 				    ////g_getkey();
 
@@ -1023,7 +1023,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 				    g_addstr(describe_entity_static(target), gamelog);
 				    if(damtype & WOUND_SHOT) g_addstr("'s upper spine is shattered!", gamelog);
 				    else g_addstr("'s upper spine is broken!", gamelog);
-				    g_addstr("\n",NULL);
+				    //g_addstr("\n",NULL);
 
 				    ////g_getkey();
 
@@ -1038,7 +1038,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 				    g_addstr(describe_entity_static(target), gamelog);
 				    if(damtype & WOUND_SHOT)g_addstr("'s lower spine is shattered!", gamelog);
 				    else g_addstr("'s lower spine is broken!", gamelog);
-				    g_addstr("\n",NULL);
+				    //g_addstr("\n",NULL);
 
 				    ////g_getkey();
 
@@ -1054,7 +1054,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 				    if(damtype & WOUND_SHOT)g_addstr("'s right lung is blasted!", gamelog);
 				    else if(damtype & WOUND_TORN)g_addstr("'s right lung is torn!", gamelog);
 				    else g_addstr("'s right lung is punctured!", gamelog);
-				    g_addstr("\n",NULL);
+				    //g_addstr("\n",NULL);
 
 				    ////g_getkey();
 
@@ -1070,7 +1070,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 				    if(damtype & WOUND_SHOT)g_addstr("'s left lung is blasted!", gamelog);
 				    else if(damtype & WOUND_TORN)g_addstr("'s left lung is torn!", gamelog);
 				    else g_addstr("'s left lung is punctured!", gamelog);
-				    g_addstr("\n",NULL);
+				    //g_addstr("\n",NULL);
 
 				    ////g_getkey();
 
@@ -1086,7 +1086,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 				    if(damtype & WOUND_SHOT)g_addstr("'s heart is blasted!", gamelog);
 				    else if(damtype & WOUND_TORN)g_addstr("'s heart is torn!", gamelog);
 				    else g_addstr("'s heart is punctured!", gamelog);
-				    g_addstr("\n",NULL);
+				    //g_addstr("\n",NULL);
 
 				    ////g_getkey();
 
@@ -1102,7 +1102,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 				    if(damtype & WOUND_SHOT)g_addstr("'s liver is blasted!", gamelog);
 				    else if(damtype & WOUND_TORN)g_addstr("'s liver is torn!", gamelog);
 				    else g_addstr("'s liver is punctured!", gamelog);
-				    g_addstr("\n",NULL);
+				    //g_addstr("\n",NULL);
 
 				    ////g_getkey();
 
@@ -1118,7 +1118,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 				    if(damtype & WOUND_SHOT)g_addstr("'s stomach is blasted!", gamelog);
 				    else if(damtype & WOUND_TORN)g_addstr("'s stomach is torn!", gamelog);
 				    else g_addstr("'s stomach is punctured!", gamelog);
-				    g_addstr("\n",NULL);
+				    //g_addstr("\n",NULL);
 
 				    ////g_getkey();
 
@@ -1134,7 +1134,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 				    if(damtype & WOUND_SHOT)g_addstr("'s right kidney is blasted!", gamelog);
 				    else if(damtype & WOUND_TORN)g_addstr("'s right kidney is torn!", gamelog);
 				    else g_addstr("'s right kidney is punctured!", gamelog);
-				    g_addstr("\n",NULL);
+				    //g_addstr("\n",NULL);
 
 				    ////g_getkey();
 
@@ -1150,7 +1150,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 				    if(damtype & WOUND_SHOT)g_addstr("'s left kidney is blasted!", gamelog);
 				    else if(damtype & WOUND_TORN)g_addstr("'s left kidney is torn!", gamelog);
 				    else g_addstr("'s left kidney is punctured!", gamelog);
-				    g_addstr("\n",NULL);
+				    //g_addstr("\n",NULL);
 
 				    //g_getkey();
 
@@ -1166,7 +1166,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 				    if(damtype & WOUND_SHOT)g_addstr("'s spleen is blasted!", gamelog);
 				    else if(damtype & WOUND_TORN)g_addstr("'s spleen is torn!", gamelog);
 				    else g_addstr("'s spleen is punctured!", gamelog);
-				    g_addstr("\n",NULL);
+				    //g_addstr("\n",NULL);
 
 				    //g_getkey();
 
@@ -1204,7 +1204,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 
 				    if(damtype & WOUND_SHOT)g_addstr("shot apart!", gamelog);
 				    else g_addstr("broken!", gamelog);
-				    g_addstr("\n",NULL);
+				    //g_addstr("\n",NULL);
 
 				    //g_getkey();
 
@@ -1226,7 +1226,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 	    strcat(str," to no effect.");
 	    //move(17,1);
 	    g_addstr(str, gamelog);
-	    g_addstr("\n",NULL);
+	    //g_addstr("\n",NULL);
 
 	    /*printparty();
 	    if(mode==GM_CHASECAR||
@@ -1248,7 +1248,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 	    strcat(str," knocks the blow aside and counters!");
 	    //move(17,1);
 	    g_addstr(str, gamelog);
-	    g_addstr("\n",NULL);
+	    //g_addstr("\n",NULL);
 
 	    //g_getkey();
 
@@ -1326,7 +1326,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 	    }
 	    //move(17,1);
 	    g_addstr(str, gamelog);
-	    g_addstr("\n",NULL);
+	    //g_addstr("\n",NULL);
 	    /*printparty();
 	    if(mode==GM_CHASECAR||
 		    mode==GM_CHASEFOOT) printchaseencounter();
@@ -1678,7 +1678,7 @@ void specialattack(struct t_creature* a, struct t_creature* t, char *actual)
 
     //move(16,1);
     g_addstr(str, gamelog);
-    g_addstr("\n",NULL);
+    //g_addstr("\n",NULL);
 
     if((t->animalgloss==ANIMALGLOSS_TANK||(t->animalgloss==ANIMALGLOSS_ANIMAL&&law[LAW_ANIMALRESEARCH]!=2))
 	    ||(enemy(a) && t->flag & CREATUREFLAG_BRAINWASHED))
@@ -1820,7 +1820,7 @@ void specialattack(struct t_creature* a, struct t_creature* t, char *actual)
 	g_addstr(" remains strong.", gamelog);
     }
 
-    g_addstr("\n",NULL);
+    //g_addstr("\n",NULL);
 
     /*printparty();
     if(mode==GM_CHASECAR||
@@ -1855,7 +1855,7 @@ void severloot(struct t_creature* cr,struct t_item* loot)
 	//move(17,1);
 	g_addstr(describe_entity_static(cr), gamelog);
 	g_addstr("'s grasp.", gamelog);
-	g_addstr("\n",NULL);
+	//g_addstr("\n",NULL);
 
 	//g_getkey();
 
@@ -1876,7 +1876,7 @@ void severloot(struct t_creature* cr,struct t_item* loot)
 	g_addstr("'s ", gamelog);
 	g_addstr(a_type(cr->armor)->name, gamelog);
 	g_addstr(" has been destroyed.", gamelog);
-	g_addstr("\n",NULL);
+	//g_addstr("\n",NULL);
 
 	//g_getkey();
 
@@ -2045,7 +2045,7 @@ char incapacitated(struct t_creature *a,char noncombat,char* printed)
 		    case 2: g_addstr(" burns...", gamelog); break;
 		}
 
-		g_addstr("\n",NULL);
+		//g_addstr("\n",NULL);
 
 		*printed=1;
 	    }
@@ -2074,7 +2074,7 @@ char incapacitated(struct t_creature *a,char noncombat,char* printed)
 		    case 2: g_addstr(" yowls pitifully...", gamelog); break;
 		}
 
-		g_addstr("\n",NULL);
+		//g_addstr("\n",NULL);
 
 		*printed=1;
 	    }
@@ -2201,7 +2201,7 @@ char incapacitated(struct t_creature *a,char noncombat,char* printed)
 		case 10: g_addstr(" tears up.", gamelog); break;
 	    }
 
-	    g_addstr("\n",NULL);
+	    //g_addstr("\n",NULL);
 
 	    *printed=1;
 	}
@@ -2226,7 +2226,7 @@ char incapacitated(struct t_creature *a,char noncombat,char* printed)
 		case 4: g_addstr(" considers the situation.", gamelog); break;
 	    }
 
-	    g_addstr("\n",NULL);
+	    //g_addstr("\n",NULL);
 
 	    *printed=1;
 	}
@@ -2383,7 +2383,7 @@ void adddeathmessage(struct t_creature* cr)
 		break;
 	}
     }
-    g_addstr("\n",NULL);
+    //g_addstr("\n",NULL);
 }
 
 
@@ -2447,7 +2447,7 @@ void freehostage(struct t_creature* cr,char situation)
             if(cr->prisoner->flag & CREATUREFLAG_JUSTESCAPED) g_addstr(" is recaptured", gamelog);
             else g_addstr(" is captured", gamelog);
          }
-         g_addstr("\n",NULL); //New line.
+         //g_addstr("\n",NULL); //New line.
       }
       else if(situation==1)
       {
@@ -2459,7 +2459,7 @@ void freehostage(struct t_creature* cr,char situation)
             if(cr->prisoner->flag & CREATUREFLAG_JUSTESCAPED) g_addstr(" is recaptured.", gamelog);
             else g_addstr(" is captured.", gamelog);
          }
-         g_addstr("\n",NULL); //New line.
+         //g_addstr("\n",NULL); //New line.
       }
       else if(situation==2)
       {
