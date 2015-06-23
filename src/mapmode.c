@@ -298,6 +298,8 @@ int mapmode() {
     } while (loop);
 
     msgprintw("Your entire squad has been eliminated. Game over, I guess.");
+    update_status(&map1);
+    update_ui(&map1);
     mapgetch();
 
     map_ui_free(&map1);
