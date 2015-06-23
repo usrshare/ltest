@@ -32,15 +32,15 @@ int inv_size(struct t_item* inv) {
 		if ((inv[i].type != IT_NONE) && (inv[i].itemcount != 0)) s++;
 	return s;
 }
-int inv_add(struct t_item* inv, struct t_item* toadd) {
+struct t_item* inv_add(struct t_item* inv, struct t_item* toadd) {
 
 	if (it_stackable[toadd -> type]) {
 		struct t_item* stack = inv_find_stack(inv, toadd);
-		if (stack) { stack->itemcount += toadd->itemcount; return 0; }
+		if (stack) { stack->itemcount += toadd->itemcount; return stack; }
 	}
 
 	struct t_item* newitem = inv_find_empty(inv);
-	if (newitem) { *newitem = *toadd; return 0; } else return 1;
+	if (newitem) { *newitem = *toadd; return newitem; } else return NULL;
 }
 
 int inv_del(struct t_item* inv, struct t_item* todel, int count) {

@@ -151,6 +151,8 @@ struct t_creature_generate_rules type_rules[ENTT_COUNT] = {
 		.skill = {ES_PISTOL},
 		.skilllim = {{1,3}},
 		.armors = {ARMOR_SECURITYUNIFORM},
+		.weapons = {WT_REVOLVER_38},
+		.number_clips = {7},
 	},
 	{.type = ET_SCIENTIST_LABTECH, .gender = EG_MBIAS,
 		.age = A_MATURE,
