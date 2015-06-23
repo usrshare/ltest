@@ -46,7 +46,7 @@ struct t_item {
 
 struct t_item* inv_find_empty(struct t_item* inv);
 int inv_size(struct t_item* inv);
-int inv_add(struct t_item* inv, struct t_item* item);
+struct t_item* inv_add(struct t_item* inv, struct t_item* toadd);
 int inv_pop(struct t_item* inv, struct t_item* o_item);
 int inv_del(struct t_item* inv, struct t_item* todel, int count);
 

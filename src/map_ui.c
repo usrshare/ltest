@@ -208,15 +208,17 @@ int updheader(struct t_map* map) {
     return 0;
 }
 
-int msgaddstr(char *string) {
+int msgaddstr(const char *string) {
 
     int y,x;
 
+    /*
     char* thisline = strtok(string,"\n");    
 
     int lines=0;
 
     while (thisline != NULL) {
+    */
 
 	if (morecount >= 1) {
 	    getsyx(y,x);
@@ -232,12 +234,12 @@ int msgaddstr(char *string) {
 	}
 
 	wclear(msgwindow);
-	mvwaddstr(msgwindow,0,0,thisline);
+	mvwaddstr(msgwindow,0,0,string);
 	wmove(msgwindow,0,0);
 
-	thisline = strtok(NULL,"\n");
+	//thisline = strtok(NULL,"\n");
 	morecount++;
-    }
+    /*}*/
 }
 
 int msgvprintw(const char *fmt, va_list ap) {

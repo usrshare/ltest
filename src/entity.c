@@ -213,8 +213,16 @@ int creature_init(struct t_creature* o_entity, struct t_creature_generate_rules*
     if (wn) {
     
     wi = randval(wn);
-    }
+
+    struct t_item new_weapon = {.type = IT_WEAPON, .itemtypeid = genrules->weapons[wi], .ammo = 200};
     
+    struct t_item clips = {.type = IT_CLIP, .itemtypeid = weapontypes[genrules->weapons[wi]].attacks[0].ammotype, .ammo = cliptypes[weapontypes[genrules->weapons[wi]].attacks[0].ammotype].ammo };
+
+
+    struct t_item* added_weapon = inv_add(o_entity->inventory, &new_weapon);
+    o_entity->weapon = added_weapon;
+
+    }
 
     o_entity->special[ESW_TEETH]=TOOTHNUM;
     o_entity->special[ESW_RIGHTEYE]=1;
