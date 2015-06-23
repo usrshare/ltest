@@ -370,18 +370,18 @@ int update_status (struct t_map* map) {
 
 	    int nl = strlen(e_name);
 
-	    mvwprintw(statwindow,0, pi*13 + 5 - (nl/2), " %s ",e_name);
+	    mvwprintw(statwindow,0, 1 + pi*13 + 5 - ((nl+1)/2), " %s ",e_name);
 
 	    char* e_weapon = w_type(e->ent->weapon)->shortname;
 	    nl = strlen(e_weapon);
-	    mvwprintw(statwindow,1, pi*13 + 5 - (nl/2), " %s ",e_weapon);
+	    mvwprintw(statwindow,1, 1+ pi*13 + 5 - ((nl+1)/2), " %s ",e_weapon);
 
 	    int statattr;
 	    char* e_stat = gethealthstat(e->ent, 1, &statattr);
 	    nl = strlen(e_stat);
 
 	    wattron(statwindow,statattr);
-	    mvwprintw(statwindow,2, pi*13 + 5 - (nl/2), " %s ",e_stat);
+	    mvwprintw(statwindow,2, 1+ pi*13 + 5 - ((nl+1)/2), " %s ",e_stat);
 	    wattroff(statwindow,statattr);
 
 	    pi++;
