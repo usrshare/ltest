@@ -267,7 +267,7 @@ int mapmode() {
 	}
     }
 
-#define ENEMIES_COUNT 3
+#define ENEMIES_COUNT 10
 
     struct t_map_entity* enemies[ENEMIES_COUNT];
 
