@@ -287,6 +287,7 @@ int mapmode() {
     int loop = 1;
     int turn_n = 0;
     do {
+	update_status(&map1);
 	update_ui(&map1);
 	make_turn(&map1);
 	loop = check_conditions(&map1);

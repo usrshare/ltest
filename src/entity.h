@@ -433,4 +433,6 @@ void creature_liberalize(struct t_creature *cr);
 
 void entity_drop_weapon(struct t_creature* e, struct t_item* loot);
 void creature_strip(struct t_creature* cr, struct t_item* lootpile);
+
+char* gethealthstat(struct t_creature* g,char smll,int* o_attrs);
 #endif

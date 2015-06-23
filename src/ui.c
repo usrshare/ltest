@@ -51,6 +51,7 @@ int g_attrset(int attrs) {
 
 char teststr[12];
 
+
 const char* tostring(int num) {
 	snprintf(teststr,12,"%d",num);
 	return teststr;

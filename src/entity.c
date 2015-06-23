@@ -812,3 +812,184 @@ void creature_strip(struct t_creature* cr, struct t_item* lootpile) {
     inv_clear(cr->inventory);
 
 }
+
+char* gethealthstat(struct t_creature* g,char smll,int* o_attrs) {
+   
+   char* resstr;
+   int attrs;
+
+   short woundsum=0;
+   bool bleeding=false;
+   for(int w=0;w<EB_COUNT;w++)
+   {
+      if(g->wound[w]!=0)woundsum++;
+      if(g->wound[w] & WOUND_BLEEDING)bleeding=true;
+   }
+
+   int armok=2,legok=2;
+   if((g->wound[EB_ARM_RIGHT] & WOUND_NASTYOFF)||
+      (g->wound[EB_ARM_RIGHT] & WOUND_CLEANOFF))armok--;
+   if((g->wound[EB_ARM_LEFT] & WOUND_NASTYOFF)||
+      (g->wound[EB_ARM_LEFT] & WOUND_CLEANOFF))armok--;
+   if((g->wound[EB_LEG_RIGHT] & WOUND_NASTYOFF)||
+      (g->wound[EB_LEG_RIGHT] & WOUND_CLEANOFF))legok--;
+   if((g->wound[EB_LEG_LEFT] & WOUND_NASTYOFF)||
+      (g->wound[EB_LEG_LEFT] & WOUND_CLEANOFF))legok--;
+
+   if(bleeding)attrs = CP_RED;
+   else attrs = CP_WHITE;
+   if(!g->alive)
+   {
+      attrs = CP_DARKGRAY;
+      resstr = "Deceased";
+   }
+   else if(g->blood<=20)
+   {
+      if(smll)resstr = "NearDETH";
+      else resstr = "Near Death";
+   }
+   else if(g->blood<=50)
+   {
+      if(smll)resstr = "BadWound";
+      else resstr = "Badly Wounded";
+   }
+   else if(g->blood<=75)
+   {
+      resstr = "Wounded";
+   }
+   else if(g->blood<100)
+   {
+      if(smll)resstr = "LtWound";
+      else resstr = "Lightly Wounded";
+   }
+   else if(g->special[ESW_NECK]==2)
+   {
+      if(!bleeding)attrs = CP_GREEN;
+      if(smll)resstr = "NckBroke";
+      else resstr = "Neck Broken";
+   }
+   else if(g->special[ESW_UPPERSPINE]==2)
+   {
+      if(!bleeding)attrs = CP_GREEN;
+      if(smll)resstr = "Quadpleg";
+      else resstr = "Quadraplegic";
+   }
+   else if(g->special[ESW_LOWERSPINE]==2)
+   {
+      if(!bleeding)attrs = CP_GREEN;
+      if(smll)resstr = "Parapleg";
+      else resstr = "Paraplegic";
+   }
+   else if(g->special[ESW_RIGHTEYE]==0&&
+      g->special[ESW_LEFTEYE]==0&&
+      g->special[ESW_NOSE]==0)
+   {
+      if(!bleeding)attrs = CP_GREEN;
+      if(smll)resstr = "FaceGone";
+      else resstr = "Face Gone";
+   }
+   else if(legok==0&&armok==0)
+   {
+      if(!bleeding)attrs = CP_GREEN;
+      resstr = "No Limbs";
+   }
+   else if((legok==1&&armok==0)||(armok==1&&legok==0))
+   {
+      if(!bleeding)attrs = CP_GREEN;
+      resstr = "One Limb";
+   }
+   else if(legok==2&&armok==0)
+   {
+      if(!bleeding)attrs = CP_GREEN;
+      resstr = "No Arms";
+   }
+   else if(legok==0&&armok==2)
+   {
+      if(!bleeding)attrs = CP_GREEN;
+      resstr = "No Legs";
+   }
+   else if(legok==1&&armok==1)
+   {
+      if(!bleeding)attrs = CP_GREEN;
+      if(smll)resstr = "1Arm1Leg";
+      else resstr = "One Arm, One Leg";
+   }
+   else if(armok==1)
+   {
+      if(!bleeding)attrs = CP_GREEN;
+      resstr = "One Arm";
+   }
+   else if(legok==1)
+   {
+      if(!bleeding)attrs = CP_GREEN;
+      resstr = "One Leg";
+   }
+   else if(g->special[ESW_RIGHTEYE]==0&&
+      g->special[ESW_LEFTEYE]==0)
+   {
+      if(!bleeding)attrs = CP_GREEN;
+      resstr = "Blind";
+   }
+   else if((g->special[ESW_RIGHTEYE]==0||
+      g->special[ESW_LEFTEYE]==0)&&
+      g->special[ESW_NOSE]==0)
+   {
+      if(!bleeding)attrs = CP_GREEN;
+      if(smll)resstr = "FaceMutl";
+      else resstr = "Face Mutilated";
+   }
+   else if(g->special[ESW_NOSE]==0)
+   {
+      if(!bleeding)attrs = CP_GREEN;
+      if(smll)resstr = "NoseGone";
+      else resstr = "Missing Nose";
+   }
+   else if(g->special[ESW_RIGHTEYE]==0||
+      g->special[ESW_LEFTEYE]==0)
+   {
+      if(!bleeding)attrs = CP_GREEN;
+      if(smll)resstr = "One Eye";
+      else resstr = "Missing Eye";
+   }
+   else if(g->special[ESW_TONGUE]==0)
+   {
+      if(!bleeding)attrs = CP_GREEN;
+      if(smll)resstr = "NoTongue";
+      else resstr = "No Tongue";
+   }
+   else if(g->special[ESW_TEETH]==0)
+   {
+      if(!bleeding)attrs = CP_GREEN;
+      resstr = "No Teeth";
+   }
+   else if(g->special[ESW_TEETH]<TOOTHNUM)
+   {
+      if(!bleeding)attrs = CP_GREEN;
+      if(smll)resstr = "MisTeeth";
+      else resstr = "Missing Teeth";
+   }
+   else
+   {
+      if(g->align==-1)
+      {
+         attrs = CP_RED;
+         if(smll)resstr = "Consrvtv";
+         else resstr = "Conservative";
+      }
+      else if(g->align==0)
+      {
+         attrs = CP_WHITE;
+         resstr = "Moderate";
+      }
+      else
+      {
+         attrs = CP_GREEN;
+         if(g->animalgloss==ANIMALGLOSS_ANIMAL)
+            resstr = "Animal";
+         else resstr = "Liberal";
+      }
+   }
+
+   if (o_attrs) *o_attrs = attrs;
+   return resstr;
+}
