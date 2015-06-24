@@ -203,7 +203,7 @@ int updheader(struct t_map* map) {
     wmove(headerwindow,0,0);
     whline(headerwindow,ACS_HLINE,COLS);
     wattron(headerwindow, A_BOLD);
-    mvwprintw(headerwindow,0,1," insert title here. - %s ",alertdescriptions[map->alert_state]);
+    mvwprintw(headerwindow,0,1," insert title here. - T%5d - %s ",map->time,alertdescriptions[map->alert_state]);
     wattroff(headerwindow, A_BOLD);
     wrefresh(headerwindow);
     return 0;
@@ -370,18 +370,18 @@ int update_status (struct t_map* map) {
 
 	    int nl = strlen(e_name);
 
-	    mvwprintw(statwindow,0, pi*13 + 5 - (nl/2), " %s ",e_name);
+	    mvwprintw(statwindow,0, pi*13 + 1, " %s ",e_name);
 
 	    char* e_weapon = w_type(e->ent->weapon)->shortname;
 	    nl = strlen(e_weapon);
-	    mvwprintw(statwindow,1, pi*13 + 5 - (nl/2), " %s ",e_weapon);
+	    mvwprintw(statwindow,1, pi*13 + 13 - nl, "%s",e_weapon);
 
 	    int statattr;
 	    char* e_stat = gethealthstat(e->ent, 1, &statattr);
 	    nl = strlen(e_stat);
 
 	    wattron(statwindow,statattr);
-	    mvwprintw(statwindow,2, pi*13 + 5 - (nl/2), " %s ",e_stat);
+	    mvwprintw(statwindow,2, pi*13 + 13 - nl, "%s",e_stat);
 	    wattroff(statwindow,statattr);
 
 	    pi++;
