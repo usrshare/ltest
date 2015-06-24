@@ -285,13 +285,14 @@ int mapmode() {
     map_ui_init(&map1);
 
     int loop = 1;
-    int turn_n = 0;
+    map1.time = 0;
     do {
+	updheader(&map1);
 	update_status(&map1);
 	update_ui(&map1);
 	make_turn(&map1);
 	loop = check_conditions(&map1);
-	turn_n++;
+	map1.time++;
 	if (map1.alert_time > 0) map1.alert_time--; if ((map1.alert_time == 0) && (map1.alert_state > 0)) map1.alert_state--;
 	for (int i = 0; i < MAX_ENTITIES; i++) {
 	    if ((map1.ent[i].type != ET_NONE) && (map1.ent[i].aidata) && (map1.ent[i].aidata->timer > 0)) map1.ent[i].aidata->timer--; }

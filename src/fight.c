@@ -671,15 +671,17 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 			//clearmessagearea();
 			g_attrset(CP_GREEN);
 
+			char msg[128]; msg[0] = 0;
 			//move(16,1);
-			g_addstr(describe_entity_static(target), gamelog);
-			if(!t->alive) g_addstr(" misguidedly", gamelog);
-			else g_addstr(" heroically", gamelog);
-			g_addstr(" shields ", gamelog);
-			g_addstr(describe_entity_static(t), gamelog);
-			if(!t->alive) g_addstr("'s corpse", gamelog);
-			g_addstr("!", gamelog);
+			strcat(msg,describe_entity_static(target));
+			if(!t->alive) strcat(msg," misguidedly");
+			else strcat(msg," heroically");
+			strcat(msg," shields ");
+			strcat(msg,describe_entity_static(t));
+			if(!t->alive) strcat(msg,"'s corpse");
+			strcat(msg,"!");
 			//g_addstr("\n",NULL);
+			g_addstr(msg,gamelog);
 
 			addjuice(target,10,1000);//Instant juice!! Way to take the bullet!!
 
@@ -1684,18 +1686,19 @@ void specialattack(struct t_creature* a, struct t_creature* t, char *actual)
 	    ||(enemy(a) && t->flag & CREATUREFLAG_BRAINWASHED))
     {
 	//move(17,1);
-	g_addstr(s,gamelog);
-	g_addstr(describe_entity_static(t), gamelog);
-	g_addstr(" is immune to the attack!", gamelog);
+	strcpy(str,s);
+	strcat(str,describe_entity_static(t));
+	strcat(str," is immune to the attack!");
+	g_addstr(str,NULL);
     }
     else if (a->align == t->align)
     {
-	move (17,1);
-	g_addstr(s,NULL);
-	g_addstr(describe_entity_static(t),NULL);
-	g_addstr(" already agrees with ",NULL);
-	g_addstr(describe_entity_static(a),NULL);
-	g_addstr(".",NULL);
+	strcpy(str,s);
+	strcat(str,describe_entity_static(t));
+	strcat(str," already agrees with ");
+	strcat(str,describe_entity_static(a));
+	strcat(str,".");
+	g_addstr(str,NULL);
     }
     else if(attack>resist)
     {
@@ -1705,49 +1708,54 @@ void specialattack(struct t_creature* a, struct t_creature* t, char *actual)
 	    if(t->juice>100)
 	    {
 		//move(17,1);
-		g_addstr(s, gamelog);
-		g_addstr(describe_entity_static(t), gamelog);
-		g_addstr(" loses juice!", gamelog);
+		strcpy(str,s);
+		strcat(str,describe_entity_static(t));
+		strcat(str," loses juice!");
 		addjuice(t,-50,100);
+		g_addstr(str,gamelog);
 	    }
 	    else if(randval(15)>entity_get_attribute(t,EA_WIS,true) || entity_get_attribute(t,EA_WIS,true) < entity_get_attribute(t,EA_HRT,true))
 	    {
 		//move(17,1);
-		g_addstr(s, gamelog);
-		g_addstr(describe_entity_static(t), gamelog);
-		g_addstr(" is tainted with Wisdom!", gamelog);
+		strcpy(str,s);
+		strcat(str,describe_entity_static(t));
+		strcat(str," is tainted with Wisdom!");
 		t->attributes[EA_WIS] +=1;
+		g_addstr(str,gamelog);
 	    }
 	    else if(t->align==ALIGN_LIBERAL && t->flag & CREATUREFLAG_LOVESLAVE)
 	    {
 		//move(17,1);
-		g_addstr(s, gamelog);
-		g_addstr(describe_entity_static(t), gamelog);
-		g_addstr(" can't bear to leave!", gamelog);
+		strcpy(str,s);
+		strcat(str,describe_entity_static(t));
+		strcat(str," can't bear to leave!");
+		g_addstr(str,gamelog);
 	    }
 	    else
 	    {
 		if(a->align==-1)
 		{
 		    //move(17,1);
-		g_addstr(s, gamelog);
-		g_addstr(describe_entity_static(t), gamelog);
-		    g_addstr(" is turned Conservative", gamelog);
+		strcpy(str,s);
+		strcat(str,describe_entity_static(t));
+		    strcat(str," is turned Conservative");
 		    t->stunned=0;
 		    if(t->prisoner!=NULL)
 			freehostage(t,0);
-		    g_addstr("!", gamelog);
+		    strcat(str,"!");
+		g_addstr(str,gamelog);
 		}
 		else
 		{
 		    //move(17,1);
-		g_addstr(s, gamelog);
-		g_addstr(describe_entity_static(t), gamelog);
-		    g_addstr(" doesn't want to fight anymore", gamelog);
+		strcpy(str,s);
+		strcat(str,describe_entity_static(t));
+		    strcat(str," doesn't want to fight anymore");
 		    t->stunned=0;
 		    if(t->prisoner!=NULL)
 			freehostage(t,0);
-		    g_addstr("!", gamelog);
+		    strcat(str,"!");
+		g_addstr(str,gamelog);
 		}
 
 		for(int e=0;e<ENCMAX;e++)
@@ -1783,27 +1791,30 @@ void specialattack(struct t_creature* a, struct t_creature* t, char *actual)
 	    if(t->juice>=100)
 	    {
 		//move(17,1);
-		g_addstr(s, gamelog);
-		g_addstr(describe_entity_static(t), gamelog);
-		g_addstr(" seems less badass!", gamelog);
+		strcpy(str,s);
+		strcat(str,describe_entity_static(t));
+		strcat(str," seems less badass!");
 		addjuice(t,-50,99);
+		g_addstr(str,gamelog);
 	    }
 	    else if(!entity_attr_check(t,EA_HRT,DIFFICULTY_AVERAGE) ||
 		    entity_get_attribute(t,EA_HRT,true) < entity_get_attribute(t,EA_WIS,true))
 	    {
 		//move(17,1);
-		g_addstr(s, gamelog);
-		g_addstr(describe_entity_static(t), gamelog);
-		g_addstr("'s Heart swells!", gamelog);
+		strcpy(str,s);
+		strcat(str,describe_entity_static(t));
+		strcat(str,"'s Heart swells!");
 		t->attributes[EA_HRT] += +1;
+		g_addstr(str,gamelog);
 	    }
 	    else
 	    {
 		//move(17,1);
-		g_addstr(s, gamelog);
-		g_addstr(describe_entity_static(t), gamelog);
-		g_addstr(" has turned Liberal!", gamelog);
+		strcpy(str,s);
+		strcat(str,describe_entity_static(t));
+		strcat(str," has turned Liberal!");
 		t->stunned=0;
+		g_addstr(str,gamelog);
 
 		creature_liberalize(t);
 		t->infiltration/=2;
@@ -1815,9 +1826,10 @@ void specialattack(struct t_creature* a, struct t_creature* t, char *actual)
     else
     {
 	//move(17,1);
-	g_addstr(s, gamelog);
-	g_addstr(describe_entity_static(t), gamelog);
-	g_addstr(" remains strong.", gamelog);
+	strcpy(str,s);
+	strcat(str,describe_entity_static(t));
+	strcat(str," remains strong.");
+	g_addstr(str,gamelog);
     }
 
     //g_addstr("\n",NULL);
@@ -2027,6 +2039,8 @@ char incapacitated(struct t_creature *a,char noncombat,char* printed)
 {
     *printed=0;
 
+    char msg[256]; msg[0] = 0;
+
     if(a->animalgloss==ANIMALGLOSS_TANK)
     {
 	if(a->blood<=20||(a->blood<=50&&(randval(2)||a->forceinc)))
@@ -2036,16 +2050,18 @@ char incapacitated(struct t_creature *a,char noncombat,char* printed)
 	    {
 		g_attrset(CP_WHITE);
 
-		g_addstr("The ", gamelog);
-		g_addstr(describe_entity_static(a), gamelog);
+		strcat(msg, "The ");
+		strcat(msg, describe_entity_static(a));
 		switch(randval(3))
 		{
-		    case 0: g_addstr(" smokes...", gamelog); break;
-		    case 1: g_addstr(" smolders.", gamelog); break;
-		    case 2: g_addstr(" burns...", gamelog); break;
+		    case 0: strcat(msg," smokes..."); break;
+		    case 1: strcat(msg," smolders."); break;
+		    case 2: strcat(msg," burns..."); break;
 		}
 
 		//g_addstr("\n",NULL);
+
+		g_addstr(msg,gamelog);
 
 		*printed=1;
 	    }
@@ -2076,6 +2092,7 @@ char incapacitated(struct t_creature *a,char noncombat,char* printed)
 
 		//g_addstr("\n",NULL);
 
+		g_addstr(msg,gamelog);
 		*printed=1;
 	    }
 	    return 1;
@@ -2093,84 +2110,85 @@ char incapacitated(struct t_creature *a,char noncombat,char* printed)
 	    g_attrset(CP_WHITE);
 
 	    //move(16,1);
-	    g_addstr(describe_entity_static(a), gamelog);
+	    strcat(msg,describe_entity_static(a));
 	    switch(randval(54))
 	    {
-		case 0: g_addstr(" desperately cries out to Jesus.", gamelog); break;
-		case 1: if(law[LAW_FREESPEECH]==-2) g_addstr(" [makes a stinky].", gamelog);
-			    else g_addstr(" soils the floor.", gamelog); break;
-		case 2: g_addstr(" whimpers in a corner.", gamelog); break;
-		case 3: g_addstr(" begins to weep.", gamelog); break;
-		case 4: g_addstr(" vomits.", gamelog); break;
-		case 5: g_addstr(" chortles...", gamelog); break;
-		case 6: g_addstr(" screams in pain.", gamelog); break;
-		case 7: g_addstr(" asks for mother.", gamelog); break;
-		case 8: g_addstr(" prays softly...", gamelog); break;
-		case 9: g_addstr(" clutches at the wounds.", gamelog); break;
-		case 10: g_addstr(" reaches out and moans.", gamelog); break;
-		case 11: g_addstr(" hollers in pain.", gamelog); break;
-		case 12: g_addstr(" groans in agony.", gamelog); break;
-		case 13: g_addstr(" begins hyperventilating.", gamelog); break;
-		case 14: g_addstr(" shouts a prayer.", gamelog); break;
-		case 15: g_addstr(" coughs up blood.", gamelog); break;
-		case 16: if(mode!=GM_CHASECAR) g_addstr(" stumbles against a wall.", gamelog);
-			     else g_addstr(" leans against the door.", gamelog); break;
-		case 17: g_addstr(" begs for forgiveness.", gamelog); break;
-		case 18: g_addstr(" shouts \"Why have you forsaken me?\"", gamelog); break;
-		case 19: g_addstr(" murmurs \"Why Lord?   Why?\"", gamelog); break;
-		case 20: g_addstr(" whispers \"Am I dead?\"", gamelog); break;
-		case 21: if(law[LAW_FREESPEECH]==-2) g_addstr(" [makes a mess], moaning.", gamelog);
-			     else g_addstr(" pisses on the floor, moaning.", gamelog); break;
-		case 22: g_addstr(" whispers incoherently.", gamelog); break;
+		case 0: strcat(msg," desperately cries out to Jesus."); break;
+		case 1: if(law[LAW_FREESPEECH]==-2) strcat(msg," [makes a stinky].");
+			    else strcat(msg," soils the floor."); break;
+		case 2: strcat(msg," whimpers in a corner."); break;
+		case 3: strcat(msg," begins to weep."); break;
+		case 4: strcat(msg," vomits."); break;
+		case 5: strcat(msg," chortles..."); break;
+		case 6: strcat(msg," screams in pain."); break;
+		case 7: strcat(msg," asks for mother."); break;
+		case 8: strcat(msg," prays softly..."); break;
+		case 9: strcat(msg," clutches at the wounds."); break;
+		case 10: strcat(msg," reaches out and moans."); break;
+		case 11: strcat(msg," hollers in pain."); break;
+		case 12: strcat(msg," groans in agony."); break;
+		case 13: strcat(msg," begins hyperventilating."); break;
+		case 14: strcat(msg," shouts a prayer."); break;
+		case 15: strcat(msg," coughs up blood."); break;
+		case 16: if(mode!=GM_CHASECAR) strcat(msg," stumbles against a wall.");
+			     else strcat(msg," leans against the door."); break;
+		case 17: strcat(msg," begs for forgiveness."); break;
+		case 18: strcat(msg," shouts \"Why have you forsaken me?\""); break;
+		case 19: strcat(msg," murmurs \"Why Lord?   Why?\""); break;
+		case 20: strcat(msg," whispers \"Am I dead?\""); break;
+		case 21: if(law[LAW_FREESPEECH]==-2) strcat(msg," [makes a mess], moaning.");
+			     else strcat(msg," pisses on the floor, moaning."); break;
+		case 22: strcat(msg," whispers incoherently."); break;
 		case 23: if(a->special[ESW_RIGHTEYE]&&a->special[ESW_LEFTEYE])
-			     g_addstr(" stares off into space.", gamelog);
+			     strcat(msg," stares off into space.");
 			 else if(a->special[ESW_RIGHTEYE]||a->special[ESW_LEFTEYE])
-			     g_addstr(" stares into space with one empty eye.", gamelog);
-			 else g_addstr(" stares out with hollow sockets.", gamelog); break;
-		case 24: g_addstr(" cries softly.", gamelog); break;
-		case 25: g_addstr(" yells until the scream cracks dry.", gamelog); break;
-		case 26: if(a->special[ESW_TEETH]>1) g_addstr("'s teeth start chattering.", gamelog);
-			     else if(a->special[ESW_TEETH]==1) g_addstr("'s tooth starts chattering.", gamelog);
-			     else g_addstr("'s gums start chattering.", gamelog); break;
-		case 27: g_addstr(" starts shaking uncontrollably.", gamelog); break;
-		case 28: g_addstr(" looks strangely calm.", gamelog); break;
-		case 29: g_addstr(" nods off for a moment.", gamelog); break;
-		case 30: g_addstr(" starts drooling.", gamelog); break;
-		case 31: g_addstr(" seems lost in memories.", gamelog); break;
-		case 32: g_addstr(" shakes with fear.", gamelog); break;
-		case 33: g_addstr(" murmurs \"I'm so afraid...\"", gamelog); break;
-		case 34: g_addstr(" cries \"It can't be like this...\"", gamelog); break;
-		case 35: if(a->age<20 && !a->animalgloss) g_addstr(" cries \"Mommy!\"", gamelog);
+			     strcat(msg," stares into space with one empty eye.");
+			 else strcat(msg," stares out with hollow sockets."); break;
+		case 24: strcat(msg," cries softly."); break;
+		case 25: strcat(msg," yells until the scream cracks dry."); break;
+		case 26: if(a->special[ESW_TEETH]>1) strcat(msg,"'s teeth start chattering.");
+			     else if(a->special[ESW_TEETH]==1) strcat(msg,"'s tooth starts chattering.");
+			     else strcat(msg,"'s gums start chattering."); break;
+		case 27: strcat(msg," starts shaking uncontrollably."); break;
+		case 28: strcat(msg," looks strangely calm."); break;
+		case 29: strcat(msg," nods off for a moment."); break;
+		case 30: strcat(msg," starts drooling."); break;
+		case 31: strcat(msg," seems lost in memories."); break;
+		case 32: strcat(msg," shakes with fear."); break;
+		case 33: strcat(msg," murmurs \"I'm so afraid...\""); break;
+		case 34: strcat(msg," cries \"It can't be like this...\""); break;
+		case 35: if(a->age<20 && !a->animalgloss) strcat(msg," cries \"Mommy!\"");
 			     else switch(a->type) {
 				 case ET_GENETIC:
-				     g_addstr(" murmurs \"What about my offspring?\"", gamelog); break;
+				     strcat(msg," murmurs \"What about my offspring?\""); break;
 				 case ET_GUARDDOG:
-				     g_addstr(" murmurs \"What about my puppies?\"", gamelog); break;
+				     strcat(msg," murmurs \"What about my puppies?\""); break;
 				 default:
-				     g_addstr(" murmurs \"What about my children?\"", gamelog); break;
+				     strcat(msg," murmurs \"What about my children?\""); break;
 			     } break;
-		case 36: g_addstr(" shudders quietly.", gamelog); break;
-		case 37: g_addstr(" yowls pitifully.", gamelog); break;
-		case 38: g_addstr(" begins losing faith in God.", gamelog); break;
-		case 39: g_addstr(" muses quietly about death.", gamelog); break;
-		case 40: g_addstr(" asks for a blanket.", gamelog); break;
-		case 41: g_addstr(" shivers softly.", gamelog); break;
-		case 42: if(law[LAW_FREESPEECH]==-2)g_addstr(" [makes a mess].", gamelog);
-			     else g_addstr(" vomits up a clot of blood.", gamelog); break;
-		case 43: if(law[LAW_FREESPEECH]==-2)g_addstr(" [makes a mess].", gamelog);
-			     else g_addstr(" spits up a cluster of bloody bubbles.", gamelog); break;
-		case 44: g_addstr(" pleads for mercy.", gamelog); break;
-		case 45: g_addstr(" quietly asks for coffee.", gamelog); break;
-		case 46: g_addstr(" looks resigned.", gamelog); break;
-		case 47: g_addstr(" scratches at the air.", gamelog); break;
-		case 48: g_addstr(" starts to giggle uncontrollably.", gamelog); break;
-		case 49: g_addstr(" wears a look of pain.", gamelog); break;
-		case 50: g_addstr(" questions God.", gamelog); break;
-		case 51: g_addstr(" whispers \"Mama baby.  Baby loves mama.\"", gamelog); break;
-		case 52: g_addstr(" asks for childhood toys frantically.", gamelog); break;
-		case 53: g_addstr(" murmurs \"But I go to church...\"", gamelog); break;
+		case 36: strcat(msg," shudders quietly."); break;
+		case 37: strcat(msg," yowls pitifully."); break;
+		case 38: strcat(msg," begins losing faith in God."); break;
+		case 39: strcat(msg," muses quietly about death."); break;
+		case 40: strcat(msg," asks for a blanket."); break;
+		case 41: strcat(msg," shivers softly."); break;
+		case 42: if(law[LAW_FREESPEECH]==-2)strcat(msg," [makes a mess].");
+			     else strcat(msg," vomits up a clot of blood."); break;
+		case 43: if(law[LAW_FREESPEECH]==-2)strcat(msg," [makes a mess].");
+			     else strcat(msg," spits up a cluster of bloody bubbles."); break;
+		case 44: strcat(msg," pleads for mercy."); break;
+		case 45: strcat(msg," quietly asks for coffee."); break;
+		case 46: strcat(msg," looks resigned."); break;
+		case 47: strcat(msg," scratches at the air."); break;
+		case 48: strcat(msg," starts to giggle uncontrollably."); break;
+		case 49: strcat(msg," wears a look of pain."); break;
+		case 50: strcat(msg," questions God."); break;
+		case 51: strcat(msg," whispers \"Mama baby.  Baby loves mama.\""); break;
+		case 52: strcat(msg," asks for childhood toys frantically."); break;
+		case 53: strcat(msg," murmurs \"But I go to church...\""); break;
 	    }
 
+	    g_addstr(msg,gamelog);
 	    *printed=1;
 	}
 
@@ -2185,24 +2203,25 @@ char incapacitated(struct t_creature *a,char noncombat,char* printed)
 	    g_attrset(CP_WHITE);
 
 	    //move(16,1);
-	    g_addstr(describe_entity_static(a), gamelog);
+	    strcat(msg,describe_entity_static(a));
 	    switch(randval(11))
 	    {
-		case 0: g_addstr(" seems hesitant.", gamelog); break;
-		case 1: g_addstr(" is caught in self-doubt.", gamelog); break;
-		case 2: g_addstr(" looks around uneasily.", gamelog); break;
-		case 3: g_addstr(" begins to weep.", gamelog); break;
-		case 4: g_addstr(" asks \"Is this right?\"", gamelog); break;
-		case 5: g_addstr(" asks for guidance.", gamelog); break;
-		case 6: g_addstr(" is caught in indecision.", gamelog); break;
-		case 7: g_addstr(" feels numb.", gamelog); break;
-		case 8: g_addstr(" prays softly.", gamelog); break;
-		case 9: g_addstr(" searches for the truth.", gamelog); break;
-		case 10: g_addstr(" tears up.", gamelog); break;
+		case 0: strcat(msg," seems hesitant."); break;
+		case 1: strcat(msg," is caught in self-doubt."); break;
+		case 2: strcat(msg," looks around uneasily."); break;
+		case 3: strcat(msg," begins to weep."); break;
+		case 4: strcat(msg," asks \"Is this right?\""); break;
+		case 5: strcat(msg," asks for guidance."); break;
+		case 6: strcat(msg," is caught in indecision."); break;
+		case 7: strcat(msg," feels numb."); break;
+		case 8: strcat(msg," prays softly."); break;
+		case 9: strcat(msg," searches for the truth."); break;
+		case 10: strcat(msg," tears up."); break;
 	    }
 
 	    //g_addstr("\n",NULL);
 
+		g_addstr(msg,gamelog);
 	    *printed=1;
 	}
 	return 1;
@@ -2216,18 +2235,19 @@ char incapacitated(struct t_creature *a,char noncombat,char* printed)
 	    g_attrset(CP_WHITE);
 
 	    //move(16,1);
-	    g_addstr(describe_entity_static(a), gamelog);
+	    strcat(msg,describe_entity_static(a));
 	    switch(randval(5))
 	    {
-		case 0: g_addstr(" looks on with authority.", gamelog); break;
-		case 1: g_addstr(" waits patiently.", gamelog); break;
-		case 2: g_addstr(" sits in thought.", gamelog); break;
-		case 3: g_addstr(" breathes slowly.", gamelog); break;
-		case 4: g_addstr(" considers the situation.", gamelog); break;
+		case 0: strcat(msg," looks on with authority."); break;
+		case 1: strcat(msg," waits patiently."); break;
+		case 2: strcat(msg," sits in thought."); break;
+		case 3: strcat(msg," breathes slowly."); break;
+		case 4: strcat(msg," considers the situation."); break;
 	    }
 
 	    //g_addstr("\n",NULL);
 
+	    g_addstr(msg,gamelog);
 	    *printed=1;
 	}
 

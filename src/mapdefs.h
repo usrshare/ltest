@@ -160,6 +160,7 @@ struct t_map {
 	uint8_t width;
 	uint8_t height;
 
+	uint32_t time;
 	enum t_alertlevel alert_state;
 	uint16_t alert_time;
 

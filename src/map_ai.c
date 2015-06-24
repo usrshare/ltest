@@ -533,8 +533,11 @@ uint16_t player_actFunc(struct t_map* map, struct t_map_entity* me) {
 				  struct t_map_entity* enemy = find_entity(map,dx,dy);
 				  if ((enemy) && (enemy->ent)) {
 				      char actual;
+				      char printed;
+				      if (!incapacitated(me->ent,0,&printed)) {
 				      attack(me->ent,enemy->ent,0,&actual,0);
 				      if (actual) r = 16;
+				      } else r = 0;
 				  } else {msgprintw("Incorrect spot.\n"); r = 4;}
 
 				  break; }
@@ -545,6 +548,9 @@ uint16_t player_actFunc(struct t_map* map, struct t_map_entity* me) {
 
 	do_fov(map,me,25,FA_FULL,me->aidata->viewarr,NULL);	
 	draw_map(map, me,1,dbgmode ? 1 : 0, dbgmode ? 1 : 0,0);
+		    
+	char printed;	
+	incapacitated(me->ent,1,&printed);
 	
 	if (r < 0) { nc_beep(); return 0;} else return r;
 }
