@@ -48,6 +48,13 @@ int movediff[MD_COUNT][2] = {
 
 int vtile(uint8_t x, uint8_t y) { return ((x < MAP_WIDTH) && (y < MAP_HEIGHT)); }
 
+struct t_item* next_empty_loot(struct t_map* map) {
+    for (int i=0; i < MAX_LOOTS; i++)
+	if (map->inventory[i*INVENTORY_SIZE].type == IT_NONE) return &(map->inventory[i*INVENTORY_SIZE]);
+
+    return NULL;
+}
+
 struct t_map_entity* next_empty_entity(struct t_map* map) {
     for (int i=0; i < MAX_ENTITIES; i++)
 	if (map->ent[i].type == ET_NONE) return &(map->ent[i]);
@@ -123,7 +130,7 @@ bool can_attack(struct t_map* map, struct t_map_entity* a, struct t_map_entity* 
     bool ranged_allowed = true;
 
     if ((dx > 1) || (dy > 1)) melee_allowed = 0; //melee can only go so far.
-    
+
     //TODO if no line of sight between a and t, ranged_allowed = 0;
     if (lineofsight(map,a->x,a->y,t->x,t->y,los_default_cb,NULL) > 0) ranged_allowed = 0;
 
@@ -145,10 +152,15 @@ int space_taken(struct t_map* map, uint8_t x, uint8_t y) {
     return 0;
 }
 
-struct t_map_entity* spawn_entity(struct t_map* map, enum entitytypes type, bool gen_creature, struct t_creature_generate_rules* genrules, enum spawnpos position, turnFunc tf, actFunc af) {
+struct t_map_entity* spawn_entity(struct t_map* map, enum entitytypes type, struct spawnflags sf) {
 
     struct t_map_entity* newent = next_empty_entity(map);
     if (newent == NULL) return NULL;
+
+    if (type == ET_LOOT) {
+	struct t_item* loot = next_empty_loot(map);
+	if (loot == NULL) return NULL; else newent->loot = loot;
+    }
 
     if (needs_ai[type]) {
 	struct t_map_ai_data* newai = next_empty_ai_data();
@@ -166,18 +178,18 @@ struct t_map_entity* spawn_entity(struct t_map* map, enum entitytypes type, bool
 
     int x,y;
 
-    if (gen_creature) {
+    if (sf.gen_creature) {
 
 	struct t_creature* newcr = next_empty_temp_entity(map);
 	if (newcr == NULL) return NULL;
 
-	creature_init(newcr,genrules);
+	creature_init(newcr,sf.genrules);
 	newent->ent = newcr;
 
 	if (newent->type == ET_PLAYER) newent->ent->name_known = 1;
     }
 
-    switch(position) {
+    switch(sf.position) {
 
 	case SF_DEFAULT: {
 
@@ -188,7 +200,9 @@ struct t_map_entity* spawn_entity(struct t_map* map, enum entitytypes type, bool
 				 i++;
 			     } while ( space_taken(map,x,y) );
 			     break; }
-
+	case SF_FIXED:
+			 x = sf.x; y = sf.y;
+			 break;
 	case SF_RANDOM:
 
 			 do {
@@ -222,8 +236,8 @@ struct t_map_entity* spawn_entity(struct t_map* map, enum entitytypes type, bool
 
     newent->x = x;
     newent->y = y;
-    newent->turn = tf;
-    newent->act = af;
+    newent->turn = sf.tf;
+    newent->act = sf.af;
     return newent;
 }
 
@@ -258,7 +272,12 @@ int mapmode() {
     struct t_map_entity* players[PLAYERS_COUNT];
 
     for (int i=0; i < PLAYERS_COUNT; i++) {
-	players[i] = spawn_entity(&map1,ET_PLAYER,true,&type_rules[ET_HIPPIE],SF_DEFAULT,player_turnFunc,player_actFunc); //temporary entity
+	players[i] = spawn_entity(&map1,ET_PLAYER,(struct spawnflags){
+		.gen_creature = true,
+		.genrules = &type_rules[ET_HIPPIE],
+		.position = SF_DEFAULT,
+		.tf = player_turnFunc,
+		.af = player_actFunc}); //temporary entity
 	if (players[i]) {
 	    players[i]->flags |= EF_ALWAYSVISIBLE;
 	    players[i]->e_id = i;
@@ -272,7 +291,12 @@ int mapmode() {
     struct t_map_entity* enemies[ENEMIES_COUNT];
 
     for (int i=0; i < ENEMIES_COUNT; i++) {
-	enemies[i] = spawn_entity(&map1,ET_CPU,true,&type_rules[ET_SECURITYGUARD],SF_RANDOM_INSIDE,enemy_turnFunc,enemy_actFunc);
+	enemies[i] = spawn_entity(&map1,ET_CPU,(struct spawnflags){
+		.gen_creature = true,
+		.genrules = &type_rules[ET_SECURITYGUARD],
+		.position = SF_RANDOM_INSIDE,
+		.tf = enemy_turnFunc,
+		.af = enemy_actFunc});
 	if (enemies[i]) {enemies[i]->aidata->task = AIT_PATROLLING;}
     }
 

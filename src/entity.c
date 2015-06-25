@@ -614,7 +614,7 @@ void addjuice(struct t_creature* e, long juice, long cap) {
     e->juice+=juice;
 
     // Pyramid scheme of juice trickling up the chain
-    if(e->hireid!=-1)
+    if(e->hireid!=NOHIREID)
 	for(int i=0;i<POOLSIZE;i++)
 	    if((pool[i]) && (pool[i]->id==e->hireid))
 	    {

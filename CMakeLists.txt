@@ -31,6 +31,7 @@ add_executable (ltest
 		src/mapmode.c
 		src/pqueue.c
 		src/random.c
+		src/stealth.c
 		src/ui.c
 		src/ui_windows.c
 		src/weapon.c

@@ -9,6 +9,7 @@
 
 #define MAX_ENTITIES 128
 #define MAX_AI_ENTITIES 64
+#define MAX_LOOTS 64
 #define MAP_WIDTH 80
 #define MAP_HEIGHT 20
 
@@ -92,6 +93,7 @@ enum entityflags {
 enum spawnpos {
 
 	SF_DEFAULT = 0,
+	SF_FIXED, 
 	SF_RANDOM,
 	SF_RANDOM_INSIDE,
 	SF_RANDOM_RESTRICTED,
@@ -138,6 +140,7 @@ struct t_map_entity {
 	uint16_t y;
 	uint16_t twait; ///< turns left to wait
 	struct t_map_ai_data* aidata;
+	struct t_item* loot;	
 	turnFunc turn; //this function is called every turn
 	actFunc act; //this function is only called when twait is 0.
 };
@@ -170,6 +173,7 @@ struct t_map {
 	struct t_creature creat[MAX_ENTITIES]; //this stores a list of temporary entities for this map.
 						//these entities are either forgotten forever, or stored
 						//into a more permanent list (which doesn't exist yet)
+	struct t_item inventory[MAX_LOOTS * INVENTORY_SIZE];
 };
 
 #endif
