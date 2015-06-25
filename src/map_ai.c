@@ -260,8 +260,7 @@ uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
 
 			if (curent->type == ET_PLAYER) {
 
-				if (disguisecheck(curent->ent, me->ent, map->alert_state, (map->sq[(curent->y) * MAP_WIDTH + (curent->x)].type == TT_RESTRICTED_SPACE)) == 0) continue;
-
+				if (disguisecheck(map, curent->ent, me->ent, map->sitealarmtimer, (map->sq[(curent->y) * MAP_WIDTH + (curent->x)].type == TT_RESTRICTED_SPACE)) == 0) continue;
 				me->aidata->alert_state = 5; me->aidata->task = AIT_CHECKING_OUT; // "?"
 				me->aidata->target = curent;
 
@@ -269,9 +268,8 @@ uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
 				me->aidata->dy = me->aidata->ly = dy =curent->y; 
 				me->aidata->path_plotted = 0;
 
-				if (map->alert_state == AL_NORMAL) {
-					map->alert_state = AL_SUSPICIOUS; map->alert_time = 60;
-					me->aidata->task = AIT_PLEASE_LEAVE; me->aidata->timer = 60;
+				if (map->sitealarm == 0) {
+					map->sitealarmtimer = 0; map->sitealarmtimer = 60;
 				} else {
 					me->aidata->task = AIT_CHECKING_OUT; me->aidata->timer = 60; }
 			}
@@ -288,7 +286,8 @@ uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
 				
 			if (me->aidata->task >= AIT_CHECKING_OUT) {
 			me->aidata->alert_state = 50;
-			me->aidata->task = AIT_ATTACKING; }
+			me->aidata->task = AIT_ATTACKING;
+			map->sitealarm = 1;}
 
 			dx = me->aidata->target->x; dy = me->aidata->target->y;
 
@@ -412,7 +411,7 @@ uint16_t enemy_actFunc(struct t_map* map, struct t_map_entity* me) {
 
 			if (can_attack(map,me,me->aidata->target)) {
 			    char actual;
-			    attack(me->ent,me->aidata->target->ent,0,&actual,false);
+			    attack(map,me->ent,me->aidata->target->ent,0,&actual,false);
 			    r = 16;
 			    break;
 			}
@@ -536,7 +535,7 @@ uint16_t player_actFunc(struct t_map* map, struct t_map_entity* me) {
 				      char actual;
 				      char printed;
 				      if (!incapacitated(me->ent,0,&printed)) {
-				      attack(me->ent,enemy->ent,0,&actual,0);
+				      attack(map,me->ent,enemy->ent,0,&actual,0);
 				      if (actual) r = 16;
 				      } else r = 0;
 				  } else {msgprintw("Incorrect spot.\n"); r = 4;}

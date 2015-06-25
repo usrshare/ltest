@@ -42,10 +42,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA   02111-1307   USA     
 
 #include "stealth.h"
 
-void noticecheck(struct t_creature* p, struct t_creature* e, int exclude,int difficulty)
+void noticecheck(struct t_map* map, struct t_creature* p, struct t_creature* e, int exclude,int difficulty)
 {
 	// p = player, e = enemy.
-	if(sitealarm) return;
+	if(map->sitealarm) return;
 
 	//Prisoners shouldn't shout for help.
 	if (e->type == ET_PRISONER) return;
@@ -59,7 +59,7 @@ void noticecheck(struct t_creature* p, struct t_creature* e, int exclude,int dif
 		g_printw("and lets forth a piercing Conservative alarm cry!");
 	else g_printw("and shouts for help!", gamelog);
 
-	sitealarm = 1;
+	map->sitealarm = 1;
 }
 
 /* checks if your liberal behavior/attack alienates anyone */
@@ -135,7 +135,7 @@ return alienate;
  */
 
 /* checks if conservatives see through your disguise */
-int disguisecheck(struct t_creature* p, struct t_creature* e, int timer, bool restricted_space)
+int disguisecheck(struct t_map* map, struct t_creature* p, struct t_creature* e, int timer, bool restricted_space)
 {
 	static const char *blew_stealth_check[] =
 	{
@@ -156,7 +156,7 @@ int disguisecheck(struct t_creature* p, struct t_creature* e, int timer, bool re
 	weapon=weaponcheck(p,0,restricted_space);
 
 	// Nothing suspicious going on here
-	if(sitealarmtimer==-1 && weapon<1 && !forcecheck)
+	if(map->sitealarmtimer==-1 && weapon<1 && !forcecheck)
 	{
 		if(!restricted_space) return 0;
 	}
@@ -220,12 +220,12 @@ int disguisecheck(struct t_creature* p, struct t_creature* e, int timer, bool re
 	}
 
 	// Increase difficulty if Conservatives suspicious...
-	if(sitealarmtimer==1)
+	if(map->sitealarmtimer==1)
 	{
 		stealth_difficulty += 6;
 		disguise_difficulty += 6;
 	}
-	else if(sitealarmtimer>1)
+	else if(map->sitealarmtimer>1)
 	{
 		stealth_difficulty += 3;
 		disguise_difficulty += 3;
@@ -321,14 +321,14 @@ int disguisecheck(struct t_creature* p, struct t_creature* e, int timer, bool re
 	if(!noticed) return 0;
 
 	g_attrset(CP_RED);
-	if(sitealarmtimer!=0 && weapon<1 && e->type!=ET_GUARDDOG)
+	if(map->sitealarmtimer!=0 && weapon<1 && e->type!=ET_GUARDDOG)
 	{
 		if((sitetype==SITE_RESIDENTIAL_TENEMENT||
 					sitetype==SITE_RESIDENTIAL_APARTMENT||
 					sitetype==SITE_RESIDENTIAL_APARTMENT_UPSCALE)&&
 				restricted_space)
 		{
-			sitealarm=1;
+			map->sitealarm=1;
 
 			g_printw("%s shouts in alarm at the squad's Liberal Trespassing!", describe_entity_static(e));
 		}
@@ -343,11 +343,12 @@ int disguisecheck(struct t_creature* p, struct t_creature* e, int timer, bool re
 
 			if(time<1)time=1;
 
-			if(sitealarmtimer>time||sitealarmtimer==-1)sitealarmtimer=time;
+			if(map->sitealarmtimer>time||map->sitealarmtimer==-1)map->sitealarmtimer=time;
 			else
 			{
-				if(sitealarmtimer>5) sitealarmtimer-= 5;
-				if(sitealarmtimer<=5)sitealarmtimer = 0;
+
+				if(map->sitealarmtimer>5) map->sitealarmtimer-= 5;
+				if(map->sitealarmtimer<=5)map->sitealarmtimer = 0;
 			}
 		}
 	}
@@ -376,7 +377,7 @@ int disguisecheck(struct t_creature* p, struct t_creature* e, int timer, bool re
 			else
 				g_addstr("and shouts for help!", gamelog);
 		}
-		sitealarm=1;
+		map->sitealarm=1;
 	}
 	return noticed;
 }
