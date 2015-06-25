@@ -10,6 +10,8 @@
 
 #include "fight.h"
 
+#include "stealth.h"
+
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -258,8 +260,7 @@ uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
 
 			if (curent->type == ET_PLAYER) {
 
-				if ( map->sq[(curent->y) * MAP_WIDTH + (curent->x)].type != TT_RESTRICTED_SPACE ) continue;
-
+				if (disguisecheck(curent->ent, me->ent, map->alert_state, (map->sq[(curent->y) * MAP_WIDTH + (curent->x)].type == TT_RESTRICTED_SPACE)) == 0) continue;
 
 				me->aidata->alert_state = 5; me->aidata->task = AIT_CHECKING_OUT; // "?"
 				me->aidata->target = curent;

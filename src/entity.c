@@ -244,6 +244,7 @@ int creature_init(struct t_creature* o_entity, struct t_creature_generate_rules*
 
     o_entity->blood = 100;
     o_entity->alive = true;
+    o_entity->exists = true;
 
     return 0;
 }
@@ -710,15 +711,17 @@ int entity_skill_roll (struct t_creature* e, enum entity_skill skill) {
 	    // Skills that should depend on clothing:
 	case ES_STEALTH:
 	    {
+		if (e->armor == NULL) return_value = 0; else {
 		float stealth = a_type(entity_get_armor(e))->stealth_value;
 		for (int i=1; i < armor_get_quality(entity_get_armor(e));i++) stealth *= 0.8;
-		if (entity_get_armor(e)->a_flags & AD_DAMAGED) stealth *= 0.5;
+		if ((e->armor) && (entity_get_armor(e)->a_flags & AD_DAMAGED)) stealth *= 0.5;
 
 		return_value *= (int)stealth;
 		return_value /= 2;
 		// Shredded clothes get you no stealth.
 		if (armor_get_quality(entity_get_armor(e)) > a_type(entity_get_armor(e))->quality_levels)
 		    return_value = 0;
+		}
 	    }
 	    break;
 	case ES_SEDUCTION:
