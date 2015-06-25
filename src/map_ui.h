@@ -13,6 +13,7 @@ int msgprintw(const char *fmt, ...);
 int msgsay(struct t_map_entity* me,const char *fmt, ...);
 enum movedirections askdir();
 
+int update_status (struct t_map* map);
 int update_ui (struct t_map* map);
 int map_ui_init(struct t_map* map);
 int map_ui_free(struct t_map* map);

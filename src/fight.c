@@ -577,7 +577,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 	// Coarse combat lethality reduction.
 	//damamount/=2;
 
-	if(t->squadid!=-1&&t->hireid==-1) // Plot Armor: if the founder is hit, inflict
+	if(t->squadid!=-1&&t->hireid==NOHIREID) // Plot Armor: if the founder is hit, inflict
 	    damamount/=2;                // 1/2 damage, because founders are cool
 
 	int mod=0;
@@ -602,7 +602,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 	if(mod<0) mod=0;
 
 	// In a car chase, the vehicle itself provides bonus armor
-	int vehicleHitLocation = 0;
+	//int vehicleHitLocation = 0;
 	/*if (mode==GM_CHASECAR && vehicle != NULL)
 	{
 	    vehicleHitLocation = vehicle->gethitlocation(w);
@@ -654,7 +654,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 	{
 	    struct t_creature *target=0;
 
-	    if(t->squadid!=-1&&t->hireid==-1&& //if the founder is hit...
+	    if(t->squadid!=-1&&t->hireid==NOHIREID&& //if the founder is hit...
 		    (damamount>t->blood||damamount>=10)&& //and lethal or potentially crippling damage is done...
 		    (w==EB_HEAD||w==EB_BODY)) //to a critical bodypart...
 	    {
@@ -1949,24 +1949,6 @@ void bloodblast(struct t_item* armor)
 }
 
 void makeloot(struct t_creature* cr,struct t_item* loot);
-
-/* kills the specified creature from the encounter, dropping loot */
-void delenc(short e,char loot)
-{
-    //MAKE GROUND LOOT
-    if(mode!=GM_SITE) loot=0;
-    //if(loot) makeloot(encounter[e],groundloot);
-
-    //BURY IT
-    for(int en=e;en<ENCMAX;en++)
-    {
-	if(!encounter[en]->exists) break;
-	if(en<ENCMAX-1) encounter[en]=encounter[en+1];
-    }
-    encounter[ENCMAX-1]->exists=0;
-}
-
-
 
 /* generates the loot dropped by a creature when it dies */
 void makeloot(struct t_creature* cr,struct t_item* loot)

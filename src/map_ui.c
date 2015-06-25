@@ -241,6 +241,7 @@ int msgaddstr(const char *string) {
 	//thisline = strtok(NULL,"\n");
 	morecount++;
     /*}*/
+	return 0;
 }
 
 int msgvprintw(const char *fmt, va_list ap) {

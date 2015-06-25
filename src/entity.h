@@ -251,6 +251,9 @@ struct activityst {
     int type;
     long arg, arg2;
 };
+
+#define NOHIREID UINT32_MAX
+
 struct t_creature {
 
     uint32_t id;
