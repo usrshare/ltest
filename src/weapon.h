@@ -163,6 +163,7 @@ extern const struct t_weapon_type weapontypes [WT_COUNT];
 extern const struct t_clip_type cliptypes [CT_COUNT];
 
 const struct t_weapon_type* w_type(struct t_item* weapon);
+enum weapon_types w_type_id(struct t_item* weapon);
 const struct t_clip_type* c_type(struct t_item* clip);
 
 const char* get_loaded_cliptypename(struct t_item* weapon);

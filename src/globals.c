@@ -42,6 +42,8 @@ char slogan[80];
 extern short law[LAWNUM];
 short law[LAWNUM];
 
+short fieldskillrate=FIELDSKILLRATE_FAST;
+
 // small functions
 
 int min(int a, int b) {

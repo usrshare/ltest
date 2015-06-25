@@ -122,6 +122,7 @@ extern const struct t_armor_type armortypes[ARMOR_COUNT];
 
 struct t_item* get_armor(struct t_creature* e);
 const struct t_armor_type* a_type(struct t_item* armor);
+enum armortype a_type_id(struct t_item* armor);
 
 bool armor_type_covers(const struct t_armor_type* t, int bodypart);
 int get_armor_type_value(const struct t_armor_type* t, int bodypart);
