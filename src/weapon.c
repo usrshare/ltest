@@ -111,6 +111,119 @@ const struct t_weapon_type weapontypes [WT_COUNT] = {
 	{.priority = 1, .ranged = true, .attack_description = "shoots at", .skill = ES_SMG, .ammotype = CT_SMG, .random_damage = 181, .fixed_damage = 10, .shoots = 1, .bleeding = 1, .damages_armor = 1, .armorpiercing = 4, .number_attacks = 3, .accuracy_bonus = 2, .successive_attacks_difficulty = 3,},
 	{.priority = 2, .strength_min = 5, .strength_max = 10, .attack_description = "swings at", .skill = ES_CLUB, .random_damage = 21, .fixed_damage = 5, .bruises = 1}, },
 	},
+	{ .name  = "Shotgun", .shortname = "Shotgun",
+	.can_take_hostages = 1, .is_threatening = 1,
+	.legality = 2, .fencevalue = 150,
+	.size = 10, .bashstrengthmod = 125,
+	.attacks = {
+	{.priority = 1, .ranged = true, .attack_description = "shoots at", .skill = ES_SHOTGUN, .ammotype = CT_BUCKSHOT, .random_damage = 201, .fixed_damage = 30, .shoots = 1, .bleeding = 1, .damages_armor = 1, .armorpiercing = 0, .number_attacks = 1,},
+	{.priority = 2, .strength_min = 6, .strength_max = 12, .attack_description = "swings at", .skill = ES_CLUB, .random_damage = 21, .fixed_damage = 5, .bruises = 1}, },
+	},
+	{ .name  = "Baseball Bat", .shortname = "B.Bat",
+	.is_threatening = 1,
+	.legality = 2, .fencevalue = 20,
+	.size = 15, .bashstrengthmod = 150,
+	.attacks = {
+	{.priority = 1, .strength_min = 6, .strength_max = 12, .attack_description = "swings at", .skill = ES_CLUB, .random_damage = 41, .fixed_damage = 5, .bruises = 1}, },
+	},
+	{ .name  = "Chain", .shortname = "Chain",
+	.can_take_hostages = 1,
+	.legality = 2, .fencevalue = 10,
+	.size = 5,
+	.attacks = {
+	{.priority = 1, .strength_min = 1, .strength_max = 6, .attack_description = "swings at", .skill = ES_CLUB, .random_damage = 11, .fixed_damage = 5, .bruises = 1}, },
+	},
+	{ .name  = "Combat Knife", .shortname = "C.Knife",
+	.can_take_hostages = 1, .is_threatening = 1,
+	.legality = 2, .fencevalue = 20, .bashstrengthmod = 105, .size = 4,
+	.attacks = {
+	{.priority = 1, .strength_min = 1, .strength_max = 6, .attack_description = "swings at", .hit_description = "slashing", .skill = ES_KNIFE, .random_damage = 61, .fixed_damage = 10, .can_backstab = 1, .cuts = 1, .bleeding = 1, .armorpiercing = 2, .number_attacks = 3, .successive_attacks_difficulty = 4}, },
+	},
+	{ .name  = "Silver Cross", .shortname = "Cross",
+	.legality = 2, .fencevalue = 100, .size = 5,
+	.attacks = {
+	{.priority = 1, .strength_min = 1, .strength_max = 4, .attack_description = "swings at", .skill = ES_CLUB, .random_damage = 11, .fixed_damage = 5, .bruises = 1}, },
+	},
+	{ .name  = "Crowbar", .shortname = "Crowbar",
+	.is_threatening = 1,
+	.legality = 2, .fencevalue = 10, .bashstrengthmod = 200, .size = 15, .auto_break_locks = 1,
+	.attacks = {
+	{.priority = 1, .strength_min = 4, .strength_max = 8, .attack_description = "swings at", .skill = ES_CLUB, .random_damage = 21, .fixed_damage = 10, .can_backstab = 1, .cuts = 1, .bleeding = 1, .armorpiercing = 2, .successive_attacks_difficulty = 4}, },
+	},
+	{ .name  = "Dagger", .shortname = "Dagger",
+	.can_take_hostages = 1, .is_threatening = 1,
+	.legality = 2, .fencevalue = 10, .size = 5,
+	.attacks = {
+	{.priority = 1, .strength_min = 1, .strength_max = 5, .attack_description = "lunges at", .hit_description = "stabbing", .skill = ES_KNIFE, .random_damage = 61, .fixed_damage = 10, .can_backstab = 1, .cuts = 1, .bleeding = 1, .damages_armor = true, .armorpiercing = 2, .number_attacks = 3, .successive_attacks_difficulty = 4}, },
+	},
+	{ .name  = "Daisho", .shortname = "Daisho",
+	.can_take_hostages = 1, .is_threatening = 1,
+	.legality = 2, .fencevalue = 100, .bashstrengthmod = 150, .size = 15,
+	.attacks = {
+	{.priority = 1, .strength_min = 6, .strength_max = 12, .attack_description = "swings at", .skill = ES_SWORD, .random_damage = 101, .fixed_damage = 10, .cuts = 1, .bleeding = 1, .damages_armor = true, .armorpiercing = 2, .severtype = WOUND_CLEANOFF}, },
+	},
+	{ .name  = "Gavel", .shortname = "Gavel",
+	.legality = 2, .fencevalue = 20, .size = 5,
+	.attacks = {
+	{.priority = 1, .strength_min = 1, .strength_max = 4, .attack_description = "swings at", .skill = ES_CLUB, .random_damage = 6, .fixed_damage = 5, .bruises = 1}, },
+	},
+	{ .name  = "Guitar", .shortname = "Guitar",
+	.is_instrument = 1, .has_musical_attack = 1,
+	.legality = 2, .fencevalue = 100, .size = 15,
+	.attacks = {
+	{.priority = 1, .strength_min = 4, .strength_max = 8, .attack_description = "swings at", .skill = ES_CLUB, .random_damage = 21, .fixed_damage = 5, .bruises = 1}, },
+	},
+	{ .name  = "Dwarven Hammer", .shortname = "Hammer",
+	.is_threatening = 1, .legality = 2, .fencevalue = 100, .bashstrengthmod = 150, .size = 15,
+	.attacks = {
+	{.priority = 1, .strength_min = 8, .strength_max = 18, .attack_description = "swings at", .skill = ES_CLUB, .random_damage = 21, .fixed_damage = 10, .bruises = 1, .bleeding = 1}, },
+	},
+	{ .name  = "Maul of Anrin", .shortname = "Maul",
+	.is_threatening = 1, .legality = 2, .fencevalue = 100, .bashstrengthmod = 150, .size = 15,
+	.attacks = {
+	{.priority = 1, .strength_min = 8, .strength_max = 18, .attack_description = "swings at", .skill = ES_CLUB, .random_damage = 41, .fixed_damage = 5, .bruises = 1}, },
+	},
+	{ .name  = "Nightstick", .shortname = "Baton",
+	.is_threatening = 1, .legality = 2, .fencevalue = 20, .bashstrengthmod = 125, .size = 15,
+	.attacks = {
+	{.priority = 1, .strength_min = 4, .strength_max = 8, .attack_description = "swings at", .skill = ES_CLUB, .random_damage = 21, .fixed_damage = 5, .bruises = 1}, },
+	},
+	{ .name  = "Pitchfork", .shortname = "P.Fork",
+	.is_threatening = 1, .legality = 2, .fencevalue = 20, .bashstrengthmod = 125, .size = 15,
+	.attacks = {
+	{.priority = 1, .strength_min = 6, .strength_max = 12, .attack_description = "stabs at", .skill = ES_SWORD, .random_damage = 61, .fixed_damage = 10, .cuts = 1, .bleeding = 1, .damages_armor = 1, .armorpiercing = 1}, },
+	},
+	{ .name  = "Shank", .shortname = "Shank",
+	.can_take_hostages = 1, .legality = 2, .fencevalue = 5, .size = 5,
+	.attacks = {
+	{.priority = 1, .strength_min = 1, .strength_max = 4, .attack_description = "lunges at", .hit_description = "stabbing", .skill = ES_KNIFE, .random_damage = 51, .fixed_damage = 10, .can_backstab = 1, .cuts = 1, .bleeding = 1, .damages_armor = 1, .armorpiercing = 1, .number_attacks = 3, .successive_attacks_difficulty = 4}, },
+	},
+	{ .name  = "Spraypaint", .shortname = "S.Paint",
+	.can_graffiti = 1, .legality = 2, .fencevalue = 2, .size = 5,
+	.attacks = {
+	{.priority = 1, .strength_min = 1, .strength_max = 4, .attack_description = "swings at", .skill = ES_CLUB, .random_damage = 11, .fixed_damage = 5, .bruises = 1}, },
+	},
+	{ .name  = "Wizard's Staff", .shortname = "Staff",
+	.is_threatening = 1, .legality = 2, .fencevalue = 100, .bashstrengthmod = 125, .size = 15,
+	.attacks = {
+	{.priority = 1, .strength_min = 6, .strength_max = 12, .attack_description = "swings at", .skill = ES_CLUB, .random_damage = 21, .fixed_damage = 5, .bruises = 1}, },
+	},
+	{ .name  = "Sword of Morfiegor", .shortname = "Sword",
+	.can_take_hostages = 1, .is_threatening = 1,
+	.legality = 2, .fencevalue = 100, .bashstrengthmod = 150, .size = 15,
+	.attacks = {
+	{.priority = 1, .strength_min = 6, .strength_max = 12, .attack_description = "slashes at", .skill = ES_SWORD, .random_damage = 101, .fixed_damage = 10, .cuts = 1, .bleeding = 1, .damages_armor = true, .armorpiercing = 2, .severtype = WOUND_CLEANOFF}, },
+	},
+	{ .name  = "Syringe", .shortname = "Syringe",
+	.can_take_hostages = 1, .legality = 2, .fencevalue = 10, .size = 5,
+	.attacks = {
+	{.priority = 1, .strength_min = 1, .strength_max = 2, .attack_description = "pokes at", .skill = ES_KNIFE, .random_damage = 4, .fixed_damage = 1, .cuts = 1, .armorpiercing = 4}, },
+	},
+	{ .name  = "Torch", .shortname = "Torch",
+	.is_threatening = 1, .legality = 2, .fencevalue = 2, .size = 15 /*can't conceal under clothes*/, 
+	.attacks = {
+	{.priority = 1, .strength_min = 1, .strength_max = 1, .attack_description = "swings at", .skill = ES_CLUB, .random_damage = 11, .fixed_damage = 5, .burns = 1, .damages_armor = 1}, },
+	},
 
 };
 

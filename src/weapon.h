@@ -150,7 +150,7 @@ struct t_weapon_type {
 	//bool acceptable_ammo(const ClipType& c);
 	bool is_ranged;
 	bool is_throwable;
-	bool auto_breaks_locks;
+	bool auto_break_locks;
 	
 	struct t_attackst attacks[MAX_ATTACKS];
 
