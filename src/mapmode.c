@@ -263,7 +263,7 @@ int mapmode() {
     memset(&(map1.creat), 0, sizeof(struct t_creature) * MAX_ENTITIES); 
     memset(aient, 0, sizeof(struct t_map_ai_data) * MAX_AI_ENTITIES); 
 
-    map1.alert_state = 0; map1.alert_time = 0;
+    map1.sitealarm = 0; map1.sitealarmtimer = -1;
 
     generate_buildings(&map1,GM_SINGLE);
 
@@ -317,7 +317,15 @@ int mapmode() {
 	make_turn(&map1);
 	loop = check_conditions(&map1);
 	map1.time++;
-	if (map1.alert_time > 0) map1.alert_time--; if ((map1.alert_time == 0) && (map1.alert_state > 0)) map1.alert_state--;
+
+
+
+	if (map1.sitealarmtimer > 0) { 
+	    map1.sitealarmtimer--;
+
+	if (map1.sitealarmtimer <= 0) msgprintw("The squad smells Conservative panic.");
+	}
+
 	for (int i = 0; i < MAX_ENTITIES; i++) {
 	    if ((map1.ent[i].type != ET_NONE) && (map1.ent[i].aidata) && (map1.ent[i].aidata->timer > 0)) map1.ent[i].aidata->timer--; }
     } while (loop);

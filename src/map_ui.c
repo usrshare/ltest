@@ -9,6 +9,7 @@
 #include "map_ai.h"
 #include "cpairs.h"
 #include "mapmode.h"
+#include "location.h"
 
 WINDOW* topwindow;
 WINDOW* headerwindow;
@@ -199,11 +200,58 @@ char* alertdescriptions[AL_COUNT] = {
     "Backup Called"
 };
 
+const char* alarm_status (struct t_map* map) {
+
+         if(map->postalarmtimer>80)
+         {
+            switch(map->type)
+            {
+            case SITE_GOVERNMENT_ARMYBASE:
+               return("SOLDIERS AND TANKS RESPONDING");
+               break;
+            case SITE_GOVERNMENT_WHITE_HOUSE:
+               return("SECRET SERVICE RESPONDING");
+               break;
+            case SITE_GOVERNMENT_INTELLIGENCEHQ:
+               return("AGENTS RESPONDING");
+               break;
+            case SITE_CORPORATE_HEADQUARTERS:
+            case SITE_CORPORATE_HOUSE:
+               return("MERCENARIES RESPONDING");
+               break;
+            case SITE_MEDIA_AMRADIO:
+            case SITE_MEDIA_CABLENEWS:
+               return("ANGRY MOB RESPONDING");
+               break;
+            case SITE_BUSINESS_CRACKHOUSE:
+               return("GANG MEMBERS RESPONDING");
+               break;
+            case SITE_GOVERNMENT_POLICESTATION:
+            default:
+               /*if(location[cursite]->renting==RENTING_CCS)
+               {
+                  return("CCS VIGILANTIES RESPONDING");
+               }
+               else */ if(law[LAW_DEATHPENALTY]==-2&&
+                  law[LAW_POLICEBEHAVIOR]==-2)return("DEATH SQUADS RESPONDING");
+               else return("POLICE RESPONDING");
+               break;
+            }
+         }
+         else if(map->postalarmtimer>60) { return("CONSERVATIVE REINFORCEMENTS INCOMING"); }
+         else if(map->sitealienate==1) { return("ALIENATED MASSES"); }
+         else if(map->sitealienate==2) { return("ALIENATED EVERYONE"); }
+         else if(map->sitealarm) { return("CONSERVATIVES ALARMED");  }
+         else if(map->sitealarmtimer==0) { return("CONSERVATIVES SUSPICIOUS"); }
+
+	 return "EVERYTHING QUIET";
+}
+
 int updheader(struct t_map* map) {
     wmove(headerwindow,0,0);
     whline(headerwindow,ACS_HLINE,COLS);
     wattron(headerwindow, A_BOLD);
-    mvwprintw(headerwindow,0,1," insert title here. - T%5d - %s ",map->time,alertdescriptions[map->alert_state]);
+    mvwprintw(headerwindow,0,1," insert title here. - T%5d - %s ",map->time,alarm_status(map));
     wattroff(headerwindow, A_BOLD);
     wrefresh(headerwindow);
     return 0;

@@ -64,7 +64,7 @@ int lineofsight(struct t_map* map, uint8_t sx, uint8_t sy, uint8_t tx, uint8_t t
 	    maxres = cb(map,sx,sy,cbparam);
 	}
     }
-
+	    
     return maxres;
 }
 

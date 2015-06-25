@@ -61,7 +61,7 @@ void freehostage(struct t_creature* cr,char situation);
 bool goodguyattack = false;
 
 /* attack handling for an individual creature and its target */
-void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,bool force_melee)
+void attack(struct t_map* map, struct t_creature* a,struct t_creature* t,char mistake,char* actual,bool force_melee)
 {
     *actual=0;
 
@@ -203,11 +203,11 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
     {
 	if(attack_used->can_backstab && a->align==ALIGN_LIBERAL && !mistake)
 	{
-	    if(t->cantbluff<1 && sitealarm<1)
+	    if(t->cantbluff<1 && map->sitealarm<1)
 	    {
 		sneak_attack = true;
 		strcat(str,"sneaks up on");
-		if(sitealarmtimer>10 || sitealarmtimer<0) sitealarmtimer=10;
+		if(map->sitealarmtimer>10 || map->sitealarmtimer<0) map->sitealarmtimer=10;
 		t->cantbluff = 2;
 	    }
 	}
@@ -215,7 +215,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 	if(!sneak_attack)
 	{
 	    strcat(str,attack_used->attack_description);
-	    sitealarm=1;
+	    map->sitealarm=1;
 	}
     }
 
@@ -754,6 +754,8 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 		    else if(enemy(target)&&(t->animalgloss!=ANIMALGLOSS_ANIMAL||law[LAW_ANIMALRESEARCH]==2))
 		    {
 			stat_kills++;
+
+			/*
 			if(location[cursite]->siege.siege) location[cursite]->siege.kills++;
 			if(location[cursite]->siege.siege && t->animalgloss==ANIMALGLOSS_TANK) location[cursite]->siege.tanks--;
 			if(location[cursite]->renting==RENTING_CCS)
@@ -761,6 +763,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 			    if(target->type==ET_CCS_ARCHCONSERVATIVE) ccs_boss_kills++;
 			    ccs_siege_kills++;
 			}
+			*/
 		    }
 		    if(target->squadid==-1 &&
 			    (target->animalgloss!=ANIMALGLOSS_ANIMAL||law[LAW_ANIMALRESEARCH]==2) &&
@@ -1256,7 +1259,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 
 	    goodguyattack = !goodguyattack;
 	    char actual_dummy;
-	    attack(t,a,0,&actual_dummy,true);
+	    attack(map,t,a,0,&actual_dummy,true);
 	    goodguyattack = !goodguyattack;
 	}//TODO if missed person, but vehicle is large, it might damage the car. 
 	else
@@ -1271,7 +1274,7 @@ void attack(struct t_creature* a,struct t_creature* t,char mistake,char* actual,
 		    case 2: strcat(str," spins and blocks the attack!"); break;
 		    default: strcat(str," jumps back and cries out in alarm!"); break;
 		}
-		sitealarm=1;
+		map->sitealarm=1;
 	    }
 	    else
 	    {
@@ -1991,7 +1994,7 @@ void capturecreature(struct t_creature *t)
     }
     if(t->flag & CREATUREFLAG_JUSTESCAPED)
     {
-	t->location=cursite;
+	//t->location=cursite;
 	if(sitetype==SITE_GOVERNMENT_PRISON||
 		sitetype==SITE_GOVERNMENT_COURTHOUSE)
 	{

@@ -163,9 +163,13 @@ struct t_map {
 	uint8_t width;
 	uint8_t height;
 
+	short type;
+
 	uint32_t time;
-	enum t_alertlevel alert_state;
-	uint16_t alert_time;
+	bool sitealarm;
+	int16_t sitealarmtimer;
+	int16_t postalarmtimer;
+	int16_t sitealienate;
 
 	struct coords spawn_points[SQUAD_MAX];
 

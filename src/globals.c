@@ -8,10 +8,10 @@ int dbgmode;
 enum uimodes curui;
 enum gamemodes mode;
 
-short sitealarm;
-short sitealarmtimer;
+//short sitealarm;
+//short sitealarmtimer;
 
-short cursite;
+//short cursite;
 
 //stats 
 
