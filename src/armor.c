@@ -105,7 +105,7 @@ enum armortype a_type_id(struct t_item* armor) {
 }
 
 int armor_get_quality(struct t_item* armor) {
-	return armor->a_flags & AD_QUALITY;
+	return (armor ? armor->a_flags & AD_QUALITY : 0);
 }
 
 void armor_set_quality(struct t_item* armor, int quality) {

@@ -331,8 +331,9 @@ int mapmode() {
     return 0;
 }
 
-char hasdisguise(struct t_creature* cr, struct t_map_entity* mcr) {
+char hasdisguise(struct t_creature* cr, bool restricted) {
     short type = -1;
+    return 0;
     if(cursite>=0)type = location[cursite]->type;
     char uniformed=0;
 
@@ -405,7 +406,7 @@ char hasdisguise(struct t_creature* cr, struct t_map_entity* mcr) {
 		break;
 	    case SITE_LABORATORY_COSMETICS:
 	    case SITE_LABORATORY_GENETIC:
-		if(curmap->sq[(mcr->y) * MAP_WIDTH + (mcr->x)].type == TT_RESTRICTED_SPACE)
+		if(restricted)
 		{
 		    uniformed=0;
 		    if(a_type(cr->armor)->type == ARMOR_LABCOAT)uniformed=1;
@@ -413,7 +414,7 @@ char hasdisguise(struct t_creature* cr, struct t_map_entity* mcr) {
 		}
 		break;
 	    case SITE_GOVERNMENT_POLICESTATION:
-		if(curmap->sq[(mcr->y) * MAP_WIDTH + (mcr->x)].type == TT_RESTRICTED_SPACE)
+		if(restricted)
 		{
 		    uniformed=0;
 		    if(a_type(cr->armor)->type == ARMOR_POLICEUNIFORM)uniformed=1;
@@ -424,7 +425,7 @@ char hasdisguise(struct t_creature* cr, struct t_map_entity* mcr) {
 		}
 		break;
 	    case SITE_GOVERNMENT_WHITE_HOUSE:
-		if(curmap->sq[(mcr->y) * MAP_WIDTH + (mcr->x)].type == TT_RESTRICTED_SPACE)
+		if(restricted)
 		{
 		    uniformed=0;
 		    if(a_type(cr->armor)->type == ARMOR_BLACKSUIT)uniformed=1;
@@ -439,7 +440,7 @@ char hasdisguise(struct t_creature* cr, struct t_map_entity* mcr) {
 		}
 		break;
 	    case SITE_GOVERNMENT_COURTHOUSE:
-		if(curmap->sq[(mcr->y) * MAP_WIDTH + (mcr->x)].type == TT_RESTRICTED_SPACE)
+		if(restricted)
 		{
 		    uniformed=0;
 		    if(a_type(cr->armor)->type == ARMOR_BLACKROBE)uniformed=1;
@@ -457,7 +458,7 @@ char hasdisguise(struct t_creature* cr, struct t_map_entity* mcr) {
 		}
 		break;
 	    case SITE_GOVERNMENT_PRISON:
-		if(curmap->sq[(mcr->y) * MAP_WIDTH + (mcr->x)].type == TT_RESTRICTED_SPACE)
+		if(restricted)
 		{
 		    uniformed=0;
 		    if(law[LAW_POLICEBEHAVIOR]==-2 && law[LAW_DEATHPENALTY]==-2)
@@ -469,7 +470,7 @@ char hasdisguise(struct t_creature* cr, struct t_map_entity* mcr) {
 		}
 		break;
 	    case SITE_GOVERNMENT_ARMYBASE:
-		if(curmap->sq[(mcr->y) * MAP_WIDTH + (mcr->x)].type == TT_RESTRICTED_SPACE)
+		if(restricted)
 		{
 		    uniformed=0;
 		    if(a_type(cr->armor)->type == ARMOR_MILITARY)uniformed=1;
@@ -478,7 +479,7 @@ char hasdisguise(struct t_creature* cr, struct t_map_entity* mcr) {
 		}
 		break;
 	    case SITE_GOVERNMENT_INTELLIGENCEHQ:
-		if(curmap->sq[(mcr->y) * MAP_WIDTH + (mcr->x)].type == TT_RESTRICTED_SPACE)
+		if(restricted)
 		{
 		    uniformed=0;
 		    if(a_type(cr->armor)->type == ARMOR_BLACKSUIT)uniformed=1;
@@ -486,7 +487,7 @@ char hasdisguise(struct t_creature* cr, struct t_map_entity* mcr) {
 		}
 		break;
 	    case SITE_GOVERNMENT_FIRESTATION:
-		if(curmap->sq[(mcr->y) * MAP_WIDTH + (mcr->x)].type == TT_RESTRICTED_SPACE)
+		if(restricted)
 		{
 		    uniformed=0;
 		    if(a_type(cr->armor)->type == ARMOR_BUNKERGEAR)uniformed=1;
@@ -503,7 +504,7 @@ char hasdisguise(struct t_creature* cr, struct t_map_entity* mcr) {
 		}
 		break;
 	    case SITE_BUSINESS_BANK:
-		if(curmap->sq[(mcr->y) * MAP_WIDTH + (mcr->x)].type == TT_RESTRICTED_SPACE)
+		if(restricted)
 		{
 		    uniformed=0;
 		    if(a_type(cr->armor)->type == ARMOR_CHEAPSUIT)uniformed=1;
@@ -544,7 +545,7 @@ char hasdisguise(struct t_creature* cr, struct t_map_entity* mcr) {
 		}
 		break;
 	    case SITE_INDUSTRY_NUCLEAR:
-		if(curmap->sq[(mcr->y) * MAP_WIDTH + (mcr->x)].type == TT_RESTRICTED_SPACE)
+		if(restricted)
 		{
 		    uniformed=0;
 		    if(a_type(cr->armor)->type == ARMOR_LABCOAT)uniformed=1;
@@ -575,7 +576,7 @@ char hasdisguise(struct t_creature* cr, struct t_map_entity* mcr) {
 		}
 		break;
 	    case SITE_MEDIA_AMRADIO:
-		if(curmap->sq[(mcr->y) * MAP_WIDTH + (mcr->x)].type == TT_RESTRICTED_SPACE)
+		if(restricted)
 		{
 		    uniformed=0;
 		    if(a_type(cr->armor)->type == ARMOR_SECURITYUNIFORM)uniformed=1;
@@ -586,7 +587,7 @@ char hasdisguise(struct t_creature* cr, struct t_map_entity* mcr) {
 		}
 		break;
 	    case SITE_MEDIA_CABLENEWS:
-		if(curmap->sq[(mcr->y) * MAP_WIDTH + (mcr->x)].type == TT_RESTRICTED_SPACE)
+		if(restricted)
 		{
 		    uniformed=0;
 		    if(a_type(cr->armor)->type == ARMOR_SECURITYUNIFORM)uniformed=1;
@@ -597,7 +598,7 @@ char hasdisguise(struct t_creature* cr, struct t_map_entity* mcr) {
 	    case SITE_RESIDENTIAL_TENEMENT:
 	    case SITE_RESIDENTIAL_APARTMENT:
 	    case SITE_RESIDENTIAL_APARTMENT_UPSCALE:
-		if(curmap->sq[(mcr->y) * MAP_WIDTH + (mcr->x)].type == TT_RESTRICTED_SPACE)uniformed=0;
+		if(restricted)uniformed=0;
 		break;
 	    default:
 		break;

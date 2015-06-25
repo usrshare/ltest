@@ -38,6 +38,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA   02111-1307   USA     
 #include "mapdefs.h"
 #include "ui.h"
 
+#include "mapmode.h"
+
 #include "stealth.h"
 
 void noticecheck(struct t_creature* p, struct t_creature* e, int exclude,int difficulty)
@@ -133,7 +135,7 @@ return alienate;
  */
 
 /* checks if conservatives see through your disguise */
-void disguisecheck(struct t_creature* p, struct t_creature* e, int timer, bool restricted_space)
+int disguisecheck(struct t_creature* p, struct t_creature* e, int timer, bool restricted_space)
 {
 	static const char *blew_stealth_check[] =
 	{
@@ -151,21 +153,21 @@ void disguisecheck(struct t_creature* p, struct t_creature* e, int timer, bool r
 	// Only start to penalize the player's disguise/stealth checks after the first turn.
 	timer--;
 
-	weapon=weaponcheck(p,0);
+	weapon=weaponcheck(p,0,restricted_space);
 
 	// Nothing suspicious going on here
 	if(sitealarmtimer==-1 && weapon<1 && !forcecheck)
 	{
-		if(!restricted_space) return;
+		if(!restricted_space) return 0;
 	}
 
 	char noticed=0;
 
-	if(e->type==ET_PRISONER) return;
+	if(e->type==ET_PRISONER) return 0;
 
 	if(e->exists&&e->alive&&enemy(e)) noticed = 1;
 
-	if(!noticed) return;
+	if(!noticed) return 0;
 
 	int n,an;
 
@@ -230,23 +232,20 @@ void disguisecheck(struct t_creature* p, struct t_creature* e, int timer, bool r
 	}
 
 	// Try to sneak.
-	if(!spotted)
-	{
-		int result = entity_skill_roll(p,ES_STEALTH);
-		result -= timer;
-		if (fieldskillrate == FIELDSKILLRATE_HARD && result + 1 == stealth_difficulty)
-		{// Hard more = You only learn if you just missed, and realize what you did wrong.
-			entity_train(p,ES_STEALTH, 10);
-		}
-		if(result < stealth_difficulty)
-			spotted = true;
+	int result = entity_skill_roll(p,ES_STEALTH);
+	result -= timer;
+	if (fieldskillrate == FIELDSKILLRATE_HARD && result + 1 == stealth_difficulty)
+	{// Hard more = You only learn if you just missed, and realize what you did wrong.
+		entity_train(p,ES_STEALTH, 10);
 	}
+	if(result < stealth_difficulty)
+		spotted = true;
 
 	// Spotted! Act casual.
 	if(spotted)
 	{
 		// Scary weapons are not very casual.
-		if(weaponcheck(p,0) == 2)
+		if(weaponcheck(p,0,restricted_space) == 2)
 		{
 			noticed = true;
 		} else {
@@ -269,9 +268,6 @@ void disguisecheck(struct t_creature* p, struct t_creature* e, int timer, bool r
 	// Give feedback on the Liberal Performance
 	if(!spotted)
 	{
-		for(int i=0;i<6;i++)
-		{
-			if(p == NULL) break;
 			switch (fieldskillrate)
 			{
 				case FIELDSKILLRATE_FAST:
@@ -281,7 +277,6 @@ void disguisecheck(struct t_creature* p, struct t_creature* e, int timer, bool r
 				case FIELDSKILLRATE_HARD:
 					entity_train(p,ES_STEALTH, 0);break;
 			}
-		}
 
 		if(timer == 0)
 		{
@@ -294,10 +289,7 @@ void disguisecheck(struct t_creature* p, struct t_creature* e, int timer, bool r
 		if(blew_it == -1)
 		{
 			int i;
-			for(i=0;i<6;i++)
-			{
-				if(p == NULL) break;
-				if(hasdisguise(*(p)))
+				if(hasdisguise(p,restricted_space))
 				{
 					switch (fieldskillrate)
 					{
@@ -309,7 +301,6 @@ void disguisecheck(struct t_creature* p, struct t_creature* e, int timer, bool r
 							entity_train(p,ES_DISGUISE, 0);break;
 					}
 				}
-			}
 		}
 
 		if(blew_it != -1 && randval(2))
@@ -327,7 +318,7 @@ void disguisecheck(struct t_creature* p, struct t_creature* e, int timer, bool r
 		}
 	}
 
-	if(!noticed)return;
+	if(!noticed) return 0;
 
 	g_attrset(CP_RED);
 	if(sitealarmtimer!=0 && weapon<1 && e->type!=ET_GUARDDOG)
@@ -365,7 +356,7 @@ void disguisecheck(struct t_creature* p, struct t_creature* e, int timer, bool r
 		if(weapon&&e->type!=ET_GUARDDOG)
 		{
 			g_printw("%s sees %s's Liberal Weapons", describe_entity_static(e),describe_entity_static(p));
-			
+
 			if(e->align==ALIGN_CONSERVATIVE)
 				g_addstr("and lets forth a piercing Conservative alarm cry!", gamelog);
 			else
@@ -387,6 +378,7 @@ void disguisecheck(struct t_creature* p, struct t_creature* e, int timer, bool r
 		}
 		sitealarm=1;
 	}
+	return noticed;
 }
 
 char weapon_in_character(enum weapon_types wtype, enum armortype atype)
@@ -458,7 +450,7 @@ char weapon_in_character(enum weapon_types wtype, enum armortype atype)
 }
 
 /* checks if a creature's weapon is suspicious */
-char weaponcheck(struct t_creature* cr, bool metaldetect) {
+char weaponcheck(struct t_creature* cr, bool metaldetect, bool restricted_space) {
 	bool suspicious = w_type(cr->weapon)->is_suspicious;
 	bool concealed = a_type(cr->armor)->conceal_weapon_size >= w_type(cr->weapon)->size;
 	char incharacter = weapon_in_character(w_type_id(cr->weapon), a_type_id(cr->armor));
@@ -466,7 +458,7 @@ char weaponcheck(struct t_creature* cr, bool metaldetect) {
 
 	// If your disguise is inappropriate to the current location,
 	// then being in character isn't sufficient
-	if(hasdisguise(cr) == false)
+	if(hasdisguise(cr,restricted_space) == false)
 		incharacter = -1;
 
 	if(suspicious)
