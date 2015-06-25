@@ -126,6 +126,13 @@ enum Laws
    LAWNUM
 };
 
+enum FieldSkillRates
+{
+	FIELDSKILLRATE_FAST,
+	FIELDSKILLRATE_CLASSIC,
+	FIELDSKILLRATE_HARD
+};
+
 enum Lawflags
 {
    LAWFLAG_TREASON,      // "Treason"
@@ -168,6 +175,8 @@ enum Lawflags
 extern short law[LAWNUM];
 
 extern char slogan[80];
+
+extern short fieldskillrate;
 
 /// end game variables
 

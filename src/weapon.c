@@ -343,3 +343,12 @@ const struct t_weapon_type* w_type( struct t_item* weapon) {
 
 	return NULL;
 }
+
+enum weapon_types w_type_id(struct t_item* weapon) {
+	
+	if (!weapon) return WT_NONE;
+	if (weapon->type != IT_WEAPON) return WT_NONE;
+	return weapon->itemtypeid;
+
+	return WT_NONE;
+}

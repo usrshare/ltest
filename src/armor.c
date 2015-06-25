@@ -98,6 +98,12 @@ const struct t_armor_type* a_type(struct t_item* armor) {
 	return &armortypes[armor->itemtypeid];
 }
 
+enum armortype a_type_id(struct t_item* armor) {
+	if (!armor) return ARMOR_NONE;
+	if (armor->type != IT_ARMOR) return ARMOR_NONE;
+	return armor->itemtypeid;
+}
+
 int armor_get_quality(struct t_item* armor) {
 	return armor->a_flags & AD_QUALITY;
 }
