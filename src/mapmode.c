@@ -283,6 +283,11 @@ int mapmode() {
 	    players[i]->e_id = i;
 	    players[i]->aidata->wideview = 1;
 	    memset(players[i]->aidata->viewarr,0,sizeof(uint8_t) * MAP_WIDTH * MAP_HEIGHT);
+
+	    struct t_item clothes;
+	    new_armor(&armortypes[ARMOR_CLOTHES],&clothes);
+	    give_armor(players[i]->ent,clothes);
+	    
 	}
     }
 

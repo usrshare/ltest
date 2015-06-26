@@ -330,7 +330,7 @@ int disguisecheck(struct t_map* map, struct t_creature* p, struct t_creature* e,
 		{
 			map->sitealarm=1;
 
-			g_printw("%s shouts in alarm at the squad's Liberal Trespassing!", describe_entity_static(e));
+			g_printw("%s shouts in alarm at %s's Liberal Trespassing!", describe_entity_static(e), describe_entity_static(p));
 		}
 		else
 		{

@@ -171,12 +171,12 @@ int new_armor(const struct t_armor_type* type,struct t_item* o_item) {
 	return 0;
 }
 
-int give_armor(struct t_creature* cr, struct t_item* armor) {
+int give_armor(struct t_creature* cr, struct t_item armor) {
 
 	struct t_item* invspace = inv_find_empty(cr->inventory);
 	if (!invspace) return 1;
 
-	*invspace = *armor; //copy physically!
+	*invspace = armor; //copy physically!
 	cr->armor = invspace;
 	
 	return 0;

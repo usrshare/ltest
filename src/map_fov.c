@@ -26,7 +26,7 @@ int lineofsight(struct t_map* map, uint8_t sx, uint8_t sy, uint8_t tx, uint8_t t
 
     dx = abs(dx) << 1; dy = abs(dy) << 1;
 
-    int maxres = 0;
+    int res = 0, maxres = 0;
     
     if (dx >= dy) {
 
@@ -43,7 +43,8 @@ int lineofsight(struct t_map* map, uint8_t sx, uint8_t sy, uint8_t tx, uint8_t t
 	    error += dy;
 	    sx += ix;
 
-	    maxres = cb(map,sx,sy,cbparam);
+	    res = cb(map,sx,sy,cbparam);
+	    if (res > maxres) maxres=res;
 	}
 
     } else {
@@ -61,7 +62,8 @@ int lineofsight(struct t_map* map, uint8_t sx, uint8_t sy, uint8_t tx, uint8_t t
 	    error += dx;
 	    sy += iy;
 
-	    maxres = cb(map,sx,sy,cbparam);
+	    res = cb(map,sx,sy,cbparam);
+	    if (res > maxres) maxres=res;
 	}
     }
 	    
