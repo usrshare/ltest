@@ -258,9 +258,9 @@ uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
 			struct t_map_entity* curent = visible_ent[i]; //let's check visible entities.
 			if (curent == NULL) continue; //this shouldn't really happen, but fine.
 
-			if (curent->type == ET_PLAYER) {
+			if ((curent->type == ET_PLAYER) && (me->aidata->timer == 0)) {
 
-				if (disguisecheck(map, curent->ent, me->ent, map->sitealarmtimer, (map->sq[(curent->y) * MAP_WIDTH + (curent->x)].type == TT_RESTRICTED_SPACE)) == 0) continue;
+				if ((me->aidata->timer > 0) || (disguisecheck(map, curent->ent, me->ent, map->sitealarmtimer, (map->sq[(curent->y) * MAP_WIDTH + (curent->x)].type == TT_RESTRICTED_SPACE)) == 0)) { me->aidata->timer = 32; continue; }
 				me->aidata->alert_state = 5; me->aidata->task = AIT_CHECKING_OUT; // "?"
 				me->aidata->target = curent;
 
