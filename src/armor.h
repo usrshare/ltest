@@ -133,7 +133,7 @@ bool armor_decrease_quality(struct t_item* armor, int decrease);
 int armor_get_quality(struct t_item* armor);
 void armor_set_quality(struct t_item* armor, int quality);
 
-int new_armor(const struct t_armor_type* type,struct t_item* o_item);
+int new_armor(enum armortype type,struct t_item* o_item);
 int give_armor(struct t_creature* cr, struct t_item armor);
 
 #endif

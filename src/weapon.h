@@ -175,5 +175,6 @@ const char* get_weapon_name_sub (struct t_item* w, unsigned subtype);
 const char* wt_get_name(const struct t_weapon_type* wt);
 const char* wt_get_name_sub(const struct t_weapon_type* wt, unsigned subtype);
 
+int new_weapon(enum weapon_types type,struct t_item* o_item, int ammo);
 const char* hit_punctuation(const struct t_attackst* attack);
 #endif

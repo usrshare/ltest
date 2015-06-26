@@ -119,6 +119,13 @@ const struct t_weapon_type weapontypes [WT_COUNT] = {
 	{.priority = 1, .ranged = true, .attack_description = "shoots at", .skill = ES_SHOTGUN, .ammotype = CT_BUCKSHOT, .random_damage = 201, .fixed_damage = 30, .shoots = 1, .bleeding = 1, .damages_armor = 1, .armorpiercing = 0, .number_attacks = 1,},
 	{.priority = 2, .strength_min = 6, .strength_max = 12, .attack_description = "swings at", .skill = ES_CLUB, .random_damage = 21, .fixed_damage = 5, .bruises = 1}, },
 	},
+	{ .name  = "Axe", .shortname = "Axe",
+	.is_threatening = 1, .can_take_hostages = 1,
+	.legality = 2, .fencevalue = 0,
+	.size = 15, .bashstrengthmod = 200,
+	.attacks = {
+	{.priority = 1, .strength_min = 6, .strength_max = 12, .attack_description = "chops at", .skill = ES_AXE, .random_damage = 101, .fixed_damage = 10, .cuts = 1, .bleeding = 1, .damages_armor = 1, .armorpiercing = 2, .severtype = WOUND_CLEANOFF}, },
+	},
 	{ .name  = "Baseball Bat", .shortname = "B.Bat",
 	.is_threatening = 1,
 	.legality = 2, .fencevalue = 20,
@@ -351,4 +358,21 @@ enum weapon_types w_type_id(struct t_item* weapon) {
 	return weapon->itemtypeid;
 
 	return WT_NONE;
+}
+
+int new_weapon(enum weapon_types type,struct t_item* o_item, int ammo) {
+	struct t_item newwpn = {.type = IT_WEAPON, .itemtypeid = type, .ammo = ammo};
+	*o_item = newwpn;
+	return 0;
+}
+
+int give_weapon(struct t_creature* cr, struct t_item weapon) {
+
+	struct t_item* invspace = inv_find_empty(cr->inventory);
+	if (!invspace) return 1;
+
+	*invspace = weapon; //copy physically!
+	cr->weapon = invspace;
+	
+	return 0;
 }

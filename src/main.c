@@ -13,6 +13,7 @@
 int init_memory() {
 
 	memset(pool,0,sizeof(struct t_creature*) * POOLSIZE);
+	return 0;
 }
 
 int main(int argc, char** argv) {
@@ -53,6 +54,7 @@ int main(int argc, char** argv) {
 
 	refresh();
 
+	init_memory();
 	init_pairs();
 
 	mapmode();

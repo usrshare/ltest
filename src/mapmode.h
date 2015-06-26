@@ -29,6 +29,7 @@ struct spawnflags {
 struct t_map_entity* spawn_loot(struct t_map* map, struct t_item* items, uint8_t y, uint8_t x);
 struct t_map_entity* spawn_entity(struct t_map* map, enum entitytypes type, struct spawnflags sf);
 int kill_entity(struct t_map_entity* ent);
+bool can_attack(struct t_map* map, struct t_map_entity* a, struct t_map_entity* t, bool no_ranged, bool no_melee);
 
 int mapmode();
 

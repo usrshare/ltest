@@ -163,9 +163,9 @@ int armor_get_value(struct t_item* armor, int bodypart) {
 
 }
 
-int new_armor(const struct t_armor_type* type,struct t_item* o_item) {
+int new_armor(enum armortype type,struct t_item* o_item) {
 
-	struct t_item newarmor = {.type = IT_ARMOR, .itemtypeid = type->type, .a_flags = 0};
+	struct t_item newarmor = {.type = IT_ARMOR, .itemtypeid = type, .a_flags = 0};
 
 	*o_item = newarmor;
 	return 0;
