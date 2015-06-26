@@ -269,9 +269,11 @@ uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
 				me->aidata->path_plotted = 0;
 
 				if (map->sitealarm == 0) {
-					map->sitealarmtimer = 0; map->sitealarmtimer = 60;
+					map->sitealarmtimer = 0;
 				} else {
-					me->aidata->task = AIT_CHECKING_OUT; me->aidata->timer = 60; }
+					me->aidata->task = AIT_CHECKING_OUT;
+					me->aidata->timer = 60;
+				}
 			}
 		}
 
@@ -284,10 +286,10 @@ uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
 			// we don't need a heatmap if we can see the entity.
 			if (me->aidata->task == AIT_LOOKING_FOR) {heatmap_clear(me->aidata->heatmap_old); heatmap_clear(me->aidata->heatmap_new);}
 				
-			if (me->aidata->task >= AIT_CHECKING_OUT) {
+			if (map->sitealarm) {
 			me->aidata->alert_state = 50;
 			me->aidata->task = AIT_ATTACKING;
-			map->sitealarm = 1;}
+			}
 
 			dx = me->aidata->target->x; dy = me->aidata->target->y;
 
@@ -407,21 +409,25 @@ uint16_t enemy_actFunc(struct t_map* map, struct t_map_entity* me) {
 			if ( (me->aidata->viewarr[ dy * MAP_WIDTH + dx ] == 3) && (find_entity(map,dx,dy) == NULL) ) { me->aidata->alert_state = 0; me->aidata->task = AIT_PATROLLING;}
 			break;
 
-		case AIT_ATTACKING:
+		case AIT_ATTACKING: {
+			    
+			bool noweapons = false;
+			if (!me->aidata->target->ent->weapon) noweapons = true;
 			
-			if (can_attack(map,me,me->aidata->target)) {
+			if (can_attack(map,me,me->aidata->target,noweapons,0)) {
 			
 			    if (me->aidata->viewarr[dy * MAP_WIDTH +dx] >= 3) {
 				md = face_square(me->x,me->y,dx,dy);
 				if (md < MD_COUNT) { me->aidata->viewdir = md; r++; } }
 
 			    char actual;
-			    attack(map,me->ent,me->aidata->target->ent,0,&actual,false);
+			    attack(map,me->ent,me->aidata->target->ent,0,&actual,noweapons);
 			    r = 16;
 			    break;
 			}
 
 			//if can't attack, pursue.
+				    }
 
 		case AIT_PURSUING:
 

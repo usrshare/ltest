@@ -1007,3 +1007,12 @@ char* gethealthstat(struct t_creature* g,char smll,int* o_attrs) {
    if (o_attrs) *o_attrs = attrs;
    return resstr;
 }
+
+int give_item(struct t_creature* cr, struct t_item item) {
+
+	struct t_item* invspace = inv_find_empty(cr->inventory);
+	if (!invspace) return 1;
+
+	*invspace = item; //copy physically!
+	return 0;
+}

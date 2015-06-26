@@ -1982,7 +1982,7 @@ void capturecreature(struct t_creature *t)
     drop_weapons_and_clips(t,NULL);
     //t.strip(NULL);
     struct t_item clothes;
-    new_armor(&armortypes[ARMOR_CLOTHES],&clothes);
+    new_armor(ARMOR_CLOTHES,&clothes);
     give_armor(t,clothes);
 
     freehostage(t,2); // situation 2 = no message; this may want to be changed to 0 or 1
@@ -1999,7 +1999,7 @@ void capturecreature(struct t_creature *t)
 		sitetype==SITE_GOVERNMENT_COURTHOUSE)
 	{
 	    struct t_item prisoner;
-	    new_armor(&armortypes[ARMOR_PRISONER], &prisoner);
+	    new_armor(ARMOR_PRISONER, &prisoner);
 	    give_armor(t,prisoner);
 	}
 	if(sitetype==SITE_GOVERNMENT_PRISON)

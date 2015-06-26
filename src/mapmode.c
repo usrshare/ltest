@@ -119,22 +119,22 @@ struct t_map_entity* find_entity(struct t_map* map, uint8_t x, uint8_t y) {
     return NULL;
 }
 
-bool can_attack(struct t_map* map, struct t_map_entity* a, struct t_map_entity* t) {
+bool can_attack(struct t_map* map, struct t_map_entity* a, struct t_map_entity* t, bool no_ranged, bool no_melee) {
 
     int dx = abs(a->x - t->x);
     int dy = abs(a->y - t->y);
 
     if (!a->ent) return false;
 
-    bool melee_allowed = true;
-    bool ranged_allowed = true;
+    bool melee_allowed = !no_melee;
+    bool ranged_allowed = !no_ranged;
 
     if ((dx > 1) || (dy > 1)) melee_allowed = 0; //melee can only go so far.
 
     //TODO if no line of sight between a and t, ranged_allowed = 0;
     if (lineofsight(map,a->x,a->y,t->x,t->y,los_default_cb,NULL) > 0) ranged_allowed = 0;
 
-    if ((!melee_allowed == 0) && (!ranged_allowed)) return false;
+    if ((!melee_allowed) && (!ranged_allowed)) return false;
 
     const struct t_attackst* att = get_attack(a->ent->weapon, !melee_allowed, !ranged_allowed, 0);
 
@@ -285,8 +285,12 @@ int mapmode() {
 	    memset(players[i]->aidata->viewarr,0,sizeof(uint8_t) * MAP_WIDTH * MAP_HEIGHT);
 
 	    struct t_item clothes;
-	    new_armor(&armortypes[ARMOR_CLOTHES],&clothes);
+	    new_armor(ARMOR_CLOTHES,&clothes);
 	    give_armor(players[i]->ent,clothes);
+
+	    struct t_item knife;
+	    new_weapon(WT_COMBATKNIFE,&knife,0);
+	    give_weapon(players[i]->ent,knife);
 	    
 	}
     }
