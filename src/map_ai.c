@@ -408,8 +408,13 @@ uint16_t enemy_actFunc(struct t_map* map, struct t_map_entity* me) {
 			break;
 
 		case AIT_ATTACKING:
-
+			
 			if (can_attack(map,me,me->aidata->target)) {
+			
+			    if (me->aidata->viewarr[dy * MAP_WIDTH +dx] >= 3) {
+				md = face_square(me->x,me->y,dx,dy);
+				if (md < MD_COUNT) { me->aidata->viewdir = md; r++; } }
+
 			    char actual;
 			    attack(map,me->ent,me->aidata->target->ent,0,&actual,false);
 			    r = 16;

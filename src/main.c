@@ -4,10 +4,16 @@
 #include <time.h>
 #include <curses.h>
 #include <unistd.h>
+#include <string.h>
 
 #include "cpairs.h"
 #include "mapmode.h"
 #include "globals.h"
+
+int init_memory() {
+
+	memset(pool,0,sizeof(struct t_creature*) * POOLSIZE);
+}
 
 int main(int argc, char** argv) {
 

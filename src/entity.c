@@ -293,11 +293,14 @@ int describe_entity(struct t_creature* me, char* const restrict o_name, size_t s
     return 0;
 }
 
-char temp_name[128];
+char temp_name[16][128];
+int temp_name_i = 0;
 
 const char* describe_entity_static(struct t_creature* me) {
-    int r = describe_entity(me,temp_name,128);
-    return (r == 0 ? temp_name : NULL);
+    int r = describe_entity(me,temp_name[temp_name_i],128);
+    const char* ret = (r == 0 ? temp_name[temp_name_i] : NULL);
+    temp_name_i = (temp_name_i+1 % 16);
+    return ret;
 }
 
 // This table is based on 2010 age/gender distribution data from the U.S. Census Bureau
