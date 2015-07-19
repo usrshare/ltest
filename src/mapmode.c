@@ -69,7 +69,7 @@ struct t_creature* next_empty_temp_entity(struct t_map* map) {
     return NULL;
 }
 
-struct t_map_ai_data* next_empty_ai_data(void) {
+struct t_ent_ai_data* next_empty_ai_data(void) {
     for (int i=0; i < MAX_AI_ENTITIES; i++)
 	if (aient[i].usedby == NULL) return &(aient[i]);
 
@@ -163,14 +163,12 @@ struct t_map_entity* spawn_entity(struct t_map* map, enum entitytypes type, stru
     }
 
     if (needs_ai[type]) {
-	struct t_map_ai_data* newai = next_empty_ai_data();
+	struct t_ent_ai_data* newai = next_empty_ai_data();
 	if (newai == NULL) return NULL;
 
 	newent->aidata = newai;
 	newai->dx = 255;
 	newai->dy = 255;
-	heatmap_clear(newai->heatmap_old);
-	heatmap_clear(newai->heatmap_new);
 	newai->usedby = newent;
     }
 
@@ -247,9 +245,9 @@ int kill_entity(struct t_map_entity* ent) {
 
     ent->type = ET_NONE;
 
-    struct t_map_ai_data* ai = ent->aidata;
+    struct t_ent_ai_data* ai = ent->aidata;
     ent->turn = ent->act = NULL;
-    if (ai) memset(ai,0,sizeof(struct t_map_ai_data));
+    if (ai) memset(ai,0,sizeof(struct t_ent_ai_data));
     ent->aidata = NULL;
     return 0;
 }
@@ -261,7 +259,7 @@ int mapmode() {
     memset(&(map1.sq), 0, sizeof(struct t_square) * MAP_WIDTH * MAP_HEIGHT); 
     memset(&(map1.ent), 0, sizeof(struct t_map_entity) * MAX_ENTITIES); 
     memset(&(map1.creat), 0, sizeof(struct t_creature) * MAX_ENTITIES); 
-    memset(aient, 0, sizeof(struct t_map_ai_data) * MAX_AI_ENTITIES); 
+    memset(aient, 0, sizeof(struct t_ent_ai_data) * MAX_AI_ENTITIES); 
 
     map1.sitealarm = 0; map1.sitealarmtimer = -1;
 
@@ -282,7 +280,6 @@ int mapmode() {
 	    players[i]->flags |= EF_ALWAYSVISIBLE;
 	    players[i]->e_id = i;
 	    players[i]->aidata->wideview = 1;
-	    memset(players[i]->aidata->viewarr,0,sizeof(uint8_t) * MAP_WIDTH * MAP_HEIGHT);
 
 	    struct t_item clothes;
 	    new_armor(ARMOR_CLOTHES,&clothes);
@@ -310,8 +307,7 @@ int mapmode() {
     }
 
     for (int i=0; i < PLAYERS_COUNT; i++) {
-	memset(players[i]->aidata->viewarr,1,sizeof(uint8_t) * MAP_WIDTH * MAP_HEIGHT);
-	do_fov(&map1,players[i],25,FA_FULL,players[i]->aidata->viewarr,NULL);
+	do_fov(&map1,players[i],25,FA_FULL,map1.aidata.p_viewarr,NULL);
 	draw_map(&map1,players[i],1,dbgmode ? 1 : 0, dbgmode ? 1 : 0,0);
     }
 

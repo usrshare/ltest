@@ -34,9 +34,9 @@ enum movedirections plot_follow(uint8_t x, uint8_t y, enum movedirections* pathp
 	if (pathprev[y * MAP_WIDTH + x] < MD_COUNT) return (4 + pathprev[y * MAP_WIDTH + x]) % 8; else return MD_COUNT;
 }
 
-int getcost(struct t_map* map, struct t_map_entity* who, uint8_t x, uint8_t y) {
+int getcost(struct t_map* map, struct t_map_entity* who, uint8_t x, uint8_t y, uint8_t* viewarr) {
 		
-	bool tilevis = (who ? (who->aidata->viewarr[y * MAP_WIDTH + x]) : 1);
+	bool tilevis = (who ? viewarr[y * MAP_WIDTH + x] : 1);
 	enum terraintypes tt = map->sq[y * MAP_WIDTH + x].type; 
 
 	uint8_t tilecost;
@@ -45,7 +45,7 @@ int getcost(struct t_map* map, struct t_map_entity* who, uint8_t x, uint8_t y) {
 	if (tilecost == 255) return -1; else return tilecost;		
 }
 
-int plot_path(struct t_map* map, uint8_t dx, uint8_t dy, uint16_t* o_patharr, enum movedirections* o_pathprev, const struct plotflags* _pf) {
+int plot_path(struct t_map* map, uint8_t dx, uint8_t dy, uint8_t* viewarr, uint16_t* o_patharr, enum movedirections* o_pathprev, const struct plotflags* _pf) {
 
 	const struct plotflags* pf = (_pf ? _pf : &plot_default);
 	
@@ -81,7 +81,7 @@ int plot_path(struct t_map* map, uint8_t dx, uint8_t dy, uint16_t* o_patharr, en
 
 		if (!vtile(nx,ny)) continue; //this should be a valid tile!
 		
-		int cost = getcost(map,pf->persp,nx,ny);
+		int cost = getcost(map,pf->persp,nx,ny,viewarr);
 		if (cost == -1) continue;
 
 		if (dir % 2) {

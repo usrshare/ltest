@@ -188,6 +188,11 @@ void find_visible_entities(struct t_map* map, uint8_t* va, struct t_map_entity**
 
 }
 
+bool can_see(struct t_map* map, struct t_map_entity* e, uint8_t x, uint8_t y) {
+
+    return !lineofsight(map,e->x,e->y,x,y,los_default_cb,NULL);
+
+}
 
 /* calculate which tiles can be seen by the player */
 void do_fov(struct t_map* map, struct t_map_entity* e, int radius, enum fov_angles angle, uint8_t* mem_array, int* visible_entities) {

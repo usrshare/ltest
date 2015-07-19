@@ -18,6 +18,6 @@ struct plotflags {
 
 extern const struct plotflags plot_default;
 
-int plot_path(struct t_map* map, uint8_t dx, uint8_t dy, uint16_t* o_patharr, enum movedirections* o_pathprev, const struct plotflags* _pf);
+int plot_path(struct t_map* map, uint8_t dx, uint8_t dy, uint8_t* viewarr, uint16_t* o_patharr, enum movedirections* o_pathprev, const struct plotflags* _pf);
 
 #endif
