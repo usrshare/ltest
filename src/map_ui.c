@@ -82,7 +82,7 @@ int draw_map(struct t_map* map, struct t_map_entity* persp, bool show_fov, bool 
 
 	    int tilevis = 1;
 
-	    if ((persp != NULL) && (persp->aidata)) tilevis = persp->aidata->viewarr[iy * MAP_WIDTH + ix];
+	    if ((persp != NULL) && (persp->aidata)) tilevis = map->aidata.p_viewarr[iy * MAP_WIDTH + ix];
 
 	    chtype tileflags = 0;
 
@@ -102,7 +102,7 @@ int draw_map(struct t_map* map, struct t_map_entity* persp, bool show_fov, bool 
 			if (map->ent[i].type == ET_NONE) continue;
 
 			int ex = map->ent[i].x; int ey = map->ent[i].y;
-			if ((map->ent[i].type != ET_PLAYER) && (map->ent[i].aidata) && (persp->aidata->viewarr[ey * (MAP_WIDTH) + ex] >= 3) && (map->ent[i].aidata->viewarr[iy * MAP_WIDTH + ix] >= 3) ) {
+			if ((map->ent[i].type != ET_PLAYER) && (map->ent[i].aidata) && (map->aidata.p_viewarr[ey * (MAP_WIDTH) + ex] >= 3) && (map->aidata.e_viewarr[iy * MAP_WIDTH + ix] >= 3) ) {
 
 			    switch (map->ent[i].aidata->task) {
 				case AIT_WORKING: fovcolor = CP_GREEN; break;
@@ -138,13 +138,13 @@ int draw_map(struct t_map* map, struct t_map_entity* persp, bool show_fov, bool 
 
 	    if (show_heatmaps) {
 		for (int m=0; m < HEATMAP_SIZE; m++) {
-		    uint16_t yx = map->ent[i].aidata->heatmap_old[m];
+		    uint16_t yx = map->aidata.e_heatmap_old[m];
 		    if (yx == 65535) continue;
 		    uint8_t y = yx / MAP_WIDTH; uint8_t x = yx % MAP_WIDTH;
 		    mvwaddch(mapwindow,y,x,'&' | CP_YELLOW);
 		}
 		for (int m=0; m < HEATMAP_SIZE; m++) {
-		    uint16_t yx = map->ent[i].aidata->heatmap_new[m];
+		    uint16_t yx = map->aidata.e_heatmap_new[m];
 		    if (yx == 65535) continue;
 		    uint8_t y = yx / MAP_WIDTH; uint8_t x = yx % MAP_WIDTH;
 		    mvwaddch(mapwindow,y,x,'&' | CP_GREEN);
@@ -159,7 +159,7 @@ int draw_map(struct t_map* map, struct t_map_entity* persp, bool show_fov, bool 
 	if (map->ent[i].type == ET_NONE) continue;
 	int ex = map->ent[i].x; int ey = map->ent[i].y;
 
-	if ( (persp == NULL) || (map->ent[i].flags & EF_ALWAYSVISIBLE) || ( (persp->aidata) && (persp->aidata->viewarr[ey * (MAP_WIDTH) + ex] >= 3) ) ) {
+	if ( (persp == NULL) || (map->ent[i].flags & EF_ALWAYSVISIBLE) || ( (persp->aidata) && (map->aidata.p_viewarr[ey * (MAP_WIDTH) + ex] >= 3) ) ) {
 
 	    int highlight = (hl_persp) && (&map->ent[i] == persp);
 	    mvwaddch(mapwindow,ey,ex,entchar(&map->ent[i]) | (highlight ? A_REVERSE : 0) );
