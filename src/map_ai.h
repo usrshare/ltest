@@ -32,13 +32,13 @@ struct t_map_ai_data {
     // player / allies
     uint8_t p_viewarr [ MAP_WIDTH * MAP_HEIGHT ];
     uint16_t p_patharr [ MAP_WIDTH * MAP_HEIGHT ];
-    uint8_t /*enum movedirections*/ p_pathprev[ MAP_WIDTH * MAP_HEIGHT ];
+    enum movedirections p_pathprev[ MAP_WIDTH * MAP_HEIGHT ];
 
 
     // enemies / neutrals
     uint8_t e_viewarr [ MAP_WIDTH * MAP_HEIGHT ];
     uint16_t e_patharr [ MAP_WIDTH * MAP_HEIGHT ];
-    uint8_t /*enum movedirections*/ e_pathprev[ MAP_WIDTH * MAP_HEIGHT ];
+    enum movedirections e_pathprev[ MAP_WIDTH * MAP_HEIGHT ];
     
     uint16_t e_heatmap_old [ HEATMAP_SIZE ]; //storing coords as (y * MAP_WIDTH + x).
     uint16_t e_heatmap_new [ HEATMAP_SIZE ]; //65535 stands for "empty".

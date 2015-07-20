@@ -88,9 +88,9 @@ int draw_map(struct t_map* map, struct t_map_entity* persp, bool show_fov, bool 
 
 	    switch (tilevis) {
 		case 1: tileflags = CP_BLUE; break;
-		case 2: tileflags = CP_DARKGRAY; break;
-		case 3: tileflags = CP_WHITE; break;
-		case 4:	tileflags = CP_WHITE; break;
+		case 2: tileflags = CP_WHITE; break;
+		case 3:
+		case 4:	tileflags = CP_WHITE | A_BOLD; break;
 		default: break;
 	    }
 
@@ -387,7 +387,7 @@ enum movedirections askdir() {
 
 int init_status (struct t_map* map) {
 
-    int y,x;
+    int y = 0,x = 0;
     setsyx(y,x);
 
     wmove(statwindow,0,0);
@@ -405,7 +405,7 @@ int init_status (struct t_map* map) {
 
 int update_status (struct t_map* map) {
 
-    int y,x;
+    int y=0,x=0;
     setsyx(y,x);
 
     int pi = 0;
@@ -421,7 +421,7 @@ int update_status (struct t_map* map) {
 
 	    mvwprintw(statwindow,0, pi*13 + 1, " %s ",e_name);
 
-	    char* e_weapon = w_type(e->ent->weapon)->shortname;
+	    const char* e_weapon = w_type(e->ent->weapon)->shortname;
 	    nl = strlen(e_weapon);
 	    mvwprintw(statwindow,1, pi*13 + 13 - nl, "%s",e_weapon);
 

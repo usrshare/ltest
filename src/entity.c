@@ -299,7 +299,7 @@ int temp_name_i = 0;
 const char* describe_entity_static(struct t_creature* me) {
     int r = describe_entity(me,temp_name[temp_name_i],128);
     const char* ret = (r == 0 ? temp_name[temp_name_i] : NULL);
-    temp_name_i = (temp_name_i+1 % 16);
+    temp_name_i = (temp_name_i+1) % 16;
     return ret;
 }
 
