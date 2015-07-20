@@ -285,9 +285,11 @@ int mapmode() {
 	    new_armor(ARMOR_CLOTHES,&clothes);
 	    give_armor(players[i]->ent,clothes);
 
+	    /*
 	    struct t_item knife;
 	    new_weapon(WT_COMBATKNIFE,&knife,0);
 	    give_weapon(players[i]->ent,knife);
+	    */
 	    
 	}
     }

@@ -21,543 +21,409 @@
 struct t_ent_ai_data aient[MAX_AI_ENTITIES];
 
 enum movedirections face_square (uint8_t sx, uint8_t sy, uint8_t dx, uint8_t dy) {
-	// this function tries to figure out the best direction in which someone at (sx,sy) has to face to see (dx,dy).
+    // this function tries to figure out the best direction in which someone at (sx,sy) has to face to see (dx,dy).
 
-	int diff_x = (dx - sx);
-	int diff_y = (dy - sy);
+    int diff_x = (dx - sx);
+    int diff_y = (dy - sy);
 
-	if ((diff_x == 0) && (diff_y == 0)) return -1; //the spots are the same!
+    if ((diff_x == 0) && (diff_y == 0)) return -1; //the spots are the same!
 
-	if (abs(diff_x) > 2 * abs(diff_y)) return (diff_x > 0) ? MD_EAST: MD_WEST;
+    if (abs(diff_x) > 2 * abs(diff_y)) return (diff_x > 0) ? MD_EAST: MD_WEST;
 
-	if (abs(diff_y) > 2 * abs(diff_x)) return (diff_y > 0) ? MD_SOUTH: MD_NORTH;
+    if (abs(diff_y) > 2 * abs(diff_x)) return (diff_y > 0) ? MD_SOUTH: MD_NORTH;
 
-	// at this point, all remaining directions are diagonal.
+    // at this point, all remaining directions are diagonal.
 
-	if (diff_x > 0) return (diff_y > 0) ? MD_SOUTHEAST : MD_NORTHEAST; else return (diff_y > 0) ? MD_SOUTHWEST : MD_NORTHWEST;
+    if (diff_x > 0) return (diff_y > 0) ? MD_SOUTHEAST : MD_NORTHEAST; else return (diff_y > 0) ? MD_SOUTHWEST : MD_NORTHWEST;
 
 }
 
 bool needs_ai [ET_COUNT] = {
-	0, //none
-	1, //player
-	1, //CPU
-	0, //static entity
+    0, //none
+    1, //player
+    1, //CPU
+    0, //static entity
 };
 
 int space_busy(struct t_map* map, uint8_t x, uint8_t y) {
 
-	if ((x >= MAP_WIDTH) || (y >= MAP_HEIGHT)) return 1;
-	if (tflags[map->sq[y*MAP_WIDTH+x].type] & TF_SOLID) return 1; //solid
+    if ((x >= MAP_WIDTH) || (y >= MAP_HEIGHT)) return 1;
+    if (tflags[map->sq[y*MAP_WIDTH+x].type] & TF_SOLID) return 1; //solid
 
-	if (space_taken(map,x,y)) return 1;
-	return 0;
+    if (space_taken(map,x,y)) return 1;
+    return 0;
 }
 
 int can_see_entity (struct t_map* map, struct t_map_entity* who, struct t_map_entity* whom) {
-	return !lineofsight(map, who->x, who->y, whom->x, whom->y, los_default_cb, NULL); 
+    return !lineofsight(map, who->x, who->y, whom->x, whom->y, los_default_cb, NULL); 
 }
 
 int trymove(struct t_map* map, struct t_map_entity* whom, int8_t dx, int8_t dy) {
 
-	if ((dx < -1) || (dx > 1)) return 1;
-	if ((dy < -1) || (dy > 1)) return 1; //this is only for simple movements.
+    if ((dx < -1) || (dx > 1)) return 1;
+    if ((dy < -1) || (dy > 1)) return 1; //this is only for simple movements.
 
-	int agility = whom->ent ? entity_get_attribute(whom->ent,EA_AGI,true) : 5;
+    int agility = whom->ent ? entity_get_attribute(whom->ent,EA_AGI,true) : 5;
 
-	int time = (abs(dx) + abs(dy)) == 2 ? 30 : 20;
+    int time = (abs(dx) + abs(dy)) == 2 ? 30 : 20;
 
-	int rx = whom->x + dx;
-	int ry = whom->y + dy;
+    int rx = whom->x + dx;
+    int ry = whom->y + dy;
 
-	if (map->sq[ry * MAP_WIDTH + rx].type == TT_DOOR_CLOSED) {
-		map->sq[ry * MAP_WIDTH + rx].type = TT_DOOR_OPEN;
-		return 40 / agility;
-	}
+    if (map->sq[ry * MAP_WIDTH + rx].type == TT_DOOR_CLOSED) {
+	map->sq[ry * MAP_WIDTH + rx].type = TT_DOOR_OPEN;
+	return 40 / agility;
+    }
 
-	if (space_busy(map,rx,ry)) return -1; //solid
+    if (space_busy(map,rx,ry)) return -1; //solid
 
-	whom->x = rx;
-	whom->y = ry;
+    whom->x = rx;
+    whom->y = ry;
 
-	return time / agility;
+    return time / agility;
 }
-
-// -- these functions use heatmaps to determine where the player may hide.
-// the idea has been shamelessly and badly stolen from 
-// http://www.roguebasin.com/index.php?title=Smart_searching_and_Modeling_the_player_with_a_%22heatmap%22
-
-uint16_t* find_empty_heatmap(uint16_t* heatmap) {
-
-	for (int i = 0; i < HEATMAP_SIZE; i++)
-		if (heatmap[i] == 65535) return &(heatmap[i]);
-
-	return NULL;
-}
-int heatmap_exists(uint16_t* hm1, uint16_t* hm2, uint8_t x, uint8_t y) {
-
-	uint16_t yx = y * MAP_WIDTH + x;
-
-	for (int i = 0; i < HEATMAP_SIZE; i++) {
-		if (hm1[i] == yx) return 1;
-	}
-
-	if (hm2 != NULL) {
-		for (int i = 0; i < HEATMAP_SIZE; i++) {
-			if (hm2[i] == yx) return 2;
-		}
-	}
-	return 0;
-}
-int heatmap_add(uint16_t* hm, uint8_t x, uint8_t y) {
-
-	uint16_t yx = y * MAP_WIDTH + x;
-
-	uint16_t* space = find_empty_heatmap(hm);
-
-	if (space == NULL) return 1; else *space = yx;
-
-	return 0;
-}
-int heatmap_clear(uint16_t* hm) {
-
-	memset(hm,0xff,sizeof(uint16_t) * HEATMAP_SIZE);
-	return 0;
-}
-int find_closest_on_heatmap(uint8_t x, uint8_t y, uint16_t* heatmap_old, uint16_t* heatmap_new, uint8_t* o_x, uint8_t* o_y) {
-
-	int8_t dx = 0, dy = 0, rx = x, ry = y;
-
-	uint8_t sm_x = 255, sm_y = 255; uint16_t sm_d = UINT16_MAX; //smallest distance, x and y
-
-	for (int i = 0; i < HEATMAP_SIZE; i++) {
-
-		if (heatmap_old[i] == 65535) continue;
-
-		rx = (heatmap_old[i] % MAP_WIDTH); dx = rx - x;
-		ry = (heatmap_old[i] / MAP_WIDTH); dy = ry - y;
-
-		uint16_t d = (abs(dx) * abs(dx)) + (abs(dy) * abs(dy));
-
-		if (d < sm_d) { sm_x = (heatmap_old[i] % MAP_WIDTH);sm_y = (heatmap_old[i] / MAP_WIDTH); sm_d = d;}
-	}
-
-	for (int i = 0; i < HEATMAP_SIZE; i++) {
-
-		if (heatmap_new[i] == 65535) continue;
-
-		rx = (heatmap_new[i] % MAP_WIDTH); dx = rx - x;
-		ry = (heatmap_new[i] / MAP_WIDTH); dy = ry - y;
-
-		uint16_t d = (abs(dx) * abs(dx)) + (abs(dy) * abs(dy));
-
-		if (d < sm_d) { sm_x = rx; sm_y = ry; sm_d = d;}
-	}
-
-	*o_x = sm_x;
-	*o_y = sm_y;
-
-	return 0;	
-}
-int spread_heatmap(struct t_map* map, uint8_t x, uint8_t y, uint16_t* heatmap_old, uint16_t* heatmap_new) {
-
-	enum movedirections md = 0;
-
-	uint8_t dx = x, dy = y;
-
-	int r = 0;
-
-	for (md = 0; md < MD_COUNT; md++) {
-		dx = x + movediff[md][0];
-		dy = y + movediff[md][1];
-		if ( (vtile(dx,dy)) && ((tflags[map->sq[dy * MAP_WIDTH + dx].type] & TF_SOLID) == 0) && (heatmap_exists(heatmap_old,heatmap_new,dx,dy) == 0) ) r = heatmap_add(heatmap_new,dx,dy); //new tile.
-		if (r == 1) return 1;
-	}
-
-	return 0;
-}
-
-int update_heatmap(struct t_map* map, struct t_map_entity* me, uint8_t x, uint8_t y, uint16_t* h_old, uint16_t* h_new) {
-
-	int r = 0;
-
-	//if (can_see_entity(map,me,target)) heatmap[(target->y) * MAP_WIDTH + (target->x)] = 2; //new tile
-
-	uint16_t h_add [ HEATMAP_SIZE]; memset(h_add,0xff,sizeof(uint16_t) * HEATMAP_SIZE);
-
-	if ( vtile(x,y) ) { r = heatmap_add(h_new,x,y); if (r != 0) return 1; }
-
-	for (int i=0; i < HEATMAP_SIZE; i++) {
-
-		if (h_new[i] != 65535) {
-
-			uint8_t y = (h_new[i] / MAP_WIDTH);
-			uint8_t x = (h_new[i] % MAP_WIDTH);
-
-			h_new[i] = 65535;
-
-			if (heatmap_exists(h_old,NULL,x,y) == 0) { r = heatmap_add(h_old,x,y); if (r != 0) return 1; }
-			r = spread_heatmap(map,x,y,h_old,h_add); if (r != 0) return 1;
-
-		}
-	}
-
-	for (int i=0; i < HEATMAP_SIZE; i++) {
-
-		if (h_add[i] != 65535) {
-
-			uint8_t y = (h_add[i] / MAP_WIDTH);
-			uint8_t x = (h_add[i] % MAP_WIDTH);
-
-			if (heatmap_exists(h_new,NULL,x,y) == 0) { r = heatmap_add(h_new,x,y); if (r != 0) return 1; }
-
-		}
-	}
-	
-	for (int i=0; i < HEATMAP_SIZE; i++) {
-
-		if ( (h_old[i] < (MAP_WIDTH * MAP_HEIGHT)) && (can_see(map,me,h_old[i] % MAP_WIDTH,h_old[i] / MAP_WIDTH)) ) h_old[i] = 65535;
-		if ( (h_new[i] < (MAP_WIDTH * MAP_HEIGHT)) && (can_see(map,me,h_new[i] % MAP_WIDTH,h_new[i] / MAP_WIDTH)) ) h_new[i] = 65535;
-
-	}	
-
-	
-	return 0;
-}
-
-// -- end of heatmap functions
 
 uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
 
-	if (me->aidata == NULL) return 1;
+    if (me->aidata == NULL) return 1;
 
-	int entities_sz = 0;
-	do_fov(map,me,12,FA_NORMAL,map->aidata.e_viewarr,&entities_sz);
+    int entities_sz = 0;
+    do_fov(map,me,12,FA_NORMAL,map->aidata.e_viewarr,&entities_sz);
 
-	struct t_map_entity* visible_ent[entities_sz];
-	memset(visible_ent,0,sizeof(struct t_map_entity*) * entities_sz);
-	find_visible_entities(map, map->aidata.e_viewarr, visible_ent, entities_sz);
+    struct t_map_entity* visible_ent[entities_sz];
+    memset(visible_ent,0,sizeof(struct t_map_entity*) * entities_sz);
+    find_visible_entities(map, map->aidata.e_viewarr, visible_ent, entities_sz);
 
-	uint8_t dx = 255, dy = 255;
+    uint8_t dx = 255, dy = 255;
 
-	if (me->aidata->target == NULL) {
+    if (me->aidata->target == NULL) {
 
-		// there's no target.
-		for (int i=0; i < entities_sz; i++) {
+	// there's no target.
+	for (int i=0; i < entities_sz; i++) {
 
-			struct t_map_entity* curent = visible_ent[i]; //let's check visible entities.
-			if (curent == NULL) continue; //this shouldn't really happen, but fine.
+	    struct t_map_entity* curent = visible_ent[i]; //let's check visible entities.
+	    if (curent == NULL) continue; //this shouldn't really happen, but fine.
 
-			if ((curent->type == ET_PLAYER) && (me->aidata->timer == 0)) {
+	    if ((curent->type == ET_PLAYER) && (me->aidata->timer == 0)) {
 
-				if ((me->aidata->timer > 0) || (disguisecheck(map, curent->ent, me->ent, map->sitealarmtimer, (map->sq[(curent->y) * MAP_WIDTH + (curent->x)].type == TT_RESTRICTED_SPACE)) == 0)) { me->aidata->timer = 32; continue; }
-				me->aidata->alert_state = 5; me->aidata->task = AIT_CHECKING_OUT; // "?"
-				me->aidata->target = curent;
+		if ((me->aidata->timer > 0) || (disguisecheck(map, curent->ent, me->ent, map->sitealarmtimer, (map->sq[(curent->y) * MAP_WIDTH + (curent->x)].type == TT_RESTRICTED_SPACE)) == 0)) { me->aidata->timer = 32; continue; }
+		me->aidata->alert_state = 5; me->aidata->task = AIT_CHECKING_OUT; // "?"
+		me->aidata->target = curent;
 
-				me->aidata->dx = me->aidata->lx = dx =curent->x; 
-				me->aidata->dy = me->aidata->ly = dy =curent->y; 
-				me->aidata->path_plotted = 0;
+		me->aidata->dx = me->aidata->lx = dx =curent->x; 
+		me->aidata->dy = me->aidata->ly = dy =curent->y; 
+		me->aidata->path_plotted = 0;
 
-				if (map->sitealarm == 0) {
-					map->sitealarmtimer = 0;
-				} else {
-					me->aidata->task = AIT_CHECKING_OUT;
-					me->aidata->timer = 60;
-				}
-			}
+		if (map->sitealarm == 0) {
+		    map->sitealarmtimer = 0;
+		} else {
+		    me->aidata->task = AIT_CHECKING_OUT;
+		    me->aidata->timer = 60;
 		}
+	    }
+	}
+
+    } else {
+
+
+	if (can_see_entity(map,me,me->aidata->target)) {
+
+
+	    // we don't need a heatmap if we can see the entity.
+	    if (map->sitealarm) {
+		me->aidata->alert_state = 50;
+		me->aidata->task = AIT_ATTACKING;
+	    }
+
+	    dx = me->aidata->target->x; dy = me->aidata->target->y;
+
+	    if ((dx != me->aidata->dx) || (dy != me->aidata->dy)) {
+		me->aidata->dy = dy;
+		me->aidata->dx = dx;
+		me->aidata->path_plotted = 0;
+	    }
+
+	    me->aidata->ly = dy;
+	    me->aidata->lx = dx;
+
 
 	} else {
-		
 
-		if (can_see_entity(map,me,me->aidata->target)) {
-	
-			
-			// we don't need a heatmap if we can see the entity.
-			if (me->aidata->task == AIT_LOOKING_FOR) {heatmap_clear(map->aidata.e_heatmap_old); heatmap_clear(map->aidata.e_heatmap_new);}
-				
-			if (map->sitealarm) {
-			me->aidata->alert_state = 50;
-			me->aidata->task = AIT_ATTACKING;
-			}
+	    update_heatmap(map,me,me->aidata->lx,me->aidata->ly,map->aidata.e_heatmap_old,map->aidata.e_heatmap_new);
+	    me->aidata->lx = 255; me->aidata->ly = 255;
 
-			dx = me->aidata->target->x; dy = me->aidata->target->y;
+	    find_closest_on_heatmap(me->x,me->y,map->aidata.e_heatmap_old,map->aidata.e_heatmap_new,&dx,&dy);
+	    if ((dx != me->aidata->dx) || (dy != me->aidata->dy)) {
+		me->aidata->dy = dy;
+		me->aidata->dx = dx;
+		me->aidata->path_plotted = 0;
+	    }
 
-			if ((dx != me->aidata->dx) || (dy != me->aidata->dy)) {
-				me->aidata->dy = dy;
-				me->aidata->dx = dx;
-				me->aidata->path_plotted = 0;
-			}
-				
-			me->aidata->ly = dy;
-			me->aidata->lx = dx;
+	    me->aidata->alert_state--;
+	    if (me->aidata->task == AIT_PURSUING) me->aidata->task = AIT_LOOKING_FOR;
 
+	    if (me->aidata->alert_state <= 0) { me->aidata->task = AIT_PATROLLING; me->aidata->target = NULL; heatmap_clear(map->aidata.e_heatmap_old); heatmap_clear(map->aidata.e_heatmap_new); }
 
-		} else {
-			
-			update_heatmap(map,me,me->aidata->lx,me->aidata->ly,map->aidata.e_heatmap_old,map->aidata.e_heatmap_new);
-			me->aidata->lx = 255; me->aidata->ly = 255;
-				
-			find_closest_on_heatmap(me->x,me->y,map->aidata.e_heatmap_old,map->aidata.e_heatmap_new,&dx,&dy);
-			if ((dx != me->aidata->dx) || (dy != me->aidata->dy)) {
-				me->aidata->dy = dy;
-				me->aidata->dx = dx;
-				me->aidata->path_plotted = 0;
-			}
-
-			me->aidata->alert_state--;
-			if (me->aidata->task == AIT_PURSUING) me->aidata->task = AIT_LOOKING_FOR;
-
-			if (me->aidata->alert_state <= 0) { me->aidata->task = AIT_PATROLLING; me->aidata->target = NULL; heatmap_clear(map->aidata.e_heatmap_old); heatmap_clear(map->aidata.e_heatmap_new); }
-
-		}
-
-		// there is a target.
 	}
 
-	if ( (me->aidata->path_plotted == 0) && (vtile(dx,dy)) )
-	{ 
-	    struct plotflags view = {.persp = me, .eightdir = true};
+	// there is a target.
+    }
 
-	    plot_path(map,dx,dy,map->aidata.e_viewarr,map->aidata.e_patharr,map->aidata.e_pathprev,&view); me->aidata->path_plotted = 1; }
-	
-	switch(me->aidata->task) {
+    if ( (me->aidata->path_plotted == 0) && (vtile(dx,dy)) )
+    { 
+	struct plotflags view = {.persp = me, .eightdir = true};
 
-		case AIT_WORKING:
-			break;
+	plot_path(map,dx,dy,map->aidata.e_viewarr,map->aidata.e_patharr,map->aidata.e_pathprev,&view); me->aidata->path_plotted = 1; }
 
-		case AIT_PATROLLING:
-			break;
+    switch(me->aidata->task) {
 
-		case AIT_PLEASE_LEAVE:
-			switch(me->aidata->timer) {
-				case 60:
-				msgsay(me,"Please leave the restricted area.\n"); break;
-				case 30:
-				msgsay(me,"I repeat: please leave the restricted area.\n"); break;
-				case 15:
-				msgsay(me,"This is the last warning. If you don't leave this area, I'll use force.\n"); break;
-			}
-			break;
+	case AIT_WORKING:
+	    break;
 
-		case AIT_CHECKING_OUT:
-			break;
+	case AIT_PATROLLING:
+	    break;
 
-		case AIT_PURSUING:
-			break;
+	case AIT_PLEASE_LEAVE:
+	    switch(me->aidata->timer) {
+		case 60:
+		    msgsay(me,"Please leave the restricted area.\n"); break;
+		case 30:
+		    msgsay(me,"I repeat: please leave the restricted area.\n"); break;
+		case 15:
+		    msgsay(me,"This is the last warning. If you don't leave this area, I'll use force.\n"); break;
+	    }
+	    break;
 
-		case AIT_LOOKING_FOR:
-			break;
-	}
+	case AIT_CHECKING_OUT:
+	    break;
 
-	return 0;
+	case AIT_PURSUING:
+	    break;
+
+	case AIT_LOOKING_FOR:
+	    break;
+    }
+
+    return 0;
 }
 uint16_t enemy_actFunc(struct t_map* map, struct t_map_entity* me) {
 
-	if (me->aidata == NULL) return 0;
+    if (me->aidata == NULL) return 0;
 
-	int r = 1;
+    int r = 1;
 
-	uint8_t dx = me->aidata->dx,dy = me->aidata->dy;
+    uint8_t dx = me->aidata->dx,dy = me->aidata->dy;
 
-	enum movedirections md;
-	switch(me->aidata->task) {
+    enum movedirections md;
+    switch(me->aidata->task) {
 
-		case AIT_WORKING:
-			r = 16;
-			break;
+	case AIT_WORKING:
+	    r = 16;
+	    break;
 
-		case AIT_PATROLLING:
+	case AIT_PATROLLING:
 
-			me->aidata->viewdir = (me->aidata->viewdir + 1) % 8;
-			r = 16;
-			break;
+	    me->aidata->viewdir = (me->aidata->viewdir + 1) % 8;
+	    r = 16;
+	    break;
 
-		case AIT_PLEASE_LEAVE:
+	case AIT_PLEASE_LEAVE:
 
-			md = plot_follow(me->x,me->y,map->aidata.e_pathprev);
-			if (md < MD_COUNT) r = trymove(map,me,movediff[md][0],movediff[md][1]); else r = 4;
+	    md = plot_follow(me->x,me->y,map->aidata.e_pathprev);
+	    if (md < MD_COUNT) r = trymove(map,me,movediff[md][0],movediff[md][1]); else r = 4;
 
-			if (map->aidata.e_viewarr[dy * MAP_WIDTH +dx] >= 3) {
-				md = face_square(me->x,me->y,dx,dy);
-				if (md < MD_COUNT) { me->aidata->viewdir = md; r++; } }
+	    if (map->aidata.e_viewarr[dy * MAP_WIDTH +dx] >= 3) {
+		md = face_square(me->x,me->y,dx,dy);
+		if (md < MD_COUNT) { me->aidata->viewdir = md; r++; } }
 
-			if ((map->sq[dy * MAP_WIDTH + dx].type != TT_RESTRICTED_SPACE)) {
-				me->aidata->task = AIT_PATROLLING;
-				me->aidata->timer = 0;
-			} else {
-				me->aidata->target->aidata->crimes++;
-				if (me->aidata->target->aidata->crimes > 25) me->aidata->task = AIT_PURSUING;
-			}
+	    if ((map->sq[dy * MAP_WIDTH + dx].type != TT_RESTRICTED_SPACE)) {
+		me->aidata->task = AIT_PATROLLING;
+		me->aidata->timer = 0;
+	    } else {
+		me->aidata->target->aidata->crimes++;
+		if (me->aidata->target->aidata->crimes > 25) me->aidata->task = AIT_PURSUING;
+	    }
 
-			break;
+	    break;
 
-		case AIT_CHECKING_OUT:
+	case AIT_CHECKING_OUT:
 
-			md = plot_follow(me->x,me->y,map->aidata.e_pathprev);
-			if (md < MD_COUNT) r = trymove(map,me,movediff[md][0],movediff[md][1]); else r = 4;
-			if ( (map->aidata.e_viewarr[ dy * MAP_WIDTH + dx ] == 3) && (find_entity(map,dx,dy) == NULL) ) { me->aidata->alert_state = 0; me->aidata->task = AIT_PATROLLING;}
-			break;
+	    md = plot_follow(me->x,me->y,map->aidata.e_pathprev);
+	    if (md < MD_COUNT) r = trymove(map,me,movediff[md][0],movediff[md][1]); else r = 4;
+	    if ( (map->aidata.e_viewarr[ dy * MAP_WIDTH + dx ] == 3) && (find_entity(map,dx,dy) == NULL) ) { me->aidata->alert_state = 0; me->aidata->task = AIT_PATROLLING;}
+	    break;
 
-		case AIT_ATTACKING: {
-			    
-			bool noweapons = false;
-			if (!me->aidata->target->ent->weapon) noweapons = true;
-			
-			if (can_attack(map,me,me->aidata->target,noweapons,0)) {
-			
+	case AIT_ATTACKING: {
+
+				bool noweapons = false;
+				if (!me->aidata->target->ent->weapon) noweapons = true;
+
+				if (can_attack(map,me,me->aidata->target,noweapons,0)) {
+
+				    if (map->aidata.e_viewarr[dy * MAP_WIDTH +dx] >= 3) {
+					md = face_square(me->x,me->y,dx,dy);
+					if (md < MD_COUNT) { me->aidata->viewdir = md; r++; } }
+
+				    char actual;
+				    attack(map,me->ent,me->aidata->target->ent,0,&actual,noweapons);
+				    r = 16;
+				    break;
+				}
+
+				//if can't attack, pursue.
+			    }
+
+	case AIT_PURSUING:
+
+			    md = plot_follow(me->x,me->y,map->aidata.e_pathprev);
+			    if (md < MD_COUNT) r = trymove(map,me,movediff[md][0],movediff[md][1]); else r = 4;
+
 			    if (map->aidata.e_viewarr[dy * MAP_WIDTH +dx] >= 3) {
 				md = face_square(me->x,me->y,dx,dy);
 				if (md < MD_COUNT) { me->aidata->viewdir = md; r++; } }
-
-			    char actual;
-			    attack(map,me->ent,me->aidata->target->ent,0,&actual,noweapons);
-			    r = 16;
 			    break;
-			}
 
-			//if can't attack, pursue.
-				    }
+	case AIT_LOOKING_FOR:
 
-		case AIT_PURSUING:
-
-			md = plot_follow(me->x,me->y,map->aidata.e_pathprev);
-			if (md < MD_COUNT) r = trymove(map,me,movediff[md][0],movediff[md][1]); else r = 4;
-
-			if (map->aidata.e_viewarr[dy * MAP_WIDTH +dx] >= 3) {
-				md = face_square(me->x,me->y,dx,dy);
-				if (md < MD_COUNT) { me->aidata->viewdir = md; r++; } }
-			break;
-
-		case AIT_LOOKING_FOR:
-			
-			md = plot_follow(me->x,me->y,map->aidata.e_pathprev);
-			if (md < MD_COUNT) { 
+			    md = plot_follow(me->x,me->y,map->aidata.e_pathprev);
+			    if (md < MD_COUNT) { 
 				me->aidata->viewdir = md;
 				r = trymove(map,me,movediff[md][0],movediff[md][1]);}  else r = 4;
 
-			break;
-	}
+			    break;
+    }
 
-	if (r < 0) {return 0;} else return r;
+    if (r < 0) {return 0;} else return r;
 }
 
 uint16_t player_turnFunc(struct t_map* map, struct t_map_entity* me) {
 
-	if (!(me->aidata)) return 0;
-	
-	do_fov(map,me,25,FA_FULL,map->aidata.p_viewarr,NULL);	
-	draw_map(map, me,1,dbgmode ? 1 : 0, dbgmode ? 1 : 0,1);
-	
-	return 0;
+    if (!(me->aidata)) return 0;
+
+    do_fov(map,me,25,FA_FULL,map->aidata.p_viewarr,NULL);	
+    draw_map(map, me,1,dbgmode ? 1 : 0, dbgmode ? 1 : 0,1);
+
+    return 0;
 }
 uint16_t player_actFunc(struct t_map* map, struct t_map_entity* me) {
 
-	if (!(me->aidata)) return 0;
-	
-	do_fov(map,me,25,FA_FULL,map->aidata.p_viewarr,NULL);	
-	draw_map(map, me,1,dbgmode ? 1 : 0, dbgmode ? 1 : 0,1);
-	
-	int pch = mapgetch();
-	int r = 0;
+    if (!(me->aidata)) return 0;
 
-	switch (pch) {
+    do_fov(map,me,25,FA_FULL,map->aidata.p_viewarr,NULL);	
+    draw_map(map, me,1,dbgmode ? 1 : 0, dbgmode ? 1 : 0,1);
 
-		case 'h':
-			me->aidata->viewdir = MD_WEST; 
-			r = trymove(map,me,MOVE(WEST)); //left
-			break;
+    int pch = mapgetch();
+    int r = 0;
 
-		case 'j':
-			me->aidata->viewdir = MD_SOUTH; 
-			r = trymove(map,me,0,1); //down
-			break;
+    switch (pch) {
 
-		case 'k':
-			me->aidata->viewdir = MD_NORTH; 
-			r = trymove(map,me,0,-1); //up
-			break;
+	case 'h':
+	    me->aidata->viewdir = MD_WEST; 
+	    r = trymove(map,me,MOVE(WEST)); //left
+	    break;
 
-		case 'l':
-			me->aidata->viewdir = MD_EAST; 
-			r = trymove(map,me,1,0); //right
-			break;
+	case 'j':
+	    me->aidata->viewdir = MD_SOUTH; 
+	    r = trymove(map,me,0,1); //down
+	    break;
 
-		case 'y':
-			me->aidata->viewdir = MD_NORTHWEST; 
-			r = trymove(map,me,-1,-1); //northwest
-			break;
+	case 'k':
+	    me->aidata->viewdir = MD_NORTH; 
+	    r = trymove(map,me,0,-1); //up
+	    break;
 
-		case 'u':
-			me->aidata->viewdir = MD_NORTHEAST; 
-			r = trymove(map,me,1,-1); //northeast
-			break;
+	case 'l':
+	    me->aidata->viewdir = MD_EAST; 
+	    r = trymove(map,me,1,0); //right
+	    break;
 
-		case 'b':
-			me->aidata->viewdir = MD_SOUTHWEST; 
-			r = trymove(map,me,-1,1); //southwest
-			break;
+	case 'y':
+	    me->aidata->viewdir = MD_NORTHWEST; 
+	    r = trymove(map,me,-1,-1); //northwest
+	    break;
 
-		case 'n':
-			me->aidata->viewdir = MD_SOUTHEAST; 
-			r = trymove(map,me,1,1); //southeast
-			break;
+	case 'u':
+	    me->aidata->viewdir = MD_NORTHEAST; 
+	    r = trymove(map,me,1,-1); //northeast
+	    break;
 
-		case 'q':
-			msgprintw("A really long sequence of text. 1\n");
-			msgprintw("A really long sequence of text. 2\n");
-			msgprintw("A really long sequence of text. 3\n");
-			msgprintw("A really long sequence of text. 4\n");
-			msgprintw("A really long sequence of text. 5\n");
-			break;
+	case 'b':
+	    me->aidata->viewdir = MD_SOUTHWEST; 
+	    r = trymove(map,me,-1,1); //southwest
+	    break;
 
-		case 'o': {
+	case 'n':
+	    me->aidata->viewdir = MD_SOUTHEAST; 
+	    r = trymove(map,me,1,1); //southeast
+	    break;
 
-				  enum movedirections dir = askdir();
-				  uint8_t dx = me->x + movediff[dir][0];
-				  uint8_t dy = me->y + movediff[dir][1];
-				  if (map->sq[dy * MAP_WIDTH + dx].type == TT_DOOR_CLOSED) { map->sq[dy * MAP_WIDTH + dx].type = TT_DOOR_OPEN; r = 8;} else { nc_beep(); r = 1; }
-				  break; }
-		case 'c': {
+	case 'q':
+	    msgprintw("A really long sequence of text. 1\n");
+	    msgprintw("A really long sequence of text. 2\n");
+	    msgprintw("A really long sequence of text. 3\n");
+	    msgprintw("A really long sequence of text. 4\n");
+	    msgprintw("A really long sequence of text. 5\n");
+	    break;
 
-				  enum movedirections dir = askdir();
-				  uint8_t dx = me->x + movediff[dir][0];
-				  uint8_t dy = me->y + movediff[dir][1];
-				  if (map->sq[dy * MAP_WIDTH + dx].type == TT_DOOR_OPEN) { map->sq[dy * MAP_WIDTH + dx].type = TT_DOOR_CLOSED; r = 8;} else { nc_beep(); r = 1;}
-				  break; }
+	case 'o': {
 
-		case 'f': {
-				  enum movedirections dir = askdir();
-				  uint8_t dx = me->x + movediff[dir][0];
-				  uint8_t dy = me->y + movediff[dir][1];
-				  me->aidata->viewdir = dir; 
-				  struct t_map_entity* enemy = find_entity(map,dx,dy);
-				  if ((enemy) && (enemy->ent)) {
-				      char actual;
-				      char printed;
-				      if (!incapacitated(me->ent,0,&printed)) {
-				      attack(map,me->ent,enemy->ent,0,&actual,0);
-				      if (actual) r = 16;
-				      } else r = 0;
-				  } else {msgprintw("Incorrect spot.\n"); r = 4;}
+		      enum movedirections dir = askdir();
+		      uint8_t dx = me->x + movediff[dir][0];
+		      uint8_t dy = me->y + movediff[dir][1];
+		      if (map->sq[dy * MAP_WIDTH + dx].type == TT_DOOR_CLOSED) { map->sq[dy * MAP_WIDTH + dx].type = TT_DOOR_OPEN; r = 8;} else { nc_beep(); r = 1; }
+		      break; }
+	case 'c': {
 
-				  break; }
+		      enum movedirections dir = askdir();
+		      uint8_t dx = me->x + movediff[dir][0];
+		      uint8_t dy = me->y + movediff[dir][1];
+		      if (map->sq[dy * MAP_WIDTH + dx].type == TT_DOOR_OPEN) { map->sq[dy * MAP_WIDTH + dx].type = TT_DOOR_CLOSED; r = 8;} else { nc_beep(); r = 1;}
+		      break; }
 
-		case 'w': //wait
-			  r = 1;
-	}
+	case 'f': {
+		      enum movedirections dir = askdir();
+		      uint8_t dx = me->x + movediff[dir][0];
+		      uint8_t dy = me->y + movediff[dir][1];
+		      me->aidata->viewdir = dir; 
+		      struct t_map_entity* enemy = find_entity(map,dx,dy);
+		      if ((enemy) && (enemy->ent)) {
+			  char actual;
+			  char printed;
+			  if (!incapacitated(me->ent,0,&printed)) {
+			      attack(map,me->ent,enemy->ent,0,&actual,0);
+			      if (actual) r = 16;
+			  } else r = 0;
+		      } else {msgprintw("Incorrect spot.\n"); r = 4;}
 
-	do_fov(map,me,25,FA_FULL,map->aidata.e_viewarr,NULL);	
-	draw_map(map, me,1,dbgmode ? 1 : 0, dbgmode ? 1 : 0,0);
-		    
-	char printed;	
-	incapacitated(me->ent,1,&printed);
-	
-	if (r < 0) { nc_beep(); return 0;} else return r;
+		      break; }
+
+	case 'w': //wait
+		  r = 1;
+    }
+
+    do_fov(map,me,25,FA_FULL,map->aidata.e_viewarr,NULL);	
+    draw_map(map, me,1,dbgmode ? 1 : 0, dbgmode ? 1 : 0,0);
+
+    char printed;	
+    incapacitated(me->ent,1,&printed);
+
+    if (r < 0) { nc_beep(); return 0;} else return r;
 }
 
+int static_plot(struct t_map* map) {
+
+    struct plotflags pf = {.eightdir = 1, .no_clear_patharr = 1};
+
+    for (int i=0; i < SQUAD_MAX; i++)
+	if (map->aidata.targets[i])
+	    plot_path(map,map->aidata.targets_x[i],map->aidata.targets_y[i],map->aidata.e_viewarr,map->aidata.e_patharr,map->aidata.e_pathprev,&pf); me->aidata->path_plotted = 1;
+
+    //this function plots paths for everyone.
+}
+
+
 struct TILE {
-	uint8_t y;
-	uint8_t x;
+    uint8_t y;
+    uint8_t x;
 };
 

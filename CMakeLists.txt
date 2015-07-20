@@ -24,6 +24,7 @@ add_executable (ltest
 		src/main.c
 		src/map_actions.c
 		src/map_ai.c
+		src/map_ai_hm.c
 		src/map_fov.c
 		src/map_path.c
 		src/map_ui.c

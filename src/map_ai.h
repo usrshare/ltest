@@ -3,8 +3,8 @@
 #define MAP_AI_H
 
 #include "mapdefs.h"
+#include "map_ai_hm.h"
 
-#define HEATMAP_SIZE 256
 
 enum aitasks {
 
@@ -43,7 +43,10 @@ struct t_map_ai_data {
     uint16_t e_heatmap_old [ HEATMAP_SIZE ]; //storing coords as (y * MAP_WIDTH + x).
     uint16_t e_heatmap_new [ HEATMAP_SIZE ]; //65535 stands for "empty".
 
-    struct t_map_entity* targets [SQUAD_MAX]; //the known squad members 
+    struct t_map_entity* targets [SQUAD_MAX]; //the known squad members
+    uint8_t targets_x [SQUAD_MAX]; //known x positions of targets
+    uint8_t targets_y [SQUAD_MAX]; //known y positions of targets
+
 
 };
 
@@ -90,7 +93,5 @@ uint16_t enemy_actFunc(struct t_map* map, struct t_map_entity* me);
 
 uint16_t player_turnFunc(struct t_map* map, struct t_map_entity* me);
 uint16_t player_actFunc(struct t_map* map, struct t_map_entity* me);
-
-int heatmap_clear(uint16_t* hm);
 
 #endif

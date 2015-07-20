@@ -94,31 +94,6 @@ int draw_map(struct t_map* map, struct t_map_entity* persp, bool show_fov, bool 
 		default: break;
 	    }
 
-	    if ((show_fov) && (tilevis >= 3)) {
-		chtype fovcolor = 0;
-		if ((tflags[map->sq[iy*(MAP_WIDTH)+ix].type] & TF_BLOCKS_VISION) == 0) {
-
-		    for (int i=0; i < MAX_ENTITIES; i++) {
-			if (map->ent[i].type == ET_NONE) continue;
-
-			int ex = map->ent[i].x; int ey = map->ent[i].y;
-			if ((map->ent[i].type != ET_PLAYER) && (map->ent[i].aidata) && (map->aidata.p_viewarr[ey * (MAP_WIDTH) + ex] >= 3) && (map->aidata.e_viewarr[iy * MAP_WIDTH + ix] >= 3) ) {
-
-			    switch (map->ent[i].aidata->task) {
-				case AIT_WORKING: fovcolor = CP_GREEN; break;
-				case AIT_PATROLLING: fovcolor = CP_CYAN; break;
-				case AIT_CHECKING_OUT:
-				case AIT_PLEASE_LEAVE: fovcolor = CP_YELLOW; break;
-				case AIT_PURSUING:
-				case AIT_ATTACKING: fovcolor = CP_RED; break;
-				case AIT_FLEEING: fovcolor = CP_PURPLE; break;
-				case AIT_LOOKING_FOR: fovcolor = CP_YELLOW; break;
-			    }
-			}
-		    } }
-		if (fovcolor) tileflags = fovcolor;
-	    }
-
 	    if (tilevis) mvwaddch(mapwindow,iy,ix, tileflags | tilech );
 
 	}
@@ -202,49 +177,49 @@ char* alertdescriptions[AL_COUNT] = {
 
 const char* alarm_status (struct t_map* map) {
 
-         if(map->postalarmtimer>80)
-         {
-            switch(map->type)
-            {
-            case SITE_GOVERNMENT_ARMYBASE:
-               return("SOLDIERS AND TANKS RESPONDING");
-               break;
-            case SITE_GOVERNMENT_WHITE_HOUSE:
-               return("SECRET SERVICE RESPONDING");
-               break;
-            case SITE_GOVERNMENT_INTELLIGENCEHQ:
-               return("AGENTS RESPONDING");
-               break;
-            case SITE_CORPORATE_HEADQUARTERS:
-            case SITE_CORPORATE_HOUSE:
-               return("MERCENARIES RESPONDING");
-               break;
-            case SITE_MEDIA_AMRADIO:
-            case SITE_MEDIA_CABLENEWS:
-               return("ANGRY MOB RESPONDING");
-               break;
-            case SITE_BUSINESS_CRACKHOUSE:
-               return("GANG MEMBERS RESPONDING");
-               break;
-            case SITE_GOVERNMENT_POLICESTATION:
-            default:
-               /*if(location[cursite]->renting==RENTING_CCS)
-               {
-                  return("CCS VIGILANTIES RESPONDING");
-               }
-               else */ if(law[LAW_DEATHPENALTY]==-2&&
-                  law[LAW_POLICEBEHAVIOR]==-2)return("DEATH SQUADS RESPONDING");
-               else return("POLICE RESPONDING");
-               break;
-            }
-         }
-         else if(map->postalarmtimer>60) { return("CONSERVATIVE REINFORCEMENTS INCOMING"); }
-         else if(map->sitealienate==1) { return("ALIENATED MASSES"); }
-         else if(map->sitealienate==2) { return("ALIENATED EVERYONE"); }
-         else if(map->sitealarm) { return("CONSERVATIVES ALARMED");  }
-         else if(map->sitealarmtimer==0) { return("CONSERVATIVES SUSPICIOUS"); }
+    if(map->postalarmtimer>80)
+    {
+	switch(map->type)
+	{
+	    case SITE_GOVERNMENT_ARMYBASE:
+		return("SOLDIERS AND TANKS RESPONDING");
+		break;
+	    case SITE_GOVERNMENT_WHITE_HOUSE:
+		return("SECRET SERVICE RESPONDING");
+		break;
+	    case SITE_GOVERNMENT_INTELLIGENCEHQ:
+		return("AGENTS RESPONDING");
+		break;
+	    case SITE_CORPORATE_HEADQUARTERS:
+	    case SITE_CORPORATE_HOUSE:
+		return("MERCENARIES RESPONDING");
+		break;
+	    case SITE_MEDIA_AMRADIO:
+	    case SITE_MEDIA_CABLENEWS:
+		return("ANGRY MOB RESPONDING");
+		break;
+	    case SITE_BUSINESS_CRACKHOUSE:
+		return("GANG MEMBERS RESPONDING");
+		break;
+	    case SITE_GOVERNMENT_POLICESTATION:
+	    default:
+		/*if(location[cursite]->renting==RENTING_CCS)
+		  {
+		  return("CCS VIGILANTIES RESPONDING");
+		  }
+		  else */ if(law[LAW_DEATHPENALTY]==-2&&
+			  law[LAW_POLICEBEHAVIOR]==-2)return("DEATH SQUADS RESPONDING");
+		  else return("POLICE RESPONDING");
+		  break;
+	}
+    }
+    else if(map->postalarmtimer>60) { return("CONSERVATIVE REINFORCEMENTS INCOMING"); }
+    else if(map->sitealienate==1) { return("ALIENATED MASSES"); }
+    else if(map->sitealienate==2) { return("ALIENATED EVERYONE"); }
+    else if(map->sitealarm) { return("CONSERVATIVES ALARMED");  }
+    else if(map->sitealarmtimer==0) { return("CONSERVATIVES SUSPICIOUS"); }
 
-	 return "EVERYTHING QUIET";
+    return "EVERYTHING QUIET";
 }
 
 int updheader(struct t_map* map) {
@@ -262,34 +237,34 @@ int msgaddstr(const char *string) {
     int y,x;
 
     /*
-    char* thisline = strtok(string,"\n");    
+       char* thisline = strtok(string,"\n");    
 
-    int lines=0;
+       int lines=0;
 
-    while (thisline != NULL) {
-    */
+       while (thisline != NULL) {
+     */
 
-	if (morecount >= 1) {
-	    getsyx(y,x);
-	    wmove(msgwindow,0,COLS-6);
-	    wattron(msgwindow,A_REVERSE);
-	    wprintw(msgwindow,"(more)");
-	    wattroff(msgwindow,A_REVERSE);
-	    wmove(msgwindow,0,COLS-1);
-	    wrefresh(msgwindow);
-	    mapgetch();
-	    setsyx(y,x);
-	    morecount = 0;
-	}
+    if (morecount >= 1) {
+	getsyx(y,x);
+	wmove(msgwindow,0,COLS-6);
+	wattron(msgwindow,A_REVERSE);
+	wprintw(msgwindow,"(more)");
+	wattroff(msgwindow,A_REVERSE);
+	wmove(msgwindow,0,COLS-1);
+	wrefresh(msgwindow);
+	mapgetch();
+	setsyx(y,x);
+	morecount = 0;
+    }
 
-	wclear(msgwindow);
-	mvwaddstr(msgwindow,0,0,string);
-	wmove(msgwindow,0,0);
+    wclear(msgwindow);
+    mvwaddstr(msgwindow,0,0,string);
+    wmove(msgwindow,0,0);
 
-	//thisline = strtok(NULL,"\n");
-	morecount++;
+    //thisline = strtok(NULL,"\n");
+    morecount++;
     /*}*/
-	return 0;
+    return 0;
 }
 
 int msgvprintw(const char *fmt, va_list ap) {
@@ -397,7 +372,7 @@ int init_status (struct t_map* map) {
     for (int i=0; i < 79; i+= 13) {
 	mvwaddch(statwindow,1,i,ACS_VLINE);
 	mvwaddch(statwindow,2,i,ACS_VLINE); }
-    
+
     getsyx(y,x);
 
     return 0;
