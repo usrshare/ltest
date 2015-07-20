@@ -149,7 +149,7 @@ uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
 
 	} else {
 
-	    update_heatmap(map,me,me->aidata->lx,me->aidata->ly,map->aidata.e_heatmap_old,map->aidata.e_heatmap_new);
+	    update_heatmap(map,me->aidata->lx,me->aidata->ly,map->aidata.e_heatmap_old,map->aidata.e_heatmap_new);
 	    me->aidata->lx = 255; me->aidata->ly = 255;
 
 	    find_closest_on_heatmap(me->x,me->y,map->aidata.e_heatmap_old,map->aidata.e_heatmap_new,&dx,&dy);
@@ -173,38 +173,41 @@ uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
     { 
 	struct plotflags view = {.persp = me, .eightdir = true};
 
-	plot_path(map,dx,dy,map->aidata.e_viewarr,map->aidata.e_patharr,map->aidata.e_pathprev,&view); me->aidata->path_plotted = 1; }
+	memset(me->aidata->ent_target_arr,255,sizeof(uint16_t) * MAP_WIDTH * MAP_HEIGHT);
+	me->aidata->ent_target_arr[dy * MAP_WIDTH + dx] = 0;
 
-    switch(me->aidata->task) {
+	plot_dijkstra_map(map,NULL,me->aidata->ent_target_arr,0,&view); me->aidata->path_plotted = 1; }
 
-	case AIT_WORKING:
-	    break;
+	switch(me->aidata->task) {
 
-	case AIT_PATROLLING:
-	    break;
+	    case AIT_WORKING:
+		break;
 
-	case AIT_PLEASE_LEAVE:
-	    switch(me->aidata->timer) {
-		case 60:
-		    msgsay(me,"Please leave the restricted area.\n"); break;
-		case 30:
-		    msgsay(me,"I repeat: please leave the restricted area.\n"); break;
-		case 15:
-		    msgsay(me,"This is the last warning. If you don't leave this area, I'll use force.\n"); break;
-	    }
-	    break;
+	    case AIT_PATROLLING:
+		break;
 
-	case AIT_CHECKING_OUT:
-	    break;
+	    case AIT_PLEASE_LEAVE:
+		switch(me->aidata->timer) {
+		    case 60:
+			msgsay(me,"Please leave the restricted area.\n"); break;
+		    case 30:
+			msgsay(me,"I repeat: please leave the restricted area.\n"); break;
+		    case 15:
+			msgsay(me,"This is the last warning. If you don't leave this area, I'll use force.\n"); break;
+		}
+		break;
 
-	case AIT_PURSUING:
-	    break;
+	    case AIT_CHECKING_OUT:
+		break;
 
-	case AIT_LOOKING_FOR:
-	    break;
-    }
+	    case AIT_PURSUING:
+		break;
 
-    return 0;
+	    case AIT_LOOKING_FOR:
+		break;
+	}
+
+	return 0;
 }
 uint16_t enemy_actFunc(struct t_map* map, struct t_map_entity* me) {
 
@@ -229,7 +232,7 @@ uint16_t enemy_actFunc(struct t_map* map, struct t_map_entity* me) {
 
 	case AIT_PLEASE_LEAVE:
 
-	    md = plot_follow(me->x,me->y,map->aidata.e_pathprev);
+	    md = roll_downhill(me->x,me->y,me->aidata->ent_target_arr);
 	    if (md < MD_COUNT) r = trymove(map,me,movediff[md][0],movediff[md][1]); else r = 4;
 
 	    if (map->aidata.e_viewarr[dy * MAP_WIDTH +dx] >= 3) {
@@ -248,7 +251,7 @@ uint16_t enemy_actFunc(struct t_map* map, struct t_map_entity* me) {
 
 	case AIT_CHECKING_OUT:
 
-	    md = plot_follow(me->x,me->y,map->aidata.e_pathprev);
+	    md = roll_downhill(me->x,me->y,me->aidata->ent_target_arr);
 	    if (md < MD_COUNT) r = trymove(map,me,movediff[md][0],movediff[md][1]); else r = 4;
 	    if ( (map->aidata.e_viewarr[ dy * MAP_WIDTH + dx ] == 3) && (find_entity(map,dx,dy) == NULL) ) { me->aidata->alert_state = 0; me->aidata->task = AIT_PATROLLING;}
 	    break;
@@ -260,7 +263,7 @@ uint16_t enemy_actFunc(struct t_map* map, struct t_map_entity* me) {
 
 				if (can_attack(map,me,me->aidata->target,noweapons,0)) {
 
-				    if (map->aidata.e_viewarr[dy * MAP_WIDTH +dx] >= 3) {
+				    if (can_see(map,me,dy,dx)) {
 					md = face_square(me->x,me->y,dx,dy);
 					if (md < MD_COUNT) { me->aidata->viewdir = md; r++; } }
 
@@ -275,20 +278,21 @@ uint16_t enemy_actFunc(struct t_map* map, struct t_map_entity* me) {
 
 	case AIT_PURSUING:
 
-			    md = plot_follow(me->x,me->y,map->aidata.e_pathprev);
+			    md = roll_downhill(me->x,me->y,me->aidata->ent_target_arr);
 			    if (md < MD_COUNT) r = trymove(map,me,movediff[md][0],movediff[md][1]); else r = 4;
 
-			    if (map->aidata.e_viewarr[dy * MAP_WIDTH +dx] >= 3) {
+			    if (can_see(map,me,dy,dx)) {
 				md = face_square(me->x,me->y,dx,dy);
 				if (md < MD_COUNT) { me->aidata->viewdir = md; r++; } }
 			    break;
 
 	case AIT_LOOKING_FOR:
 
-			    md = plot_follow(me->x,me->y,map->aidata.e_pathprev);
+			    md = roll_downhill(me->x,me->y,map->aidata.e_targets_arr);
 			    if (md < MD_COUNT) { 
 				me->aidata->viewdir = md;
-				r = trymove(map,me,movediff[md][0],movediff[md][1]);}  else r = 4;
+				r = trymove(map,me,movediff[md][0],movediff[md][1]);}
+			    else r = 4;
 
 			    break;
     }
@@ -414,16 +418,15 @@ int static_plot(struct t_map* map) {
 
     struct plotflags pf = {.eightdir = 1, .no_clear_patharr = 1};
 
+    memset(map->aidata.e_targets_arr, 255, sizeof(uint16_t) * MAP_WIDTH * MAP_HEIGHT);
+
     for (int i=0; i < SQUAD_MAX; i++)
 	if (map->aidata.targets[i])
-	    plot_path(map,map->aidata.targets_x[i],map->aidata.targets_y[i],map->aidata.e_viewarr,map->aidata.e_patharr,map->aidata.e_pathprev,&pf); me->aidata->path_plotted = 1;
+	    map->aidata.e_targets_arr [ map->aidata.targets_y[i] * MAP_WIDTH + map->aidata.targets_y[i] ] =0;
+
+    plot_dijkstra_map(map,NULL,map->aidata.e_targets_arr,0,&pf); 
 
     //this function plots paths for everyone.
+
+    return 0;
 }
-
-
-struct TILE {
-    uint8_t y;
-    uint8_t x;
-};
-

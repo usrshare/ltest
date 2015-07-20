@@ -98,7 +98,7 @@ int spread_heatmap(struct t_map* map, uint8_t x, uint8_t y, uint16_t* heatmap_ol
 
 	return 0;
 }
-int update_heatmap(struct t_map* map, struct t_map_entity* me, uint8_t x, uint8_t y, uint16_t* h_old, uint16_t* h_new) {
+int update_heatmap(struct t_map* map, uint8_t x, uint8_t y, uint16_t* h_old, uint16_t* h_new) {
 
 	int r = 0;
 
@@ -137,8 +137,8 @@ int update_heatmap(struct t_map* map, struct t_map_entity* me, uint8_t x, uint8_
 	
 	for (int i=0; i < HEATMAP_SIZE; i++) {
 
-		if ( (h_old[i] < (MAP_WIDTH * MAP_HEIGHT)) && (can_see(map,me,h_old[i] % MAP_WIDTH,h_old[i] / MAP_WIDTH)) ) h_old[i] = 65535;
-		if ( (h_new[i] < (MAP_WIDTH * MAP_HEIGHT)) && (can_see(map,me,h_new[i] % MAP_WIDTH,h_new[i] / MAP_WIDTH)) ) h_new[i] = 65535;
+		if ( (h_old[i] < (MAP_WIDTH * MAP_HEIGHT)) && (map->aidata.e_viewarr[h_old[i]] >= 3)) h_old[i] = 65535;
+		if ( (h_new[i] < (MAP_WIDTH * MAP_HEIGHT)) && (map->aidata.e_viewarr[h_new[i]] >= 3)) h_new[i] = 65535;
 
 	}	
 

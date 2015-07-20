@@ -192,6 +192,37 @@ bool can_see(struct t_map* map, struct t_map_entity* e, uint8_t x, uint8_t y) {
 
 }
 
+int octant(int8_t dx, int8_t dy) {
+/*
+	uint8_t oc = 0;
+
+	if (dy 	
+*/
+}
+
+/*
+int see_entities(struct t_map* map, struct t_map_entity* e, enum movedirections viewdir, int radius, enum fov_angles angle, int* visible_entities) {
+
+	//very TODO
+
+	if (e == NULL) return;
+	if (visible_entities) (*visible_entities) = 0;
+
+	for (int i=0; i < MAX_ENTITIES; i++) {
+
+	    if (ent[i].type == ET_NONE) continue;
+	    
+	    if (!can_see(map,e,ent[i].x,ent[i].y)) continue;
+	    
+	    int oc = octant(ent[i].x - e.x, ent[i].y - e.y); 
+
+
+
+	} 
+
+}
+*/
+
 /* calculate which tiles can be seen by the player */
 void do_fov(struct t_map* map, struct t_map_entity* e, int radius, enum fov_angles angle, uint8_t* mem_array, int* visible_entities) {
 
