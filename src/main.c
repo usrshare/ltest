@@ -12,55 +12,55 @@
 
 int init_memory() {
 
-	memset(pool,0,sizeof(struct t_creature*) * POOLSIZE);
-	return 0;
+    memset(pool,0,sizeof(struct t_creature*) * POOLSIZE);
+    return 0;
 }
 
 int main(int argc, char** argv) {
 
-	srand(time(NULL));
+    srand(time(NULL));
 
-	int opt = -1;
+    int opt = -1;
 
-	dbgmode = 0;
+    dbgmode = 0;
 
-	while ((opt = getopt(argc, argv, "dv")) != -1) {
-		switch (opt) {
-			case 'd':
-				dbgmode = 1;
-				printf("Press ENTER to start (feel free to attach a debugger to this process at this moment).\n");
-				getc(stdin);
-				break;
-			case 'v':
-				printf("insert version info here\n");
-				exit(0);
-				break;
-			case '?':
-			default: /* '?' */
-				fprintf(stderr, "Usage: %s [-d] [-v]\n"
-						"\n"
-						" -d : Debug mode.\n"
-						" -v : Version info.\n"
-						"\n"
-						,argv[0]);
-				exit(0);
-		}
+    while ((opt = getopt(argc, argv, "dv")) != -1) {
+	switch (opt) {
+	    case 'd':
+		dbgmode = 1;
+		printf("Press ENTER to start (feel free to attach a debugger to this process at this moment).\n");
+		getc(stdin);
+		break;
+	    case 'v':
+		printf("insert version info here\n");
+		exit(0);
+		break;
+	    case '?':
+	    default: /* '?' */
+		fprintf(stderr, "Usage: %s [-d] [-v]\n"
+			"\n"
+			" -d : Debug mode.\n"
+			" -v : Version info.\n"
+			"\n"
+			,argv[0]);
+		exit(0);
 	}
+    }
 
 
-	initscr();	
-	cbreak();
-	noecho();
+    initscr();	
+    cbreak();
+    noecho();
 
-	refresh();
+    refresh();
 
-	init_memory();
-	init_pairs();
+    init_memory();
+    init_pairs();
 
-	mapmode();
+    mapmode();
 
-	endwin();
+    endwin();
 
-	return 0;
+    return 0;
 
 }
