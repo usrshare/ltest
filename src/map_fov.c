@@ -136,9 +136,7 @@ void cast_light(struct t_map* map, uint x, uint y, uint radius, uint row,
 			if ((uint)(dx * dx + dy * dy) < radius2) {
 				
 				if (flag_updated) {
-
-				int ov = mem_array[ay * MAP_WIDTH + ax];
-				if (ov == 0) (*flag_updated) = 1; }
+				if (mem_array[ay * MAP_WIDTH + ax] == 0) (*flag_updated) = 1; }
 
 				mem_array[ay * MAP_WIDTH + ax] = 3;
 
@@ -203,16 +201,6 @@ void do_fov(struct t_map* map, struct t_map_entity* e, int radius, enum fov_angl
 
 	bool flag_updated = 0;
 
-	/* un-see everything */
-	//1 means "remembered", 2 means "seen".
-	for (int j = 0; j < MAP_HEIGHT; j++) {
-		for (int i = 0; i < MAP_WIDTH; i++) {
-			if (mem_array[j * MAP_WIDTH + i] >= 3) {
-				mem_array[j * MAP_WIDTH + i] = 2;
-			}
-		}
-	}
-
 	if (visible_entities) (*visible_entities) = 0;
 	
 	mem_array[(e->y) * MAP_WIDTH + (e->x)] = 3;
@@ -232,6 +220,19 @@ void do_fov(struct t_map* map, struct t_map_entity* e, int radius, enum fov_angl
 
 	if (flag_updated) e->aidata->viewarr_updated = 1;
 	
+}
+
+void obsolete_fov(uint8_t* mem_array) {
+	
+    /* un-see everything */
+	//1 means "remembered", 2 means "seen".
+	for (int j = 0; j < MAP_HEIGHT; j++) {
+		for (int i = 0; i < MAP_WIDTH; i++) {
+			if (mem_array[j * MAP_WIDTH + i] >= 3) {
+				mem_array[j * MAP_WIDTH + i] = 2;
+			}
+		}
+	}
 }
 
 // end of shamelessly borrowed code.

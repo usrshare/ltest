@@ -170,7 +170,7 @@ struct t_map_entity* spawn_entity(struct t_map* map, enum entitytypes type, stru
 	newai->dx = 255;
 	newai->dy = 255;
 	newai->usedby = newent;
-    }
+    } else newent->aidata = NULL;
 
     newent->type = type;
 
@@ -319,6 +319,10 @@ int mapmode() {
 	updheader(&map1);
 	update_status(&map1);
 	update_ui(&map1);
+
+	obsolete_fov(map1.aidata.p_viewarr);
+	obsolete_fov(map1.aidata.e_viewarr);
+
 	make_turn(&map1);
 	loop = check_conditions(&map1);
 	map1.time++;
