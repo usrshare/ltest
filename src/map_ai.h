@@ -21,7 +21,7 @@ enum aitasks {
 struct t_map_ai_data {
 
     // this one is for the entire map.
-    
+
     // VIEWARR FORMAT:
     // 0 = never seen this square.
     // 1 = seen it on a map, but not directly.
@@ -31,15 +31,12 @@ struct t_map_ai_data {
 
     // player / allies
     uint8_t p_viewarr [ MAP_WIDTH * MAP_HEIGHT ];
-    uint16_t p_patharr [ MAP_WIDTH * MAP_HEIGHT ];
-    enum movedirections p_pathprev[ MAP_WIDTH * MAP_HEIGHT ];
-
 
     // enemies / neutrals
     uint8_t e_viewarr [ MAP_WIDTH * MAP_HEIGHT ];
-    uint16_t e_patharr [ MAP_WIDTH * MAP_HEIGHT ];
-    enum movedirections e_pathprev[ MAP_WIDTH * MAP_HEIGHT ];
-    
+    // enemies are assumed to have perfect knowledge of the map
+    // and/or have radios to communicate.
+
     uint16_t e_heatmap_old [ HEATMAP_SIZE ]; //storing coords as (y * MAP_WIDTH + x).
     uint16_t e_heatmap_new [ HEATMAP_SIZE ]; //65535 stands for "empty".
 
@@ -47,6 +44,14 @@ struct t_map_ai_data {
     uint8_t targets_x [SQUAD_MAX]; //known x positions of targets
     uint8_t targets_y [SQUAD_MAX]; //known y positions of targets
 
+    uint16_t e_targets_arr [ MAP_WIDTH * MAP_HEIGHT ]; //pursuing targets.
+
+    uint16_t e_flee_arr [ MAP_WIDTH * MAP_HEIGHT ]; //fleeing from the targets.
+
+    uint16_t e_explore_timer [ MAP_WIDTH * MAP_HEIGHT];
+    //have these areas been neglected for too long?
+    
+    uint16_t e_explore_arr [ MAP_WIDTH * MAP_HEIGHT];
 
 };
 
@@ -58,7 +63,7 @@ struct t_ent_ai_data {
     // this structure will be replaced by ones from t_map_ai_data.
 
     struct t_map_entity* usedby;
-    uint8_t /*enum movedirections*/ viewdir;
+    enum movedirections viewdir;
     bool wideview;
     bool show_fov;
 
@@ -77,6 +82,8 @@ struct t_ent_ai_data {
     uint16_t crimes;
 
     uint16_t timer;
+    
+    uint16_t ent_target_arr [ MAP_WIDTH * MAP_HEIGHT ]; //single array for single target.
 
     // array for pathfinding
 
