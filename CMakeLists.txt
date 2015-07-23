@@ -41,7 +41,7 @@ pkg_check_modules(NCURSESW "ncursesw" REQUIRED)
 
 include_directories(${NCURSESW_INCLUDE_DIRS})
 
-target_link_libraries(ltest ncursesw menu curl pthread m)
+target_link_libraries(ltest ncursesw menu m)
 
 install(TARGETS ltest
 	RUNTIME DESTINATION bin
