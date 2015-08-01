@@ -111,6 +111,22 @@ int draw_map(struct t_map* map, struct t_map_entity* persp, bool show_fov, bool 
 		    mvwaddch(mapwindow,map->ent[i].aidata->dy,map->ent[i].aidata->dx,'%' | CP_PURPLE);
 	    }
 
+	    if (show_fov && (map->aidata.p_viewarr[map->ent[i].y * MAP_WIDTH + map->ent[i].x] >= 3)) {
+
+		// if we can see the entity, that means we can see what direction it is currently looking at.
+		// the next tile in that direction will be redrawn with a cyan color.
+
+		uint8_t vx = map->ent[i].x + movediff[map->ent[i].aidata->viewdir][0];
+		uint8_t vy = map->ent[i].y + movediff[map->ent[i].aidata->viewdir][1];
+
+		if (vtile(vx,vy)) {
+		    chtype t = mvwinch(mapwindow,vy,vx);
+		    // we strip the original character of all previous attributes,
+		    // except the "alternate charset" one.
+		    mvwaddch(mapwindow,vy,vx,(t & (A_ALTCHARSET | A_CHARTEXT)) | CP_CYAN);
+		}
+	    }
+
 	    if (show_heatmaps) {
 		for (int m=0; m < HEATMAP_SIZE; m++) {
 		    uint16_t yx = map->aidata.e_heatmap_old[m];

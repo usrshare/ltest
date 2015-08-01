@@ -19,6 +19,7 @@ struct plotflags {
 extern const struct plotflags plot_default;
 
 int plot_dijkstra_map(struct t_map* map, uint8_t* viewarr, uint16_t* o_patharr, bool invert, const struct plotflags* _pf);
+enum movedirections roll_downhill(uint16_t* patharr, uint8_t sx, uint8_t sy);
 
 //int plot_path(struct t_map* map, uint8_t dx, uint8_t dy, uint8_t* viewarr, uint16_t* o_patharr, enum movedirections* o_pathprev, const struct plotflags* _pf);
 

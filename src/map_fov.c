@@ -104,7 +104,7 @@ static int octants[MD_COUNT][8] = {
 
 void cast_light(struct t_map* map, uint x, uint y, uint radius, uint row,
 		float start_slope, float end_slope, uint xx, uint xy, uint yx,
-		uint yy, uint8_t* mem_array, bool* flag_updated, int* visible_entities) {
+		uint yy, uint8_t* mem_array, bool* flag_updated, int* entity_c, struct t_map_entity** entity_v) {
 	if (start_slope < end_slope) {
 		return;
 	}
@@ -145,7 +145,7 @@ void cast_light(struct t_map* map, uint x, uint y, uint radius, uint row,
 				struct t_map_entity* ent = find_entity(map,ax,ay);
 				if (ent) {
 					if (mem_array) mem_array [ay * MAP_WIDTH + ax] = 4;
-					if (visible_entities) (*visible_entities)++;
+					if (entity_c) { entity_v[*entity_c] = ent; (*entity_c)++; }
 				}
 			}
 
@@ -161,31 +161,13 @@ void cast_light(struct t_map* map, uint x, uint y, uint radius, uint row,
 				blocked = true;
 				next_start_slope = r_slope;
 				cast_light(map, x, y, radius, i + 1, start_slope, l_slope, xx,
-						xy, yx, yy, mem_array, flag_updated, visible_entities);
+						xy, yx, yy, mem_array, flag_updated, entity_c, entity_v);
 			}
 		}
 		if (blocked) {
 			break;
 		}
 	}
-}
-
-void find_visible_entities(struct t_map* map, uint8_t* va, struct t_map_entity** o_entities, size_t sz) {
-
-	size_t idx=0;
-	
-	for (int j = 0; j < MAP_HEIGHT; j++) {
-		for (int i = 0; i < MAP_WIDTH; i++) {
-			if (va[j * MAP_WIDTH + i] == 4) {
-				
-				if (idx >= sz) return;
-				o_entities[idx] = find_entity(map,i,j);
-				idx++;
-
-			}
-		}
-	}
-
 }
 
 bool can_see(struct t_map* map, struct t_map_entity* e, uint8_t x, uint8_t y) {
@@ -226,14 +208,14 @@ int see_entities(struct t_map* map, struct t_map_entity* e, enum movedirections 
 */
 
 /* calculate which tiles can be seen by the player */
-void do_fov(struct t_map* map, struct t_map_entity* e, int radius, enum fov_angles angle, uint8_t* mem_array, int* visible_entities) {
+void do_fov(struct t_map* map, struct t_map_entity* e, int radius, enum fov_angles angle, uint8_t* mem_array, int* entity_c, struct t_map_entity** entity_v) {
 
 	if (e == NULL) return;
 	if (e->aidata == NULL) return;
 
 	bool flag_updated = 0;
 
-	if (visible_entities) (*visible_entities) = 0;
+	if (entity_c) (*entity_c) = 0;
 	
 	mem_array[(e->y) * MAP_WIDTH + (e->x)] = 3;
 
@@ -247,7 +229,7 @@ void do_fov(struct t_map* map, struct t_map_entity* e, int radius, enum fov_angl
 
 	for (int i=0; i < oc; i++) {
 		int co = octants[e->aidata->viewdir][i];
-		cast_light(map, e->x, e->y, radius, 1, 1.0, 0.0, multipliers[0][co], multipliers[1][co], multipliers[2][co], multipliers[3][co], mem_array, &flag_updated, visible_entities);
+		cast_light(map, e->x, e->y, radius, 1, 1.0, 0.0, multipliers[0][co], multipliers[1][co], multipliers[2][co], multipliers[3][co], mem_array, &flag_updated, entity_c, entity_v);
 	}
 
 	if (flag_updated) e->aidata->viewarr_updated = 1;

@@ -309,7 +309,7 @@ int mapmode() {
     }
 
     for (int i=0; i < PLAYERS_COUNT; i++) {
-	do_fov(&map1,players[i],25,FA_FULL,map1.aidata.p_viewarr,NULL);
+	do_fov(&map1,players[i],25,FA_FULL,map1.aidata.p_viewarr,NULL,NULL);
 	draw_map(&map1,players[i],1,dbgmode ? 1 : 0, dbgmode ? 1 : 0,0);
     }
 

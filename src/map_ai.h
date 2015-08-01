@@ -103,4 +103,6 @@ uint16_t enemy_actFunc(struct t_map* map, struct t_map_entity* me);
 uint16_t player_turnFunc(struct t_map* map, struct t_map_entity* me);
 uint16_t player_actFunc(struct t_map* map, struct t_map_entity* me);
 
+int static_plot(struct t_map* map);
+
 #endif
