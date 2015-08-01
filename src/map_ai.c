@@ -88,11 +88,10 @@ uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
     if (me->aidata == NULL) return 1;
 
     int entities_sz = 0;
-    do_fov(map,me,12,FA_NORMAL,map->aidata.e_viewarr,&entities_sz);
+    struct t_map_entity* visible_ent[MAX_ENTITIES];
+    memset(visible_ent,0,sizeof(struct t_map_entity*) * MAX_ENTITIES);
 
-    struct t_map_entity* visible_ent[entities_sz];
-    memset(visible_ent,0,sizeof(struct t_map_entity*) * entities_sz);
-    find_visible_entities(map, map->aidata.e_viewarr, visible_ent, entities_sz);
+    do_fov(map,me,12,FA_NORMAL,map->aidata.e_viewarr,&entities_sz,visible_ent);
 
     uint8_t dx = 255, dy = 255;
 
@@ -178,36 +177,36 @@ uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
 
 	plot_dijkstra_map(map,NULL,me->aidata->ent_target_arr,0,&view); me->aidata->path_plotted = 1; }
 
-	switch(me->aidata->task) {
+    switch(me->aidata->task) {
 
-	    case AIT_WORKING:
-		break;
+	case AIT_WORKING:
+	    break;
 
-	    case AIT_PATROLLING:
-		break;
+	case AIT_PATROLLING:
+	    break;
 
-	    case AIT_PLEASE_LEAVE:
-		switch(me->aidata->timer) {
-		    case 60:
-			msgsay(me,"Please leave the restricted area.\n"); break;
-		    case 30:
-			msgsay(me,"I repeat: please leave the restricted area.\n"); break;
-		    case 15:
-			msgsay(me,"This is the last warning. If you don't leave this area, I'll use force.\n"); break;
-		}
-		break;
+	case AIT_PLEASE_LEAVE:
+	    switch(me->aidata->timer) {
+		case 60:
+		    msgsay(me,"Please leave the restricted area.\n"); break;
+		case 30:
+		    msgsay(me,"I repeat: please leave the restricted area.\n"); break;
+		case 15:
+		    msgsay(me,"This is the last warning. If you don't leave this area, I'll use force.\n"); break;
+	    }
+	    break;
 
-	    case AIT_CHECKING_OUT:
-		break;
+	case AIT_CHECKING_OUT:
+	    break;
 
-	    case AIT_PURSUING:
-		break;
+	case AIT_PURSUING:
+	    break;
 
-	    case AIT_LOOKING_FOR:
-		break;
-	}
+	case AIT_LOOKING_FOR:
+	    break;
+    }
 
-	return 0;
+    return 0;
 }
 uint16_t enemy_actFunc(struct t_map* map, struct t_map_entity* me) {
 
@@ -232,7 +231,7 @@ uint16_t enemy_actFunc(struct t_map* map, struct t_map_entity* me) {
 
 	case AIT_PLEASE_LEAVE:
 
-	    md = roll_downhill(me->x,me->y,me->aidata->ent_target_arr);
+	    md = roll_downhill(me->aidata->ent_target_arr,me->x,me->y);
 	    if (md < MD_COUNT) r = trymove(map,me,movediff[md][0],movediff[md][1]); else r = 4;
 
 	    if (map->aidata.e_viewarr[dy * MAP_WIDTH +dx] >= 3) {
@@ -251,7 +250,7 @@ uint16_t enemy_actFunc(struct t_map* map, struct t_map_entity* me) {
 
 	case AIT_CHECKING_OUT:
 
-	    md = roll_downhill(me->x,me->y,me->aidata->ent_target_arr);
+	    md = roll_downhill(me->aidata->ent_target_arr,me->x,me->y);
 	    if (md < MD_COUNT) r = trymove(map,me,movediff[md][0],movediff[md][1]); else r = 4;
 	    if ( (map->aidata.e_viewarr[ dy * MAP_WIDTH + dx ] == 3) && (find_entity(map,dx,dy) == NULL) ) { me->aidata->alert_state = 0; me->aidata->task = AIT_PATROLLING;}
 	    break;
@@ -278,7 +277,7 @@ uint16_t enemy_actFunc(struct t_map* map, struct t_map_entity* me) {
 
 	case AIT_PURSUING:
 
-			    md = roll_downhill(me->x,me->y,me->aidata->ent_target_arr);
+			    md = roll_downhill(me->aidata->ent_target_arr,me->x,me->y);
 			    if (md < MD_COUNT) r = trymove(map,me,movediff[md][0],movediff[md][1]); else r = 4;
 
 			    if (can_see(map,me,dy,dx)) {
@@ -288,7 +287,7 @@ uint16_t enemy_actFunc(struct t_map* map, struct t_map_entity* me) {
 
 	case AIT_LOOKING_FOR:
 
-			    md = roll_downhill(me->x,me->y,map->aidata.e_targets_arr);
+			    md = roll_downhill(me->aidata->ent_target_arr,me->x,me->y);
 			    if (md < MD_COUNT) { 
 				me->aidata->viewdir = md;
 				r = trymove(map,me,movediff[md][0],movediff[md][1]);}
@@ -304,7 +303,7 @@ uint16_t player_turnFunc(struct t_map* map, struct t_map_entity* me) {
 
     if (!(me->aidata)) return 0;
 
-    do_fov(map,me,25,FA_FULL,map->aidata.p_viewarr,NULL);	
+    do_fov(map,me,25,FA_FULL,map->aidata.p_viewarr,NULL,NULL);	
     draw_map(map, me,1,dbgmode ? 1 : 0, dbgmode ? 1 : 0,1);
 
     return 0;
@@ -313,7 +312,7 @@ uint16_t player_actFunc(struct t_map* map, struct t_map_entity* me) {
 
     if (!(me->aidata)) return 0;
 
-    do_fov(map,me,25,FA_FULL,map->aidata.p_viewarr,NULL);	
+    do_fov(map,me,25,FA_FULL,map->aidata.p_viewarr,NULL,NULL);	
     draw_map(map, me,1,dbgmode ? 1 : 0, dbgmode ? 1 : 0,1);
 
     int pch = mapgetch();
@@ -405,7 +404,7 @@ uint16_t player_actFunc(struct t_map* map, struct t_map_entity* me) {
 		  r = 1;
     }
 
-    do_fov(map,me,25,FA_FULL,map->aidata.e_viewarr,NULL);	
+    do_fov(map,me,25,FA_FULL,map->aidata.e_viewarr,NULL,NULL);	
     draw_map(map, me,1,dbgmode ? 1 : 0, dbgmode ? 1 : 0,0);
 
     char printed;	
