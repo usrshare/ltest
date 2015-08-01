@@ -329,7 +329,7 @@ int mapmode() {
 	loop = check_conditions(&map1);
 	map1.time++;
 
-
+	static_plot(&map1);
 
 	if (map1.sitealarmtimer > 0) { 
 	    map1.sitealarmtimer--;

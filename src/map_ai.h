@@ -55,6 +55,8 @@ struct t_map_ai_data {
 
 };
 
+int find_empty_target (struct t_map_ai_data* data); //returns an index from 0 to 5 or -1.
+
 struct t_ent_ai_data {
 
     // this one is for specific entities.

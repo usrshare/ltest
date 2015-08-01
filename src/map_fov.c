@@ -135,14 +135,16 @@ void cast_light(struct t_map* map, uint x, uint y, uint radius, uint row,
 			uint radius2 = radius * radius;
 			if ((uint)(dx * dx + dy * dy) < radius2) {
 				
+				if (mem_array) {
 				if (flag_updated) {
 				if (mem_array[ay * MAP_WIDTH + ax] == 0) (*flag_updated) = 1; }
 
 				mem_array[ay * MAP_WIDTH + ax] = 3;
+				}
 
 				struct t_map_entity* ent = find_entity(map,ax,ay);
 				if (ent) {
-					mem_array [ay * MAP_WIDTH + ax] = 4;
+					if (mem_array) mem_array [ay * MAP_WIDTH + ax] = 4;
 					if (visible_entities) (*visible_entities)++;
 				}
 			}
@@ -159,7 +161,7 @@ void cast_light(struct t_map* map, uint x, uint y, uint radius, uint row,
 				blocked = true;
 				next_start_slope = r_slope;
 				cast_light(map, x, y, radius, i + 1, start_slope, l_slope, xx,
-						xy, yx, yy,mem_array, flag_updated, visible_entities);
+						xy, yx, yy, mem_array, flag_updated, visible_entities);
 			}
 		}
 		if (blocked) {
@@ -228,7 +230,6 @@ void do_fov(struct t_map* map, struct t_map_entity* e, int radius, enum fov_angl
 
 	if (e == NULL) return;
 	if (e->aidata == NULL) return;
-	if (mem_array == NULL) return;
 
 	bool flag_updated = 0;
 
