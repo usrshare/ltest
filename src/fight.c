@@ -509,7 +509,7 @@ void attack(struct t_map* map, struct t_creature* a,struct t_creature* t,char mi
 
 	char damagearmor=0;
 	char armorpiercing=0;
-	int extraarmor=0;
+	//int extraarmor=0;
 
 	if (!a->weapon)
 	{
