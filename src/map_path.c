@@ -36,7 +36,7 @@ enum movedirections plot_follow(uint8_t x, uint8_t y, enum movedirections* pathp
 
 int getcost(struct t_map* map, struct t_map_entity* who, uint8_t x, uint8_t y, uint8_t* viewarr) {
 		
-	bool tilevis = (who ? viewarr[y * MAP_WIDTH + x] : 1);
+	bool tilevis = (viewarr ? viewarr[y * MAP_WIDTH + x] : 1);
 	enum terraintypes tt = map->sq[y * MAP_WIDTH + x].type; 
 
 	uint8_t tilecost;
