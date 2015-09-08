@@ -8,6 +8,7 @@
 
 int los_default_cb(struct t_map* map, uint8_t x, uint8_t y, void* param) {
 
+    if (!vtile(x,y)) return 1;
     if (tflags[map->sq[y * MAP_WIDTH + x].type] & TF_SOLID) return 1;
     return 0;
 }
