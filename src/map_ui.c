@@ -270,37 +270,37 @@ int updheader(struct t_map* map) {
 
 int msgaddstr(const char *string) {
 
-    int y,x;
+    char* dblstr = strdup(string);
+    char* thisline = dblstr;
 
-    /*
-       char* thisline = strtok(string,"\n");    
-
-       int lines=0;
-
-       while (thisline != NULL) {
-     */
+    bool hascr = strchr(thisline,'\n');
+    thisline = strtok(dblstr,"\n");    
+    int lines=0;
+    while (thisline != NULL) {
 
     if (morecount >= LINES-24) {
 	int cy,cx;
 	getyx(msgwindow,cy,cx);
-	wmove(msgwindow,0,COLS-6);
+	wmove(msgwindow,0,COLS-4);
 	wattron(msgwindow,A_REVERSE);
-	wprintw(msgwindow,"(more)");
+	waddstr(msgwindow,">>");
 	wattroff(msgwindow,A_REVERSE);
 	wmove(msgwindow,0,COLS-1);
 	wrefresh(msgwindow);
-	mapgetch();
+	askgetch();
 	wmove(msgwindow,cy,cx);
 	morecount = 0;
     }
 
     //wclear(msgwindow);
-    waddstr(msgwindow,string);
-    //wmove(msgwindow,0,0);
+    waddstr(msgwindow,thisline);
 
-    //thisline = strtok(NULL,"\n");
+    thisline = strtok(NULL,"\n");
     morecount++;
-    /*}*/
+    }
+    if (hascr) {
+	if (LINES > 25) waddstr(msgwindow,"\n"); else wmove(msgwindow,0,0); }
+    free(dblstr);
     return 0;
 }
 
