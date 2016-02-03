@@ -4,6 +4,7 @@
 #include "map_fov.h"
 #include "map_path.h"
 
+#include "item_ui.h"
 #include "map_ui.h"
 
 #include "globals.h"
@@ -45,6 +46,10 @@ bool needs_ai [ET_COUNT] = {
     0, //static entity
 };
 
+bool is_enemy(struct t_map_entity* m, struct t_map_entity* e) {
+    return (e->type == ET_PLAYER);
+}
+
 int space_busy(struct t_map* map, uint8_t x, uint8_t y) {
 
     if ((x >= MAP_WIDTH) || (y >= MAP_HEIGHT)) return 1;
@@ -80,6 +85,7 @@ int trymove(struct t_map* map, struct t_map_entity* whom, int8_t dx, int8_t dy) 
     whom->x = rx;
     whom->y = ry;
 
+    whom->didntmove = 0;
     return time / agility;
 }
 
@@ -89,7 +95,7 @@ uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
 
     int entities_sz = 0;
     struct t_map_entity* visible_ent[MAX_ENTITIES];
-    memset(visible_ent,0,sizeof(struct t_map_entity*) * MAX_ENTITIES);
+    memset(visible_ent,0,sizeof visible_ent[0] * MAX_ENTITIES);
 
     do_fov(map,me,12,FA_NORMAL,map->aidata.e_viewarr,&entities_sz,visible_ent);
 
@@ -103,7 +109,7 @@ uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
 	    struct t_map_entity* curent = visible_ent[i]; //let's check visible entities.
 	    if (curent == NULL) continue; //this shouldn't really happen, but fine.
 
-	    if ((curent->type == ET_PLAYER) && (me->aidata->timer == 0)) {
+	    if (is_enemy(me,curent) && (me->aidata->timer == 0)) {
 
 		if ((me->aidata->timer > 0) || (disguisecheck(map, curent->ent, me->ent, map->sitealarmtimer, (map->sq[(curent->y) * MAP_WIDTH + (curent->x)].type == TT_RESTRICTED_SPACE)) == 0)) { me->aidata->timer = 32; continue; }
 		me->aidata->alert_state = 5; me->aidata->task = AIT_CHECKING_OUT; // "?"
@@ -187,11 +193,11 @@ uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
 
 	case AIT_PLEASE_LEAVE:
 	    switch(me->aidata->timer) {
-		case 60:
+		case 90:
 		    msgsay(me,"Please leave the restricted area.\n"); break;
-		case 30:
+		case 60:
 		    msgsay(me,"I repeat: please leave the restricted area.\n"); break;
-		case 15:
+		case 30:
 		    msgsay(me,"This is the last warning. If you don't leave this area, I'll use force.\n"); break;
 	    }
 	    break;
@@ -207,6 +213,14 @@ uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
     }
 
     return 0;
+}
+
+int distance_sq(struct t_map_entity* a, struct t_map_entity* b) {
+
+    int dx = (a->x - b->x);
+    int dy = (a->y - b->y);
+
+    return dx*dx + dy*dy;
 }
 uint16_t enemy_actFunc(struct t_map* map, struct t_map_entity* me) {
 
@@ -267,7 +281,7 @@ uint16_t enemy_actFunc(struct t_map* map, struct t_map_entity* me) {
 					if (md < MD_COUNT) { me->aidata->viewdir = md; r++; } }
 
 				    char actual;
-				    attack(map,me->ent,me->aidata->target->ent,0,&actual,noweapons);
+				    attack(map,me->ent,me->aidata->target->ent,0,&actual,noweapons,distance_sq(me,me->aidata->target));
 				    r = 16;
 				    break;
 				}
@@ -305,7 +319,25 @@ uint16_t player_turnFunc(struct t_map* map, struct t_map_entity* me) {
 
     do_fov(map,me,25,FA_FULL,map->aidata.p_viewarr,NULL,NULL);	
     draw_map(map, me,1,dbgmode ? 1 : 0, dbgmode ? 1 : 0,1);
+    
+    if (me->didntmove == 0) {
+    // look for loot.
+    struct t_map_entity* e = NULL; int i=0;
+    e = find_entity_ind(map,me->x,me->y,i);
+    
+    while (e) {
+	if (e->type == ET_LOOT) {
 
+	    if (!(e->loot)) { msgprintw("ERROR: this loot item has no actual loot.\n"); return 0; }
+
+	    msgprintw("You see: %s (%d)\n", describe_item(e->loot),e->loot->itemcount);
+	}
+	i++;
+	e = find_entity_ind(map,me->x,me->y,i);
+    };
+    }
+
+    me->didntmove = 1;
     return 0;
 }
 uint16_t player_actFunc(struct t_map* map, struct t_map_entity* me) {
@@ -315,6 +347,7 @@ uint16_t player_actFunc(struct t_map* map, struct t_map_entity* me) {
     do_fov(map,me,25,FA_FULL,map->aidata.p_viewarr,NULL,NULL);	
     draw_map(map, me,1,dbgmode ? 1 : 0, dbgmode ? 1 : 0,1);
 
+    // check for input
     int pch = mapgetch();
     int r = 0;
 
@@ -393,10 +426,33 @@ uint16_t player_actFunc(struct t_map* map, struct t_map_entity* me) {
 			  char actual;
 			  char printed;
 			  if (!incapacitated(me->ent,0,&printed)) {
-			      attack(map,me->ent,enemy->ent,0,&actual,0);
+			      attack(map,me->ent,enemy->ent,0,&actual,0,distance_sq(me,enemy));
 			      if (actual) r = 16;
 			  } else r = 0;
 		      } else {msgprintw("Incorrect spot.\n"); r = 4;}
+
+		      break; }
+	case ',': {
+		      int i=0;
+		      struct t_map_entity* e = NULL;
+		      e = find_entity_ind(map,me->x,me->y,i);
+
+		      while (e) {
+
+			  if (e->type == ET_LOOT) {
+
+			      if (!(e->loot)) { msgprintw("ERROR: this loot item has no actual loot.\n"); return 0; }
+			      msgprintw("Picked up %s (%d)\n", describe_item(e->loot),e->loot->itemcount);
+			      inv_join(me->ent->inventory, e->loot);
+			      kill_entity(e); 
+			      return 16;
+			  }
+			  i++;
+			  e = find_entity_ind(map,me->x,me->y,i);
+		      }
+
+		      msgprintw("Nothing to pick up.\n");
+		      return 0;
 
 		      break; }
 

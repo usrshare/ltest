@@ -5,7 +5,6 @@
 #include "mapdefs.h"
 #include "map_ai_hm.h"
 
-
 enum aitasks {
 
     AIT_WORKING, // for non-hostile NPCs doing "their regular jobs"
@@ -17,6 +16,8 @@ enum aitasks {
     AIT_LOOKING_FOR,// and when it doesn't.
     AIT_FLEEING,
 };
+
+typedef uint16_t (*customFunc)(struct t_map* map, struct t_map_entity* me);
 
 struct t_map_ai_data {
 
@@ -52,6 +53,9 @@ struct t_map_ai_data {
     //have these areas been neglected for too long?
     
     uint16_t e_explore_arr [ MAP_WIDTH * MAP_HEIGHT];
+
+    customFunc turnFunc;
+    customFunc actFunc;
 
 };
 

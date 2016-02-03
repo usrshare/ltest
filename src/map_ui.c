@@ -63,6 +63,7 @@ chtype entchar(struct t_map_entity* e) {
 
 
 			 return char_color | '@'; }
+	case ET_LOOT: return CP_YELLOW | '$';
 	case ET_STATIC: return '!';
 	default: return 'X';
     }
@@ -145,7 +146,7 @@ int draw_map(struct t_map* map, struct t_map_entity* persp, bool show_fov, bool 
 	}
     }
 
-    for (int i=0; i < MAX_ENTITIES; i++) {
+    for (int i= (MAX_ENTITIES - 1); i >= 0; i--) {
 
 	if (map->ent[i].type == ET_NONE) continue;
 	int ex = map->ent[i].x; int ey = map->ent[i].y;
@@ -170,13 +171,32 @@ int mapgetch() {
     morecount = 0;
 
     getsyx(y,x);
+
+    int cy,cx;
+    
+    getyx(msgwindow,cy,cx);
     int m = wmove(msgwindow,0,COLS-1);
     if (m == ERR) beep();
 
     int c = getch();
 
+    wmove(msgwindow,cy,cx);
     setsyx(y,x);
 
+    return c;
+}
+
+
+int askgetch() {
+
+    morecount = 0;
+	
+    echo();
+    int c = wgetch(msgwindow);
+    noecho();
+    
+    waddstr(msgwindow,"\n");
+     
     return c;
 }
 int nc_beep(void) {
@@ -260,8 +280,9 @@ int msgaddstr(const char *string) {
        while (thisline != NULL) {
      */
 
-    if (morecount >= 1) {
-	getsyx(y,x);
+    if (morecount >= LINES-24) {
+	int cy,cx;
+	getyx(msgwindow,cy,cx);
 	wmove(msgwindow,0,COLS-6);
 	wattron(msgwindow,A_REVERSE);
 	wprintw(msgwindow,"(more)");
@@ -269,13 +290,13 @@ int msgaddstr(const char *string) {
 	wmove(msgwindow,0,COLS-1);
 	wrefresh(msgwindow);
 	mapgetch();
-	setsyx(y,x);
+	wmove(msgwindow,cy,cx);
 	morecount = 0;
     }
 
-    wclear(msgwindow);
-    mvwaddstr(msgwindow,0,0,string);
-    wmove(msgwindow,0,0);
+    //wclear(msgwindow);
+    waddstr(msgwindow,string);
+    //wmove(msgwindow,0,0);
 
     //thisline = strtok(NULL,"\n");
     morecount++;
@@ -337,9 +358,7 @@ enum movedirections askdir() {
     int go_on = 1;
 
     while (go_on) {
-	echo();
-	int c = mapgetch();
-	noecho();
+	int c = askgetch();
 	switch(c) {
 	    case 'h':
 	    case 'H':
@@ -433,7 +452,7 @@ int update_status (struct t_map* map) {
 }
 
 int update_ui (struct t_map* map) {
-    wmove(msgwindow,0,COLS-1);
+    //wmove(msgwindow,0,COLS-1);
     wrefresh(headerwindow);
     wrefresh(statwindow);
     wrefresh(msgwindow);
@@ -451,16 +470,17 @@ int map_ui_init(struct t_map* map) {
 
     updheader(map);
 
-    msgwindow = subwin(topwindow,1,COLS,0,0);
+    msgwindow = subwin(topwindow,LINES-24,COLS,0,0);
     if (msgwindow == 0) return 1;
     //scrollok(msgwindow,1);
 
-    statwindow = subwin(topwindow,LINES-22,COLS,1,0);
+    statwindow = subwin(topwindow,3,COLS,LINES-24,0);
     if (statwindow == 0) return 1;
 
     init_status(map);
 
     keypad(msgwindow,1);
+    scrollok(msgwindow,TRUE);
 
     wmove(msgwindow,0,0);
 

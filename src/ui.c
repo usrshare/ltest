@@ -11,6 +11,7 @@ int g_addstr (const char* str, void* log) {
 		case UI_MAPMODE:
 			return msgaddstr(str);
 	}
+	return 1;
 }
 
 int g_printw (const char* fmt, ...) {
@@ -38,7 +39,7 @@ int g_getkey() {
 		case UI_MAPMODE:
 			return mapgetch();
 	}
-
+	return 0;
 }
 
 int g_attrset(int attrs) {
@@ -46,7 +47,7 @@ int g_attrset(int attrs) {
 		case UI_MAPMODE:
 			return msgattrset(attrs);
 	}
-
+	return 1;
 }
 
 char teststr[12];

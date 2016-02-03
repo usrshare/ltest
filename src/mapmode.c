@@ -110,13 +110,19 @@ int check_conditions(struct t_map* map) {
     return 1;
 }
 
-struct t_map_entity* find_entity(struct t_map* map, uint8_t x, uint8_t y) {
+struct t_map_entity* find_entity_ind(struct t_map* map, uint8_t x, uint8_t y, int ind) {
 
+    int n = 0;
     for (int i=0; i < MAX_ENTITIES; i++) {
 	struct t_map_entity* e = &map->ent[i];
-	if ((e->x == x) && (e->y == y)) return e;
+	if ((e->x == x) && (e->y == y)) { n++; if (n > ind) return e; }
     }
     return NULL;
+}
+
+struct t_map_entity* find_entity(struct t_map* map, uint8_t x, uint8_t y) {
+
+    return find_entity_ind(map,x,y,0);
 }
 
 bool can_attack(struct t_map* map, struct t_map_entity* a, struct t_map_entity* t, bool no_ranged, bool no_melee) {
@@ -146,7 +152,7 @@ int space_taken(struct t_map* map, uint8_t x, uint8_t y) {
 
     for (int i=0; i < MAX_ENTITIES; i++) {
 	struct t_map_entity* e = &map->ent[i];
-	if ((e->type != ET_NONE) && (e->x == x) && (e->y == y)) return 1;
+	if ((e->type != ET_NONE) && (e->type != ET_LOOT) && (e->x == x) && (e->y == y)) return 1;
     }
 
     return 0;
@@ -272,7 +278,7 @@ int mapmode() {
     for (int i=0; i < PLAYERS_COUNT; i++) {
 	players[i] = spawn_entity(&map1,ET_PLAYER,(struct spawnflags){
 		.gen_creature = true,
-		.genrules = &type_rules[ET_HIPPIE],
+		.genrules = &(type_rules[ET_HIPPIE]),
 		.position = SF_DEFAULT,
 		.tf = player_turnFunc,
 		.af = player_actFunc}); //temporary entity
@@ -284,13 +290,15 @@ int mapmode() {
 	    struct t_item clothes;
 	    new_armor(ARMOR_CLOTHES,&clothes);
 	    give_armor(players[i]->ent,clothes);
-
-	    /*
+	    
+	    
 	    struct t_item knife;
 	    new_weapon(WT_COMBATKNIFE,&knife,0);
 	    give_weapon(players[i]->ent,knife);
-	    */
-	    
+	   
+	    struct t_item ak47;
+	    new_weapon(WT_AUTORIFLE_AK47,&ak47,1000);
+	    give_weapon(players[i]->ent,ak47);
 	}
     }
 
@@ -306,6 +314,17 @@ int mapmode() {
 		.tf = enemy_turnFunc,
 		.af = enemy_actFunc});
 	if (enemies[i]) {enemies[i]->aidata->task = AIT_PATROLLING;}
+    }
+
+#define LOOT_COUNT 40
+    
+    struct t_map_entity* loots[LOOT_COUNT];
+   
+    for (int i=0; i < LOOT_COUNT; i++) {
+	loots[i] = spawn_entity(&map1,ET_LOOT,(struct spawnflags){
+		.position = SF_RANDOM_RESTRICTED,});
+	if (loots[i]) { new_money(loots[i]->loot, randval(100)+1);
+		/* TODO assign items and money */}
     }
 
     for (int i=0; i < PLAYERS_COUNT; i++) {

@@ -39,6 +39,7 @@ struct t_map {
 struct t_map* curmap;
 
 int space_taken(struct t_map* map, uint8_t x, uint8_t y);
+struct t_map_entity* find_entity_ind(struct t_map* map, uint8_t x, uint8_t y, int ind);
 struct t_map_entity* find_entity(struct t_map* map, uint8_t x, uint8_t y);
 int vtile(uint8_t x, uint8_t y);
 
