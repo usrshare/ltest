@@ -43,6 +43,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA   02111-1307   USA     
 #include "armor.h"
 #include "weapon.h"
 
+#include <math.h>
 #include <stdbool.h>
 #include <string.h>
 
@@ -61,7 +62,7 @@ void freehostage(struct t_creature* cr,char situation);
 bool goodguyattack = false;
 
 /* attack handling for an individual creature and its target */
-void attack(struct t_map* map, struct t_creature* a,struct t_creature* t,char mistake,char* actual,bool force_melee)
+void attack(struct t_map* map, struct t_creature* a,struct t_creature* t,char mistake,char* actual,bool force_melee, int distance_sq)
 {
     *actual=0;
 
@@ -252,6 +253,8 @@ void attack(struct t_map* map, struct t_creature* a,struct t_creature* t,char mi
 
     // Basic roll
     int aroll=entity_skill_roll(a,wsk);
+
+    if (distance_sq > 4) aroll /= (sqrt(distance_sq) / 2);
     // In a car chase, the driver provides the defence roll instead of the victim.
     int droll= 0;
     if (mode!=GM_CHASECAR)
@@ -481,7 +484,7 @@ void attack(struct t_map* map, struct t_creature* a,struct t_creature* t,char mi
 	    strcat(str,", ");
 	    if(!a->weapon) //Move into WEAPON_NONE? -XML
 		strcat(str,"striking");
-	    else strcat(str,attack_used->hit_description);
+	    else strcat(str,attack_used->hit_description ? attack_used->hit_description : "hitting");
 
 	    switch(bursthits)
 	    {
@@ -1259,7 +1262,7 @@ void attack(struct t_map* map, struct t_creature* a,struct t_creature* t,char mi
 
 	    goodguyattack = !goodguyattack;
 	    char actual_dummy;
-	    attack(map,t,a,0,&actual_dummy,true);
+	    attack(map,t,a,0,&actual_dummy,true,distance_sq);
 	    goodguyattack = !goodguyattack;
 	}//TODO if missed person, but vehicle is large, it might damage the car. 
 	else

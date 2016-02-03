@@ -20,6 +20,7 @@ add_executable (ltest
 		src/fight.c
 		src/globals.c
 		src/item.c
+		src/item_ui.c
 		src/location.c
 		src/main.c
 		src/map_actions.c

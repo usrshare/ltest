@@ -5,5 +5,17 @@
 
 const char* describe_item (struct t_item* i) {
 
-	return "something";
+	switch (i->type) {
+
+		case IT_WEAPON:
+		return get_weapon_name(i);
+	       	case IT_ARMOR:
+		return get_armor_name(i);
+		case IT_CLIP:
+		return cliptypes[i->itemtypeid].name;
+		case IT_MONEY:
+		return "$";
+		default:
+		return "something";
+	}
 }

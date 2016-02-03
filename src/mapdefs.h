@@ -136,6 +136,7 @@ struct t_map_entity {
 	enum entitytypes type;
 	enum entityflags flags;
 	struct t_creature* ent;
+	bool didntmove;
 	uint8_t e_id;
 	uint16_t x;
 	uint16_t y;
