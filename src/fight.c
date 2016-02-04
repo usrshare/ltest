@@ -167,6 +167,8 @@ void attack(struct t_map* map, struct t_creature* a,struct t_creature* t,char mi
     if(attack_used->ranged) melee=false;
     bool sneak_attack=false;
 
+    if (melee && (distance_sq > 2)) return; //melee attacks can only hit nearby
+
     strcpy(str,describe_entity_static(a));
     strcat(str," ");
     if(mistake) strcat(str,"MISTAKENLY ");

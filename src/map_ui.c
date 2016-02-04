@@ -186,8 +186,7 @@ int mapgetch() {
     return c;
 }
 
-
-int askgetch() {
+int askgetch(bool nocr) {
 
     morecount = 0;
 	
@@ -195,7 +194,7 @@ int askgetch() {
     int c = wgetch(msgwindow);
     noecho();
     
-    waddstr(msgwindow,"\n");
+    if (!nocr) waddstr(msgwindow,"\n");
      
     return c;
 }
@@ -287,7 +286,7 @@ int msgaddstr(const char *string) {
 	wattroff(msgwindow,A_REVERSE);
 	wmove(msgwindow,0,COLS-1);
 	wrefresh(msgwindow);
-	askgetch();
+	askgetch(false);
 	wmove(msgwindow,cy,cx);
 	morecount = 0;
     }
@@ -358,7 +357,7 @@ enum movedirections askdir() {
     int go_on = 1;
 
     while (go_on) {
-	int c = askgetch();
+	int c = askgetch(false);
 	switch(c) {
 	    case 'h':
 	    case 'H':
@@ -393,6 +392,69 @@ enum movedirections askdir() {
     }
 
     return r;
+}
+
+int askpos(uint8_t* y, uint8_t* x) {
+
+    msgprintw("Choose a location. [yuhjklbn] Move [.] Confirm [,] Cancel");
+    wrefresh(msgwindow);
+
+    int ny = *y, nx = *x;
+    int go_on = 1;
+    int res = 0;
+
+    while (go_on) {
+
+	wmove(mapwindow,ny,nx);
+	int c = wgetch(mapwindow);
+	switch(c) {
+	    case 'h':
+	    case 'H':
+		if (nx > 0) nx--; break;
+	    case 'j':
+	    case 'J':
+		if (ny < MAP_HEIGHT) ny++; break;
+	    case 'k':
+	    case 'K':
+		if (ny > 0) ny--; break;
+	    case 'l':
+	    case 'L':
+		if (nx < MAP_WIDTH) nx++; break;
+	    case 'y':
+	    case 'Y':
+		if (nx > 0) nx--;
+		if (ny > 0) ny--; break;
+	    case 'u':
+	    case 'U':
+		if (nx < MAP_WIDTH) nx++;
+		if (ny > 0) ny--; break;
+	    case 'b':
+	    case 'B':
+		if (nx > 0) nx--;
+		if (ny < MAP_HEIGHT) ny++; break;
+	    case 'n':
+	    case 'N':
+		if (nx > 0) nx--;
+		if (ny < MAP_HEIGHT) ny++; break;
+	    case '.':
+		go_on = 0;
+		res = 0;
+		break;
+	    case ',':
+		go_on = 0;
+		res = 1;
+	    default:
+		beep();
+		wrefresh(msgwindow);
+	}
+
+    }
+
+    morecount=0;
+    waddstr(msgwindow,"\n");
+
+    if (res == 0) *y = ny; *x = nx;
+    return res;
 }
 
 int init_status (struct t_map* map) {
