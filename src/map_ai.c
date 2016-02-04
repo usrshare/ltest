@@ -417,10 +417,11 @@ uint16_t player_actFunc(struct t_map* map, struct t_map_entity* me) {
 		      break; }
 
 	case 'f': {
-		      enum movedirections dir = askdir();
-		      uint8_t dx = me->x + movediff[dir][0];
-		      uint8_t dy = me->y + movediff[dir][1];
-		      me->aidata->viewdir = dir; 
+		      //enum movedirections dir = askdir();
+		      uint8_t dx = me->x;
+		      uint8_t dy = me->y;
+		      int r = askpos(&dy, &dx);
+		      if (r == 0) {
 		      struct t_map_entity* enemy = find_entity(map,dx,dy);
 		      if ((enemy) && (enemy->ent)) {
 			  char actual;
@@ -430,6 +431,7 @@ uint16_t player_actFunc(struct t_map* map, struct t_map_entity* me) {
 			      if (actual) r = 16;
 			  } else r = 0;
 		      } else {msgprintw("Incorrect spot.\n"); r = 4;}
+		      }
 
 		      break; }
 	case ',': {
