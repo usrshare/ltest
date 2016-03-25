@@ -5,10 +5,6 @@
 
 #include <stdlib.h>
 
-int map_attack(struct t_map* map, struct t_map_entity* a,struct t_map_entity* t,char mistake,char* actual,bool force_melee, int distance_sq) {
-	
-}
-
 int open_door (struct t_map* map, struct t_map_entity* who, uint8_t x, uint8_t y) {
 
 	if (!vtile(x,y)) return -1; // not a valid space

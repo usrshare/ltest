@@ -5,6 +5,7 @@
 
 #include <math.h>
 #include <stdlib.h>
+#define M_PI 3.14159265358979323846264338327
 
 int los_default_cb(struct t_map* map, uint8_t x, uint8_t y, void* param) {
 
@@ -75,6 +76,57 @@ int lineofsight(struct t_map* map, uint8_t sx, uint8_t sy, uint8_t tx, uint8_t t
 int vispass(struct t_map* map, uint8_t x, uint8_t y) {
 
 	return !(tflags[map->sq[y * MAP_WIDTH + x].type] & TF_BLOCKS_VISION);
+}
+
+uint8_t get_bearing(uint8_t sx, uint8_t sy, uint8_t tx, uint8_t ty) {
+
+    //returns the bearing from (sx,sy) to (tx,ty). map squares are are assumed
+    // to be square. 0 is north, 64 is east, 128 is south, 192 is west.
+
+    if ((tx == sx) && (ty == sy)) return 0; //avoid div0 further ahead
+
+    float dist = sqrtf( (tx-sx) * (tx-sx) + (ty-sy) * (ty-sy) );
+
+    float vsin = asinf ( (float)(ty-sy) / dist);
+    float vcos = acosf ( (float)(tx-sx) / dist);
+
+    float bearing = ((vsin) + (M_PI / 2)) * 128.0 / (M_PI);
+
+    if (tx < sx) bearing = 256.0 - bearing; 
+
+    return (uint8_t)nearbyintf(bearing);
+    
+}
+
+int aim_bearing (struct t_map* map, uint8_t* sx, uint8_t* sy, uint8_t bearing) {
+
+    uint8_t absbear = (bearing <= 128) ? bearing : (256 - bearing);
+
+    float vsin = - ( cos( absbear / 128.0 * M_PI));
+
+    float vcos = sqrtf ( 1 - powf(vsin,2.0f));
+
+    if (bearing > 128) vcos *= -1.0f;
+
+    float x = *sx, y = *sy;
+    uint8_t ix = *sx, iy = *sy;
+    
+    do {
+    
+	x += vcos;
+	y += vsin;
+    
+	ix = nearbyintf(x); iy = nearbyintf(y);
+
+	if ((ix > MAP_WIDTH) || (iy > MAP_HEIGHT)) return 1;
+    }
+    while ( ((ix == *sx) && (iy == *sy)) ||
+	    ((!(tflags[map->sq[iy * MAP_WIDTH + ix].type] & TF_BLOCKS_ATTACKS)) &&
+	     !find_entity(map,ix,iy)) ); //blocked by an entity or an obstacle.
+
+    *sx = ix; *sy = iy;    
+
+    return 0;
 }
 
 

@@ -4,6 +4,7 @@
 #include "map_ui.h"
 
 #include <stdarg.h>
+#include <unistd.h>
 
 int g_addstr (const char* str, void* log) {
 
@@ -51,6 +52,11 @@ int g_attrset(int attrs) {
 }
 
 char teststr[12];
+
+int ms_sleep(int ms) {
+
+	return usleep(ms * 1000);
+}
 
 
 const char* tostring(int num) {

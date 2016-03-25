@@ -21,6 +21,11 @@
 
 struct t_ent_ai_data aient[MAX_AI_ENTITIES];
 
+void map_ai_init (struct t_map* map) {
+
+    heatmap_reset(map->aidata.e_hm);
+}
+
 enum movedirections face_square (uint8_t sx, uint8_t sy, uint8_t dx, uint8_t dy) {
     // this function tries to figure out the best direction in which someone at (sx,sy) has to face to see (dx,dy).
 
@@ -128,6 +133,17 @@ uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
 	    }
 	}
 
+	if (me->aidata->task == AIT_PATROLLING) {
+	    update_heatmap(map,map->aidata.e_hm,me->aidata->lx,me->aidata->ly);
+	    me->aidata->lx = 255; me->aidata->ly = 255;
+
+	    find_closest_on_heatmap(me->x,me->y,map->aidata.e_hm,&dx,&dy);
+	    if ((dx != me->aidata->dx) || (dy != me->aidata->dy)) {
+		me->aidata->dy = dy;
+		me->aidata->dx = dx;
+		me->aidata->path_plotted = 0;}
+	} 
+
     } else {
 
 
@@ -154,10 +170,10 @@ uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
 
 	} else {
 
-	    update_heatmap(map,me->aidata->lx,me->aidata->ly,map->aidata.e_heatmap_old,map->aidata.e_heatmap_new);
+	    update_heatmap(map,map->aidata.e_hm,me->aidata->lx,me->aidata->ly);
 	    me->aidata->lx = 255; me->aidata->ly = 255;
 
-	    find_closest_on_heatmap(me->x,me->y,map->aidata.e_heatmap_old,map->aidata.e_heatmap_new,&dx,&dy);
+	    find_closest_on_heatmap(me->x,me->y,map->aidata.e_hm,&dx,&dy);
 	    if ((dx != me->aidata->dx) || (dy != me->aidata->dy)) {
 		me->aidata->dy = dy;
 		me->aidata->dx = dx;
@@ -167,7 +183,7 @@ uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
 	    me->aidata->alert_state--;
 	    if (me->aidata->task == AIT_PURSUING) me->aidata->task = AIT_LOOKING_FOR;
 
-	    if (me->aidata->alert_state <= 0) { me->aidata->task = AIT_PATROLLING; me->aidata->target = NULL; heatmap_clear(map->aidata.e_heatmap_old); heatmap_clear(map->aidata.e_heatmap_new); }
+	    if (me->aidata->alert_state <= 0) { me->aidata->task = AIT_PATROLLING; me->aidata->target = NULL; heatmap_clear(map->aidata.e_hm);}
 
 	}
 
@@ -238,9 +254,14 @@ uint16_t enemy_actFunc(struct t_map* map, struct t_map_entity* me) {
 	    break;
 
 	case AIT_PATROLLING:
+			    
+	    md = roll_downhill(me->aidata->ent_target_arr,me->x,me->y);
+	    if (md < MD_COUNT) r = trymove(map,me,movediff[md][0],movediff[md][1]); else r = 4;
 
-	    me->aidata->viewdir = (me->aidata->viewdir + 1) % 8;
-	    r = 16;
+	    if (can_see(map,me,dy,dx)) {
+	    md = face_square(me->x,me->y,dx,dy);
+	    if (md < MD_COUNT) { me->aidata->viewdir = md; r++; } }
+				    
 	    break;
 
 	case AIT_PLEASE_LEAVE:
@@ -313,12 +334,45 @@ uint16_t enemy_actFunc(struct t_map* map, struct t_map_entity* me) {
     if (r < 0) {return 0;} else return r;
 }
 
+void map_attack (struct t_map* map, struct t_map_entity* a, uint8_t dx, uint8_t dy) {
+
+    uint8_t bearing = get_bearing(a->x,a->y,dx,dy);
+
+    uint8_t dx_act = a->x, dy_act = a->y;
+
+    int r = aim_bearing(map,&dx_act,&dy_act, bearing);
+
+    struct t_map_entity* enemy_i = find_entity(map,dx,dy); //intended
+    struct t_map_entity* enemy_a = find_entity(map,dx_act,dy_act); //actual
+	
+   
+    if (r == 0) { 
+    mapaddch("*",dy_act,dx_act);
+    maprefresh();
+
+    ms_sleep(100);
+    }
+
+    if ((r == 0) && (enemy_a) && (enemy_a->ent)) {
+			  char actual;
+			  char printed;
+			  if (!incapacitated(a->ent,0,&printed)) {
+			      attack(map,a->ent,enemy_a->ent,0,&actual,0,distance_sq(a,enemy_a));
+			      if (actual) r = 16;
+			  } else r = 0;
+    } else {
+
+
+	if (enemy_i) msgprintw("Your attack missed.\n"); else msgprintw("You shot empty space.\n");
+    }
+}
+
 uint16_t player_turnFunc(struct t_map* map, struct t_map_entity* me) {
 
     if (!(me->aidata)) return 0;
 
     do_fov(map,me,25,FA_FULL,map->aidata.p_viewarr,NULL,NULL);	
-    draw_map(map, me,1,dbgmode ? 1 : 0, dbgmode ? 1 : 0,1);
+    update_player_map(map, me,1);
     
     if (me->didntmove == 0) {
     // look for loot.
@@ -345,7 +399,7 @@ uint16_t player_actFunc(struct t_map* map, struct t_map_entity* me) {
     if (!(me->aidata)) return 0;
 
     do_fov(map,me,25,FA_FULL,map->aidata.p_viewarr,NULL,NULL);	
-    draw_map(map, me,1,dbgmode ? 1 : 0, dbgmode ? 1 : 0,1);
+    update_player_map(map, me,1);
 
     // check for input
     int pch = mapgetch();
@@ -422,15 +476,7 @@ uint16_t player_actFunc(struct t_map* map, struct t_map_entity* me) {
 		      uint8_t dy = me->y;
 		      int r = askpos(&dy, &dx);
 		      if (r == 0) {
-		      struct t_map_entity* enemy = find_entity(map,dx,dy);
-		      if ((enemy) && (enemy->ent)) {
-			  char actual;
-			  char printed;
-			  if (!incapacitated(me->ent,0,&printed)) {
-			      attack(map,me->ent,enemy->ent,0,&actual,0,distance_sq(me,enemy));
-			      if (actual) r = 16;
-			  } else r = 0;
-		      } else {msgprintw("Incorrect spot.\n"); r = 4;}
+		      map_attack(map,me,dx,dy);
 		      }
 
 		      break; }
@@ -463,7 +509,7 @@ uint16_t player_actFunc(struct t_map* map, struct t_map_entity* me) {
     }
 
     do_fov(map,me,25,FA_FULL,map->aidata.e_viewarr,NULL,NULL);	
-    draw_map(map, me,1,dbgmode ? 1 : 0, dbgmode ? 1 : 0,0);
+    update_player_map(map, me,0);
 
     char printed;	
     incapacitated(me->ent,1,&printed);

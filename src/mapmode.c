@@ -6,6 +6,7 @@
 #include "entity_types.h"
 #include "mapgen.h"
 #include "map_fov.h"
+#include "squad.h"
 
 #include "random.h"
 #include "map_ui.h"
@@ -258,7 +259,7 @@ int kill_entity(struct t_map_entity* ent) {
     return 0;
 }
 
-int mapmode() {
+int mapmode(struct t_squad* activesquad) {
 
     struct t_map map1;
 
@@ -271,18 +272,19 @@ int mapmode() {
 
     generate_buildings(&map1,GM_SINGLE);
 
-#define PLAYERS_COUNT 1
+#define MAX_PLAYERS_COUNT 6
 
-    struct t_map_entity* players[PLAYERS_COUNT];
+    struct t_map_entity* players[MAX_PLAYERS_COUNT];
 
-    for (int i=0; i < PLAYERS_COUNT; i++) {
+    for (int i=0; i < MAX_PLAYERS_COUNT; i++) 
+    if (activesquad->squad[i]) {
 	players[i] = spawn_entity(&map1,ET_PLAYER,(struct spawnflags){
-		.gen_creature = true,
-		.genrules = &(type_rules[ET_HIPPIE]),
+		.gen_creature = false,
 		.position = SF_DEFAULT,
 		.tf = player_turnFunc,
 		.af = player_actFunc}); //temporary entity
 	if (players[i]) {
+	    players[i]->ent = activesquad->squad[i];
 	    players[i]->flags |= EF_ALWAYSVISIBLE;
 	    players[i]->e_id = i;
 	    players[i]->aidata->wideview = 1;
@@ -290,7 +292,6 @@ int mapmode() {
 	    struct t_item clothes;
 	    new_armor(ARMOR_CLOTHES,&clothes);
 	    give_armor(players[i]->ent,clothes);
-	    
 	    
 	    struct t_item knife;
 	    new_weapon(WT_COMBATKNIFE,&knife,0);
@@ -327,12 +328,15 @@ int mapmode() {
 		/* TODO assign items and money */}
     }
 
-    for (int i=0; i < PLAYERS_COUNT; i++) {
+    for (int i=0; i < MAX_PLAYERS_COUNT; i++) {
+	if (players[i]) {
 	do_fov(&map1,players[i],25,FA_FULL,map1.aidata.p_viewarr,NULL,NULL);
-	draw_map(&map1,players[i],1,dbgmode ? 1 : 0, dbgmode ? 1 : 0,0);
+	draw_map(&map1,dbgmode ? NULL : players[i],1,dbgmode ? 1 : 0, dbgmode ? 1 : 0,0);
+    }
     }
 
     map_ui_init(&map1);
+    map_ai_init(&map1);
 
     int loop = 1;
     map1.time = 0;

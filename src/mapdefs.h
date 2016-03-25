@@ -13,6 +13,7 @@
 #define MAP_WIDTH 80
 #define MAP_HEIGHT 20
 
+#define MAP_SIZE (MAP_WIDTH*MAP_HEIGHT)
 
 struct coords {
 	uint8_t x;

@@ -16,8 +16,7 @@
 
 uint32_t curcreatureid = 0;
 
-struct t_squad* activesquad;
-struct t_creature* encounter[ENCMAX];
+//struct t_creature* encounter[ENCMAX];
 
 struct t_creature* pool[POOLSIZE];
 
