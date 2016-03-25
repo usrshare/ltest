@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 project(ltest)
 
-set (CMAKE_C_FLAGS "-std=c99 -Wall -Wextra -D_POSIX_C_SOURCE=2 -Wno-override-init")
+set (CMAKE_C_FLAGS "-std=c99 -Wall -Wextra -D_POSIX_C_SOURCE=2 -Wno-override-init ${CMAKE_C_FLAGS}")
 
 set_source_files_properties(tags PROPERTIES GENERATED true)
 
@@ -33,6 +33,7 @@ add_executable (ltest
 		src/mapmode.c
 		src/pqueue.c
 		src/random.c
+		src/squad.c
 		src/stealth.c
 		src/ui.c
 		src/weapon.c

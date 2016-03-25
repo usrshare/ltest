@@ -4,16 +4,24 @@
 #include <time.h>
 #include <curses.h>
 #include <unistd.h>
+#include <signal.h>
 #include <string.h>
 
 #include "cpairs.h"
 #include "mapmode.h"
 #include "globals.h"
+#include "entity_types.h"
+#include "squad.h"
 
 int init_memory() {
 
     memset(pool,0,sizeof(struct t_creature*) * POOLSIZE);
     return 0;
+}
+
+void inthandler(int sig) {
+    endwin();
+        exit(0);
 }
 
 int main(int argc, char** argv) {
@@ -54,10 +62,29 @@ int main(int argc, char** argv) {
 
     refresh();
 
+    signal(SIGINT,inthandler);
+
     init_memory();
     init_pairs();
 
-    mapmode();
+    struct t_squad squad1;
+
+    memset(&squad1,0,sizeof squad1);
+    strcpy(squad1.name, "Liberal Crime Squad");
+
+    squad1.id = 0;
+
+    struct t_creature player1;
+    creature_init(&player1, &type_rules[ET_POLITICALACTIVIST]);   
+
+    squad1.squad[0] = &player1;
+    //activesquad = &squad1;
+
+    while (squad_alive(&squad1)) {
+
+    mapmode(&squad1);
+
+    }
 
     endwin();
 

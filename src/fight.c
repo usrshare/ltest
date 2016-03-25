@@ -34,10 +34,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA   02111-1307   USA     
 
 #include "globals.h"
 #include "ui.h"
+
 #include "entity.h"
 #include "entity_types.h"
 #include "location.h"
 #include "mapmode.h"
+#include "squad.h"
 
 #include "item.h"
 #include "armor.h"
@@ -217,7 +219,7 @@ void attack(struct t_map* map, struct t_creature* a,struct t_creature* t,char mi
 
 	if(!sneak_attack)
 	{
-	    strcat(str,attack_used->attack_description);
+	    strcat(str,attack_used->attack_description ? attack_used->attack_description : "finds a bug in");
 	    map->sitealarm=1;
 	}
     }
@@ -582,8 +584,9 @@ void attack(struct t_map* map, struct t_creature* a,struct t_creature* t,char mi
 	// Coarse combat lethality reduction.
 	//damamount/=2;
 
-	if(t->squadid!=-1&&t->hireid==NOHIREID) // Plot Armor: if the founder is hit, inflict
-	    damamount/=2;                // 1/2 damage, because founders are cool
+	//if(t->squadid!=-1&&t->hireid==NOHIREID) // Plot Armor: if the founder is hit, inflict
+	//    damamount/=2;                // 1/2 damage, because founders are cool
+	// invalid code, relies on squadid.
 
 	int mod=0;
 
@@ -657,46 +660,7 @@ void attack(struct t_map* map, struct t_creature* a,struct t_creature* t,char mi
 	}
 	if(damamount>0)
 	{
-	    struct t_creature *target=0;
-
-	    if(t->squadid!=-1&&t->hireid==NOHIREID&& //if the founder is hit...
-		    (damamount>t->blood||damamount>=10)&& //and lethal or potentially crippling damage is done...
-		    (w==EB_HEAD||w==EB_BODY)) //to a critical bodypart...
-	    {
-		//Oh Noes!!!! Find a liberal to jump in front of the bullet!!!
-		for(int i=0;i<6;i++)
-		{
-		    if(activesquad->squad[i]==NULL) break;
-		    if(activesquad->squad[i]==t) break;
-		    if(entity_get_attribute(activesquad->squad[i],EA_HRT,true)>8&&
-			    entity_get_attribute(activesquad->squad[i],EA_AGI,true)>4)
-		    {
-			target=activesquad->squad[i];
-
-			//clearmessagearea();
-			g_attrset(CP_GREEN);
-
-			char msg[128]; msg[0] = 0;
-			//move(16,1);
-			strcat(msg,describe_entity_static(target));
-			if(!t->alive) strcat(msg," misguidedly");
-			else strcat(msg," heroically");
-			strcat(msg," shields ");
-			strcat(msg,describe_entity_static(t));
-			if(!t->alive) strcat(msg,"'s corpse");
-			strcat(msg,"!");
-			g_addstr("\n",NULL);
-			g_addstr(msg,gamelog);
-
-			addjuice(target,10,1000);//Instant juice!! Way to take the bullet!!
-
-			////g_getkey();
-
-			break;
-		    }
-		}
-	    }
-	    if(!target) target=t;//If nobody jumps in front of the attack,
+	    struct t_creature *target=t;
 
 	    target->wound[w]|=damtype;
 
@@ -1766,6 +1730,7 @@ void specialattack(struct t_creature* a, struct t_creature* t, char *actual)
 		g_addstr(str,gamelog);
 		}
 
+		/*
 		for(int e=0;e<ENCMAX;e++)
 		{
 		    if(encounter[e]->exists==0)
@@ -1792,6 +1757,7 @@ void specialattack(struct t_creature* a, struct t_creature* t, char *actual)
 		    if(flipstart&&p<5) activesquad->squad[p]=activesquad->squad[p+1];
 		}
 		if(flipstart) activesquad->squad[5]=NULL;
+		*/
 	    }
 	}
 	else
@@ -1937,6 +1903,7 @@ void bloodblast(struct t_item* armor)
     //levelmap[locx][locy][locz].flag|=SITEBLOCK_BLOODY2;
 
     //HIT EVERYTHING
+    /*
     for(int p=0;p<6;p++)
     {
 	if(activesquad->squad[p]==NULL) continue;
@@ -1950,6 +1917,7 @@ void bloodblast(struct t_item* armor)
 	if(!randval(2))
 	    encounter[e]->armor->a_flags |= AD_BLOODY;
     }
+    */
 
     //REFRESH THE SCREEN
     //printsitemap(locx,locy,locz);
@@ -2478,7 +2446,8 @@ void freehostage(struct t_creature* cr,char situation)
 
       if(cr->prisoner->squadid==-1)
       {
-         for(int e=0;e<ENCMAX;e++)
+         /*
+	  for(int e=0;e<ENCMAX;e++)
          {
             if(encounter[e]->exists==0)
             {
@@ -2488,6 +2457,8 @@ void freehostage(struct t_creature* cr,char situation)
                break;
             }
          }
+	 // TODO spawn prisoner nearby
+	 */
          free(cr->prisoner);
       }
       else capturecreature(cr->prisoner);

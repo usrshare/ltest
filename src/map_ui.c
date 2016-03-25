@@ -68,6 +68,11 @@ chtype entchar(struct t_map_entity* e) {
 	default: return 'X';
     }
 }
+
+int update_player_map(struct t_map* map, struct t_map_entity* player, int hl_player) {
+    return draw_map(map,player,1,dbgmode ? 1 : 0, dbgmode ? 1 : 0, hl_player);
+}
+
 int draw_map(struct t_map* map, struct t_map_entity* persp, bool show_fov, bool show_targets, bool show_heatmaps, bool hl_persp) {
 
     int cs = curs_set(0);
@@ -83,7 +88,7 @@ int draw_map(struct t_map* map, struct t_map_entity* persp, bool show_fov, bool 
 
 	    int tilevis = 1;
 
-	    if ((persp != NULL) && (persp->aidata)) tilevis = map->aidata.p_viewarr[iy * MAP_WIDTH + ix];
+	    tilevis = map->aidata.p_viewarr[iy * MAP_WIDTH + ix];
 
 	    chtype tileflags = 0;
 
@@ -129,17 +134,11 @@ int draw_map(struct t_map* map, struct t_map_entity* persp, bool show_fov, bool 
 	    }
 
 	    if (show_heatmaps) {
-		for (int m=0; m < HEATMAP_SIZE; m++) {
-		    uint16_t yx = map->aidata.e_heatmap_old[m];
-		    if (yx == 65535) continue;
+		for (int yx=0; yx < HEATMAP_SIZE; yx++) {
 		    uint8_t y = yx / MAP_WIDTH; uint8_t x = yx % MAP_WIDTH;
-		    mvwaddch(mapwindow,y,x,'&' | CP_YELLOW);
-		}
-		for (int m=0; m < HEATMAP_SIZE; m++) {
-		    uint16_t yx = map->aidata.e_heatmap_new[m];
-		    if (yx == 65535) continue;
-		    uint8_t y = yx / MAP_WIDTH; uint8_t x = yx % MAP_WIDTH;
-		    mvwaddch(mapwindow,y,x,'&' | CP_GREEN);
+		    uint8_t m = map->aidata.e_hm[yx];
+		    if (!m) continue;
+		    mvwaddch(mapwindow,y,x,'&' | ((m == 2) ? CP_GREEN : CP_YELLOW));
 		}
 	    }
 
@@ -151,7 +150,7 @@ int draw_map(struct t_map* map, struct t_map_entity* persp, bool show_fov, bool 
 	if (map->ent[i].type == ET_NONE) continue;
 	int ex = map->ent[i].x; int ey = map->ent[i].y;
 
-	if ( (persp == NULL) || (map->ent[i].flags & EF_ALWAYSVISIBLE) || ( (persp->aidata) && (map->aidata.p_viewarr[ey * (MAP_WIDTH) + ex] >= 3) ) ) {
+	if ( (persp == NULL) || (map->ent[i].flags & EF_ALWAYSVISIBLE) || ((map->aidata.p_viewarr[ey * (MAP_WIDTH) + ex] >= 3) ) ) {
 
 	    int highlight = (hl_persp) && (&map->ent[i] == persp);
 	    mvwaddch(mapwindow,ey,ex,entchar(&map->ent[i]) | (highlight ? A_REVERSE : 0) );
@@ -267,9 +266,15 @@ int updheader(struct t_map* map) {
     return 0;
 }
 
+int maprefresh(void) {
+
+    return wrefresh(mapwindow);
+}
+
 int msgaddstr(const char *string) {
 
-    char* dblstr = strdup(string);
+    char* dblstr = malloc(strlen(string)+1);
+    strcpy(dblstr,string);
     char* thisline = dblstr;
 
     bool hascr = strchr(thisline,'\n');
@@ -321,6 +326,13 @@ int msgprintw(const char *fmt, ...) {
     int r = msgvprintw(fmt,varglist);
     va_end(varglist);
     return r;
+}
+
+int mapaddch(const char *c, uint8_t y, uint8_t x) {
+
+    mvwaddstr(mapwindow,y,x,c);
+
+    return 0;
 }
 
 int msgattrset(int attrs) {

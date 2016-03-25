@@ -38,8 +38,7 @@ struct t_map_ai_data {
     // enemies are assumed to have perfect knowledge of the map
     // and/or have radios to communicate.
 
-    uint16_t e_heatmap_old [ HEATMAP_SIZE ]; //storing coords as (y * MAP_WIDTH + x).
-    uint16_t e_heatmap_new [ HEATMAP_SIZE ]; //65535 stands for "empty".
+    uint8_t e_hm [ MAP_WIDTH * MAP_HEIGHT ]; //0 = none, 1 = old, 2 = new.
 
     struct t_map_entity* targets [SQUAD_MAX]; //the known squad members
     uint8_t targets_x [SQUAD_MAX]; //known x positions of targets
@@ -99,7 +98,11 @@ extern bool needs_ai [ET_COUNT];
 
 extern struct t_ent_ai_data aient[MAX_AI_ENTITIES];
 
+void map_ai_init (struct t_map* map);
+
 uint16_t enemy_seeFunc(struct t_map* map, struct t_map_entity* me, uint8_t y, uint8_t x, struct t_map_entity* whom);
+
+void map_attack (struct t_map* map, struct t_map_entity* a, uint8_t dx, uint8_t dy);
 
 uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me);
 uint16_t enemy_actFunc(struct t_map* map, struct t_map_entity* me);

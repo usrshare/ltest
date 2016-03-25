@@ -65,7 +65,8 @@ struct t_item* inv_find_used(struct t_item* inv) {
 int new_money(struct t_item* inv, int value) {
 
 	struct t_item newmoney = {.type = IT_MONEY, .itemtypeid = 0, .value = value};
-	return inv_add(inv,&newmoney);
+	inv_add(inv,&newmoney);
+	return 0;
 }
 
 int inv_join(struct t_item* inv_to, struct t_item* inv_from) {

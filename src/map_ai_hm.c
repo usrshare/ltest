@@ -9,44 +9,29 @@
 // the idea has been shamelessly and badly stolen from 
 // http://www.roguebasin.com/index.php?title=Smart_searching_and_Modeling_the_player_with_a_%22heatmap%22
 
-uint16_t* find_empty_heatmap(uint16_t* heatmap) {
-
-	for (int i = 0; i < HEATMAP_SIZE; i++)
-		if (heatmap[i] == 65535) return &(heatmap[i]);
-
-	return NULL;
-}
-int heatmap_exists(uint16_t* hm1, uint16_t* hm2, uint8_t x, uint8_t y) {
+int heatmap_exists(uint8_t* hm, uint8_t x, uint8_t y) {
 
 	uint16_t yx = y * MAP_WIDTH + x;
 
-	for (int i = 0; i < HEATMAP_SIZE; i++) {
-		if (hm1[i] == yx) return 1;
-	}
+	return hm[yx];
+}
 
-	if (hm2 != NULL) {
-		for (int i = 0; i < HEATMAP_SIZE; i++) {
-			if (hm2[i] == yx) return 2;
-		}
-	}
+int heatmap_add(uint8_t* hm, uint8_t x, uint8_t y, uint8_t v) {
+	
+	hm[ y * MAP_WIDTH + x] = v;
 	return 0;
 }
-int heatmap_add(uint16_t* hm, uint8_t x, uint8_t y) {
+int heatmap_reset(uint8_t* hm) {
 
-	uint16_t yx = y * MAP_WIDTH + x;
-
-	uint16_t* space = find_empty_heatmap(hm);
-
-	if (space == NULL) return 1; else *space = yx;
-
+	memset(hm,2,sizeof(uint8_t) * HEATMAP_SIZE);
 	return 0;
 }
-int heatmap_clear(uint16_t* hm) {
+int heatmap_clear(uint8_t* hm) {
 
-	memset(hm,0xff,sizeof(uint16_t) * HEATMAP_SIZE);
+	memset(hm,0,sizeof(uint8_t) * HEATMAP_SIZE);
 	return 0;
 }
-int find_closest_on_heatmap(uint8_t x, uint8_t y, uint16_t* heatmap_old, uint16_t* heatmap_new, uint8_t* o_x, uint8_t* o_y) {
+int find_closest_on_heatmap(uint8_t x, uint8_t y, uint8_t* heatmap, uint8_t* o_x, uint8_t* o_y) {
 
 	int8_t dx = 0, dy = 0, rx = x, ry = y;
 
@@ -54,22 +39,10 @@ int find_closest_on_heatmap(uint8_t x, uint8_t y, uint16_t* heatmap_old, uint16_
 
 	for (int i = 0; i < HEATMAP_SIZE; i++) {
 
-		if (heatmap_old[i] == 65535) continue;
+		if (!heatmap[i]) continue;
 
-		rx = (heatmap_old[i] % MAP_WIDTH); dx = rx - x;
-		ry = (heatmap_old[i] / MAP_WIDTH); dy = ry - y;
-
-		uint16_t d = (abs(dx) * abs(dx)) + (abs(dy) * abs(dy));
-
-		if (d < sm_d) { sm_x = (heatmap_old[i] % MAP_WIDTH);sm_y = (heatmap_old[i] / MAP_WIDTH); sm_d = d;}
-	}
-
-	for (int i = 0; i < HEATMAP_SIZE; i++) {
-
-		if (heatmap_new[i] == 65535) continue;
-
-		rx = (heatmap_new[i] % MAP_WIDTH); dx = rx - x;
-		ry = (heatmap_new[i] / MAP_WIDTH); dy = ry - y;
+		rx = (i % MAP_WIDTH); dx = rx - x;
+		ry = (i / MAP_WIDTH); dy = ry - y;
 
 		uint16_t d = (abs(dx) * abs(dx)) + (abs(dy) * abs(dy));
 
@@ -81,7 +54,19 @@ int find_closest_on_heatmap(uint8_t x, uint8_t y, uint16_t* heatmap_old, uint16_
 
 	return 0;	
 }
-int spread_heatmap(struct t_map* map, uint8_t x, uint8_t y, uint16_t* heatmap_old, uint16_t* heatmap_new) {
+
+bool iterate_heatmap(uint8_t* hm, uint8_t* x, uint8_t* y) {
+
+    int yx = (*y) * MAP_WIDTH + (*x);
+
+    for (int i = yx; i < HEATMAP_SIZE; i++) {
+
+	if (hm[i]) {*y = (i / MAP_WIDTH); *x = (i % MAP_WIDTH); return true; }
+    }
+    return false;
+}
+
+int spread_heatmap(struct t_map* map, uint8_t x, uint8_t y, uint8_t* heatmap) {
 
 	enum movedirections md = 0;
 
@@ -92,56 +77,40 @@ int spread_heatmap(struct t_map* map, uint8_t x, uint8_t y, uint16_t* heatmap_ol
 	for (md = 0; md < MD_COUNT; md++) {
 		dx = x + movediff[md][0];
 		dy = y + movediff[md][1];
-		if ( (vtile(dx,dy)) && ((tflags[map->sq[dy * MAP_WIDTH + dx].type] & TF_SOLID) == 0) && (heatmap_exists(heatmap_old,heatmap_new,dx,dy) == 0) ) r = heatmap_add(heatmap_new,dx,dy); //new tile.
-		if (r == 1) return 1;
+		if ( (vtile(dx,dy)) && ((tflags[map->sq[dy * MAP_WIDTH + dx].type] & TF_SOLID) == 0) && (heatmap_exists(heatmap,dx,dy) == 0) ) heatmap_add(heatmap,dx,dy,2); //new tile.
 	}
+
+	heatmap_add(heatmap,x,y,1);
 
 	return 0;
 }
-int update_heatmap(struct t_map* map, uint8_t x, uint8_t y, uint16_t* h_old, uint16_t* h_new) {
+int update_heatmap(struct t_map* map, uint8_t* hm, uint8_t x, uint8_t y) {
 
 	int r = 0;
 
 	//if (can_see_entity(map,me,target)) heatmap[(target->y) * MAP_WIDTH + (target->x)] = 2; //new tile
 
-	uint16_t h_add [ HEATMAP_SIZE]; memset(h_add,0xff,sizeof(uint16_t) * HEATMAP_SIZE);
+	uint8_t h_add [ HEATMAP_SIZE]; memset(h_add,0,sizeof(uint8_t) * HEATMAP_SIZE);
 
-	if ( vtile(x,y) ) { r = heatmap_add(h_new,x,y); if (r != 0) return 1; }
+	if ( vtile(x,y) ) { r = heatmap_add(hm,x,y,2); if (r != 0) return 1; }
 
 	for (int i=0; i < HEATMAP_SIZE; i++) {
 
-		if (h_new[i] != 65535) {
+		if (hm[i] == 2) {
 
-			uint8_t y = (h_new[i] / MAP_WIDTH);
-			uint8_t x = (h_new[i] % MAP_WIDTH);
+			uint8_t y = (i / MAP_WIDTH);
+			uint8_t x = (i % MAP_WIDTH);
 
-			h_new[i] = 65535;
+			hm[i] = 1;
 
-			if (heatmap_exists(h_old,NULL,x,y) == 0) { r = heatmap_add(h_old,x,y); if (r != 0) return 1; }
-			r = spread_heatmap(map,x,y,h_old,h_add); if (r != 0) return 1;
+			r = spread_heatmap(map,x,y,hm); if (r != 0) return 1;
 
 		}
 	}
 
 	for (int i=0; i < HEATMAP_SIZE; i++) {
-
-		if (h_add[i] != 65535) {
-
-			uint8_t y = (h_add[i] / MAP_WIDTH);
-			uint8_t x = (h_add[i] % MAP_WIDTH);
-
-			if (heatmap_exists(h_new,NULL,x,y) == 0) { r = heatmap_add(h_new,x,y); if (r != 0) return 1; }
-
-		}
-	}
-	
-	for (int i=0; i < HEATMAP_SIZE; i++) {
-
-		if ( (h_old[i] < (MAP_WIDTH * MAP_HEIGHT)) && (map->aidata.e_viewarr[h_old[i]] >= 3)) h_old[i] = 65535;
-		if ( (h_new[i] < (MAP_WIDTH * MAP_HEIGHT)) && (map->aidata.e_viewarr[h_new[i]] >= 3)) h_new[i] = 65535;
-
+		if ( hm[i] && (map->aidata.e_viewarr[i] >= 3) ) hm[i] = 0;
 	}	
-
 	
 	return 0;
 }
