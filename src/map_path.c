@@ -66,6 +66,47 @@ enum movedirections roll_downhill(uint16_t* patharr, uint8_t sx, uint8_t sy) {
     return leastdir;
 }
 
+struct plot_node_t {
+	pqueue_pri_t priority;
+	uint16_t yx;
+	size_t pos;
+};
+
+pqueue_pri_t plot_get_priority(void* a) {
+    return ((struct plot_node_t*)a) ->priority;
+}
+
+void plot_set_priority(void* a, pqueue_pri_t pri) {
+    ((struct plot_node_t*) a)->priority = pri;
+}
+
+int plot_cmp_priority(pqueue_pri_t next, pqueue_pri_t curr) {
+    return (next < curr ? 1 : 0);
+}
+
+size_t plot_get_pos(void* a) {
+    return ((struct plot_node_t*) a)->pos;
+}
+
+void plot_set_pos(void* a, size_t pos) {
+   ((struct plot_node_t*) a)->pos = pos;
+}
+
+struct plot_node_t* new_plot_node(int yx,int pri){ 
+
+    struct plot_node_t* nn = malloc(sizeof *nn );
+    nn->yx = yx; nn->priority = pri; nn->pos = 0;
+    return nn;
+}
+
+int pop_and_free_plot_node(pqueue_t* pq) {
+
+    struct plot_node_t* pn = pqueue_pop(pq);
+    int r = pn->yx;
+    free(pn);
+    return r;
+}
+
 int plot_dijkstra_map(struct t_map* map, uint8_t* viewarr, uint16_t* o_patharr, bool invert, const struct plotflags* _pf) {
 
 	//this function is more generic than plot_path.
@@ -73,20 +114,17 @@ int plot_dijkstra_map(struct t_map* map, uint8_t* viewarr, uint16_t* o_patharr, 
 	//it allows to invert the search (plot paths away from targets). 
 
 	const struct plotflags* pf = (_pf ? _pf : &plot_default);
-	
-	struct pqel pathqueue[MAP_WIDTH * MAP_HEIGHT]; 
-	memset(pathqueue,0,sizeof(struct pqel) * MAP_WIDTH * MAP_HEIGHT);
 
-	int pqels = 0;
+	pqueue_t* pq = pqueue_init(MAP_WIDTH * MAP_HEIGHT,plot_cmp_priority,plot_get_priority,plot_set_priority,plot_get_pos,plot_set_pos);
 
 	for (int i=0; i < (MAP_WIDTH * MAP_HEIGHT); i++) {
-	    if (o_patharr[i] == 0) pq_add_element(pathqueue,(MAP_WIDTH * MAP_HEIGHT), (void*)(intptr_t)i, 0); pqels++; }
+	    if (o_patharr[i] == 0) pqueue_insert(pq, new_plot_node(i,0)); }
 
-	while (pqels) {
+	while (pqueue_size(pq)) {
 
-		intptr_t xy = (intptr_t) pq_get_lowest(pathqueue, (MAP_WIDTH * MAP_HEIGHT)); pqels--;
-		int x = (xy % MAP_WIDTH);
-		int y = (xy / MAP_WIDTH);
+		int yx = pop_and_free_plot_node(pq);
+		int x = (yx % MAP_WIDTH);
+		int y = (yx / MAP_WIDTH);
 
 	int dir=0;
 
@@ -112,12 +150,13 @@ int plot_dijkstra_map(struct t_map* map, uint8_t* viewarr, uint16_t* o_patharr, 
 
 			o_patharr[ny * MAP_WIDTH + nx] = alt;
 
-			int r = pq_decrease_or_add(pathqueue,(MAP_WIDTH * MAP_HEIGHT),(void*)(intptr_t)(ny * MAP_WIDTH + nx), alt); if (r == 2) pqels++;
-
+			pqueue_insert(pq, new_plot_node(ny * MAP_WIDTH + nx, alt));			
 		}
 
 	}
 	}
+    
+	pqueue_free(pq);
 	return 0;
 }
 

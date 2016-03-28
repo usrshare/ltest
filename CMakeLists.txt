@@ -32,6 +32,7 @@ add_executable (ltest
 		src/mapgen.c
 		src/mapmode.c
 		src/pqueue.c
+		src/queue.c
 		src/random.c
 		src/squad.c
 		src/stealth.c
