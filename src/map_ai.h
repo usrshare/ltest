@@ -43,6 +43,8 @@ struct t_map_ai_data {
     struct t_map_entity* targets [SQUAD_MAX]; //the known squad members
     uint8_t targets_x [SQUAD_MAX]; //known x positions of targets
     uint8_t targets_y [SQUAD_MAX]; //known y positions of targets
+    
+    bool targets_moved; //whether the targets moved / plots need refreshing.
 
     uint16_t e_targets_arr [ MAP_WIDTH * MAP_HEIGHT ]; //pursuing targets.
 

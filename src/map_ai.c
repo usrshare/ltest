@@ -519,6 +519,7 @@ uint16_t player_actFunc(struct t_map* map, struct t_map_entity* me) {
 
 int static_plot(struct t_map* map) {
 
+    if (map->aidata.targets_moved ) {
     struct plotflags pf = {.eightdir = 1, .no_clear_patharr = 1};
 
     memset(map->aidata.e_targets_arr, 255, sizeof(uint16_t) * MAP_WIDTH * MAP_HEIGHT);
@@ -528,6 +529,9 @@ int static_plot(struct t_map* map) {
 	    map->aidata.e_targets_arr [ map->aidata.targets_y[i] * MAP_WIDTH + map->aidata.targets_y[i] ] =0;
 
     plot_dijkstra_map(map,NULL,map->aidata.e_targets_arr,0,&pf); 
+
+    map->aidata.targets_moved = false;
+    }
 
     //this function plots paths for everyone.
 
