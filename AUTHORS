@@ -2,8 +2,6 @@ This program was developed by usr_share.
 
 There's no other contributors at the moment.
 
-Priority queue code taken from libpqueue <https://github.com/vy/libpqueue> by Volkan Yazıcı <volkan.yazici@gmail.com>.
-
 Some of the code is based on code from Liberal Crime Squad <http://lcsgame.sf.net>. Here is the full AUTHORS list:
 
 Liberal Crime Squad authors and contributors (some files use borrowed code):

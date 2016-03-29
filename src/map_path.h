@@ -7,6 +7,7 @@ enum movedirections plot_follow(uint8_t x, uint8_t y, enum movedirections* pathp
 
 struct plotflags {
     struct t_map_entity* persp; //for line of sight and TODO locked doors
+    bool limited ; //don't build full map
     bool eightdir; //plot in all 8 directions instead of 4.
     bool no_clear_patharr; // don't clear patharr. useful for setting multiple targets.
     uint8_t mx; //minimum x

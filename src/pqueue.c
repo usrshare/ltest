@@ -1,310 +1,211 @@
 // vim: cin:sts=4:sw=4 
-/*
- * Copyright (c) 2014, Volkan Yazıcı <volkan.yazici@gmail.com>
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this
- *    list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 
 #include "pqueue.h"
+#include <malloc.h>
+#include <string.h>
 
+// this is a minheap binary tree.
 
-#define left(i)   ((i) << 1)
-#define right(i)  (((i) << 1) + 1)
-#define parent(i) ((i) >> 1)
+#define PARENT(x) ((x) >> 1)
+#define LCHILD(x) ((x) << 1)
+#define RCHILD(x) (((x) << 1) + 1)
 
+#define ROOT_EL 1
 
-pqueue_t *
-pqueue_init(size_t n,
-            pqueue_cmp_pri_f cmppri,
-            pqueue_get_pri_f getpri,
-            pqueue_set_pri_f setpri,
-            pqueue_get_pos_f getpos,
-            pqueue_set_pos_f setpos)
-{
-    pqueue_t *q;
+typedef int (*datacmp) (void* a, void* b);
 
-    if (!(q = malloc(sizeof(pqueue_t))))
-        return NULL;
+struct pqueue_t {
 
-    /* Need to allocate n+1 elements since element 0 isn't used. */
-    if (!(q->d = malloc((n + 1) * sizeof(void *)))) {
-        free(q);
-        return NULL;
+    struct pqel_t* elements; ///< binary tree of elements
+    size_t elcnt; ///< size of binary tree, incl. empty elements
+};
+
+struct pqel_t {
+    void* value;
+    unsigned int priority;
+};
+
+// a binary search-ish algorithm for finding the empty element
+int _pq_find_empty (struct pqueue_t* pq) {
+
+    unsigned int lb = 1;
+    unsigned int ub = (pq->elcnt - 1);
+
+    while (lb != ub) {
+
+    unsigned int mid = (lb + ub) / 2;
+
+    if (pq->elements[mid].value) lb = mid+1;
+else ub = mid;
+    
+    if (lb >= (pq->elcnt)) return -1;
     }
 
-    q->size = 1;
-    q->avail = q->step = (n+1);  /* see comment above about n+1 */
-    q->cmppri = cmppri;
-    q->setpri = setpri;
-    q->getpri = getpri;
-    q->getpos = getpos;
-    q->setpos = setpos;
-
-    return q;
+    return lb;
 }
 
+/*int _pq_find_empty (struct pqueue_t* pq) {
 
-void
-pqueue_free(pqueue_t *q)
-{
-    free(q->d);
-    free(q);
-}
-
-
-size_t
-pqueue_size(pqueue_t *q)
-{
-    /* queue element 0 exists but doesn't count since it isn't used. */
-    return (q->size - 1);
-}
-
-
-static void
-bubble_up(pqueue_t *q, size_t i)
-{
-    size_t parent_node;
-    void *moving_node = q->d[i];
-    pqueue_pri_t moving_pri = q->getpri(moving_node);
-
-    for (parent_node = parent(i);
-         ((i > 1) && q->cmppri(q->getpri(q->d[parent_node]), moving_pri));
-         i = parent_node, parent_node = parent(i))
-    {
-        q->d[i] = q->d[parent_node];
-        q->setpos(q->d[i], i);
+    for (int i=1; i < (pq->elcnt); i++) {
+	if (!(pq->elements[i].value)) return i;
     }
 
-    q->d[i] = moving_node;
-    q->setpos(moving_node, i);
+    return -1;
+}*/
+
+int _pq_swap (struct pqel_t* p1, struct pqel_t* p2) {
+
+    struct pqel_t tmp;
+
+    memcpy(&tmp, p1, sizeof tmp);
+    memcpy(p1, p2, sizeof tmp);
+    memcpy(p2, &tmp, sizeof tmp);
+    return 0;
 }
 
+int _pq_down_heap (struct pqueue_t* pq, int index) {
+    
+    int swap_index = -1;
+    unsigned int swap_prio = pq->elements[index].priority;
 
-static size_t
-maxchild(pqueue_t *q, size_t i)
-{
-    size_t child_node = left(i);
+    if ((pq->elements[LCHILD(index)].value) &&
+	(pq->elements[LCHILD(index)].priority < swap_prio)) {
 
-    if (child_node >= q->size)
-        return 0;
+	swap_index = LCHILD(index); swap_prio = pq->elements[LCHILD(index)].priority;
 
-    if ((child_node+1) < q->size &&
-        q->cmppri(q->getpri(q->d[child_node]), q->getpri(q->d[child_node+1])))
-        child_node++; /* use right child instead of left */
+    }
+    
+    if ((pq->elements[RCHILD(index)].value) &&
+	(pq->elements[RCHILD(index)].priority < swap_prio)) {
 
-    return child_node;
-}
+	swap_index = RCHILD(index); swap_prio = pq->elements[RCHILD(index)].priority;
 
-
-static void
-percolate_down(pqueue_t *q, size_t i)
-{
-    size_t child_node;
-    void *moving_node = q->d[i];
-    pqueue_pri_t moving_pri = q->getpri(moving_node);
-
-    while ((child_node = maxchild(q, i)) &&
-           q->cmppri(moving_pri, q->getpri(q->d[child_node])))
-    {
-        q->d[i] = q->d[child_node];
-        q->setpos(q->d[i], i);
-        i = child_node;
     }
 
-    q->d[i] = moving_node;
-    q->setpos(moving_node, i);
+    if (swap_index != -1) {
+
+	_pq_swap(&pq->elements[index], &pq->elements[swap_index]);
+	return _pq_down_heap(pq, swap_index);
+    }
+    
+    return 0;
 }
 
+void* pq_pop (struct pqueue_t* pq, unsigned int* o_priority) {
 
-int
-pqueue_insert(pqueue_t *q, void *d)
-{
-    void *tmp;
-    size_t i;
-    size_t newsize;
+    unsigned int r_prio = pq->elements[1].priority;
+    void* r_val = pq->elements[1].value;
 
-    if (!q) return 1;
+    int index = _pq_find_empty(pq);
 
-    /* allocate more memory if necessary */
-    if (q->size >= q->avail) {
-        newsize = q->size + q->step;
-        if (!(tmp = realloc(q->d, sizeof(void *) * newsize)))
-            return 1;
-        q->d = tmp;
-        q->avail = newsize;
-    }
+    memcpy( &pq->elements[1], &pq->elements[index], sizeof( struct pqel_t)); //replace root
+    memset( &pq->elements[index], 0, sizeof(struct pqel_t)); //zero old element
 
-    /* insert item */
-    i = q->size++;
-    q->d[i] = d;
-    bubble_up(q, i);
+    _pq_down_heap(pq, 1);
+
+    if (o_priority) *o_priority = r_prio;
+    return r_val;
+}
+
+int _pq_up_heap (struct pqueue_t* pq, int index) {
+   
+    if (index == 0) return 1; //shouldn't happen!
+    if (index == 1) return 0; //already done.
+    int p_ind = PARENT(index);
+
+    if ( pq->elements[index].priority < pq->elements[p_ind].priority ) {
+	_pq_swap(&pq->elements[index], &pq->elements[p_ind]);
+	return _pq_up_heap(pq, p_ind); }
 
     return 0;
 }
 
+int _pq_expand (struct pqueue_t* pq) {
 
-void
-pqueue_change_priority(pqueue_t *q,
-                       pqueue_pri_t new_pri,
-                       void *d)
-{
-    size_t posn;
-    pqueue_pri_t old_pri = q->getpri(d);
+    size_t oldelcnt = (pq->elcnt);
+    size_t newelcnt = (pq->elcnt) << 1;
+    struct pqel_t* newels = realloc(pq->elements, newelcnt);
+    if (pq->elements == NULL) return -1;
+    pq->elements = newels;
 
-    q->setpri(d, new_pri);
-    posn = q->getpos(d);
-    if (q->cmppri(old_pri, new_pri))
-        bubble_up(q, posn);
-    else
-        percolate_down(q, posn);
+    memset (pq->elements + oldelcnt, 0, sizeof(struct pqel_t) * oldelcnt); //fill with zeroes 
+    pq->elcnt = newelcnt;
+    return 0;
+
 }
 
 
-int
-pqueue_remove(pqueue_t *q, void *d)
-{
-    size_t posn = q->getpos(d);
-    q->d[posn] = q->d[--q->size];
-    if (q->cmppri(q->getpri(d), q->getpri(q->d[posn])))
-        bubble_up(q, posn);
-    else
-        percolate_down(q, posn);
+int _pq_find_or_expand (struct pqueue_t* pq) {
+
+    int r = _pq_find_empty(pq);
+
+    if (r >= 0) return r;
+
+    return (_pq_expand(pq) == 0) ? ((pq->elcnt) / 2) : -1;
+}
+
+
+int _pq_find_value (struct pqueue_t* pq, void* value) {
+
+    for (unsigned int i=1; i < (pq->elcnt); i++) {
+	if ((pq->elements[i].value) == value) return i;
+    }
+
+    return -1;
+}
+
+int pq_size (struct pqueue_t* pq) {
+
+    int r = _pq_find_empty(pq);
+    return (r >= 0) ? r : (int)(pq->elcnt);
+}
+
+
+int pq_push (struct pqueue_t* pq, void* data, unsigned int priority) {
+
+    int same = _pq_find_value(pq, data);
+
+    if (same != -1) {
+    
+	unsigned int oldpri = pq->elements[same].priority;
+	
+        //change the old element's priority to a new value.
+	pq->elements[same].priority = priority;
+
+	if (oldpri < priority) _pq_up_heap(pq, same); else
+	    if (oldpri > priority) _pq_down_heap(pq, same);
+
+    } else {
+
+	//add an entirely new element to the queue.
+
+	int newi = _pq_find_or_expand(pq);
+
+	if (newi == -1) return -1;
+
+	pq->elements[newi].value = data; pq->elements[newi].priority = priority;
+
+	_pq_up_heap(pq,newi);
+    }
 
     return 0;
 }
 
+struct pqueue_t* pq_create (void) {
 
-void *
-pqueue_pop(pqueue_t *q)
-{
-    void *head;
+    struct pqueue_t* npq = malloc (sizeof *npq);
+    memset(npq, 0, sizeof *npq);
 
-    if (!q || q->size == 1)
-        return NULL;
+    npq->elements = malloc (sizeof (struct pqel_t) * 4); // 4 elements is the minimum
+    memset(npq->elements, 0, sizeof (struct pqel_t) * 4);
+    npq->elcnt = 4;
 
-    head = q->d[1];
-    q->d[1] = q->d[--q->size];
-    percolate_down(q, 1);
-
-    return head;
+    return npq;
 }
 
+int pq_destroy(struct pqueue_t* pq) {
 
-void *
-pqueue_peek(pqueue_t *q)
-{
-    void *d;
-    if (!q || q->size == 1)
-        return NULL;
-    d = q->d[1];
-    return d;
-}
-
-
-void
-pqueue_dump(pqueue_t *q,
-            FILE *out,
-            pqueue_print_entry_f print)
-{
-    int i;
-
-    fprintf(stdout,"posn\tleft\tright\tparent\tmaxchild\t...\n");
-    for (i = 1; i < q->size ;i++) {
-        fprintf(stdout,
-                "%d\t%d\t%d\t%d\t%ul\t",
-                i,
-                left(i), right(i), parent(i),
-                (unsigned int)maxchild(q, i));
-        print(out, q->d[i]);
-    }
-}
-
-
-static void
-set_pos(void *d, size_t val)
-{
-    /* do nothing */
-}
-
-
-static void
-set_pri(void *d, pqueue_pri_t pri)
-{
-    /* do nothing */
-}
-
-
-void
-pqueue_print(pqueue_t *q,
-             FILE *out,
-             pqueue_print_entry_f print)
-{
-    pqueue_t *dup;
-    void *e;
-
-    dup = pqueue_init(q->size,
-                      q->cmppri, q->getpri, set_pri,
-                      q->getpos, set_pos);
-    dup->size = q->size;
-    dup->avail = q->avail;
-    dup->step = q->step;
-
-    memcpy(dup->d, q->d, (q->size * sizeof(void *)));
-
-    while ((e = pqueue_pop(dup)))
-	print(out, e);
-
-    pqueue_free(dup);
-}
-
-
-static int
-subtree_is_valid(pqueue_t *q, int pos)
-{
-    if (left(pos) < q->size) {
-        /* has a left child */
-        if (q->cmppri(q->getpri(q->d[pos]), q->getpri(q->d[left(pos)])))
-            return 0;
-        if (!subtree_is_valid(q, left(pos)))
-            return 0;
-    }
-    if (right(pos) < q->size) {
-        /* has a right child */
-        if (q->cmppri(q->getpri(q->d[pos]), q->getpri(q->d[right(pos)])))
-            return 0;
-        if (!subtree_is_valid(q, right(pos)))
-            return 0;
-    }
-    return 1;
-}
-
-
-int
-pqueue_is_valid(pqueue_t *q)
-{
-    return subtree_is_valid(q, 1);
+    free(pq->elements);
+    free(pq);
+    return 0;
 }

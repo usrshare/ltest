@@ -2,6 +2,7 @@
 #include "map_ai_hm.h"
 
 #include "mapmode.h"
+#include "pqueue.h"
 
 #include <string.h>
 
@@ -11,48 +12,63 @@
 
 int heatmap_exists(uint8_t* hm, uint8_t x, uint8_t y) {
 
-	uint16_t yx = y * MAP_WIDTH + x;
+    uint16_t yx = y * MAP_WIDTH + x;
 
-	return hm[yx];
+    return hm[yx];
 }
 
 int heatmap_add(uint8_t* hm, uint8_t x, uint8_t y, uint8_t v) {
-	
-	hm[ y * MAP_WIDTH + x] = v;
-	return 0;
+
+    hm[ y * MAP_WIDTH + x] = v;
+    return 0;
 }
 int heatmap_reset(uint8_t* hm) {
 
-	memset(hm,2,sizeof(uint8_t) * HEATMAP_SIZE);
-	return 0;
+    memset(hm,2,sizeof(uint8_t) * HEATMAP_SIZE);
+    return 0;
 }
 int heatmap_clear(uint8_t* hm) {
 
-	memset(hm,0,sizeof(uint8_t) * HEATMAP_SIZE);
-	return 0;
+    memset(hm,0,sizeof(uint8_t) * HEATMAP_SIZE);
+    return 0;
 }
 int find_closest_on_heatmap(uint8_t x, uint8_t y, uint8_t* heatmap, uint8_t* o_x, uint8_t* o_y) {
 
-	int8_t dx = 0, dy = 0, rx = x, ry = y;
+    struct pqueue_t* pq = pq_create();
 
-	uint8_t sm_x = 255, sm_y = 255; uint16_t sm_d = UINT16_MAX; //smallest distance, x and y
+    pq_push (pq, (void*)((int)y * MAP_WIDTH + x + 1), 0);
 
-	for (int i = 0; i < HEATMAP_SIZE; i++) {
+    bool found = false;
 
-		if (!heatmap[i]) continue;
+    while ((pq_size(pq)) || (!found)) {
 
-		rx = (i % MAP_WIDTH); dx = rx - x;
-		ry = (i / MAP_WIDTH); dy = ry - y;
+	int yx = (int)(pq_pop(pq,NULL)) - 1;
+	int x = (yx % MAP_WIDTH);
+	int y = (yx / MAP_WIDTH);
 
-		uint16_t d = (abs(dx) * abs(dx)) + (abs(dy) * abs(dy));
+	if (heatmap[y * MAP_WIDTH + x]) { 
+	    found=1; *o_x = x; *o_y = y; pq_destroy(pq); return 0; }
 
-		if (d < sm_d) { sm_x = rx; sm_y = ry; sm_d = d;}
+	int dir=0;
+
+	for (dir=0; dir < MD_COUNT; dir++) {
+
+	    int nx = x + movediff[dir][0];
+	    int ny = y + movediff[dir][1];
+
+	    if (!vtile(nx,ny)) continue; //this should be a valid tile!
+
+	    pq_push (pq, (void*) (ny * MAP_WIDTH + nx + 1), 1);			
+
 	}
+    }
 
-	*o_x = sm_x;
-	*o_y = sm_y;
+    pq_destroy(pq);
 
-	return 0;	
+    *o_x = 255;
+    *o_y = 255;
+
+    return 0;	
 }
 
 bool iterate_heatmap(uint8_t* hm, uint8_t* x, uint8_t* y) {
@@ -68,51 +84,51 @@ bool iterate_heatmap(uint8_t* hm, uint8_t* x, uint8_t* y) {
 
 int spread_heatmap(struct t_map* map, uint8_t x, uint8_t y, uint8_t* heatmap) {
 
-	enum movedirections md = 0;
+    enum movedirections md = 0;
 
-	uint8_t dx = x, dy = y;
+    uint8_t dx = x, dy = y;
 
-	int r = 0;
+    int r = 0;
 
-	for (md = 0; md < MD_COUNT; md++) {
-		dx = x + movediff[md][0];
-		dy = y + movediff[md][1];
-		if ( (vtile(dx,dy)) && ((tflags[map->sq[dy * MAP_WIDTH + dx].type] & TF_SOLID) == 0) && (heatmap_exists(heatmap,dx,dy) == 0) ) heatmap_add(heatmap,dx,dy,2); //new tile.
-	}
+    for (md = 0; md < MD_COUNT; md++) {
+	dx = x + movediff[md][0];
+	dy = y + movediff[md][1];
+	if ( (vtile(dx,dy)) && ((tflags[map->sq[dy * MAP_WIDTH + dx].type] & TF_SOLID) == 0) && (heatmap_exists(heatmap,dx,dy) == 0) ) heatmap_add(heatmap,dx,dy,2); //new tile.
+    }
 
-	heatmap_add(heatmap,x,y,1);
+    heatmap_add(heatmap,x,y,1);
 
-	return 0;
+    return 0;
 }
 int update_heatmap(struct t_map* map, uint8_t* hm, uint8_t x, uint8_t y) {
 
-	int r = 0;
+    int r = 0;
 
-	//if (can_see_entity(map,me,target)) heatmap[(target->y) * MAP_WIDTH + (target->x)] = 2; //new tile
+    //if (can_see_entity(map,me,target)) heatmap[(target->y) * MAP_WIDTH + (target->x)] = 2; //new tile
 
-	uint8_t h_add [ HEATMAP_SIZE]; memset(h_add,0,sizeof(uint8_t) * HEATMAP_SIZE);
+    uint8_t h_add [ HEATMAP_SIZE]; memset(h_add,0,sizeof(uint8_t) * HEATMAP_SIZE);
 
-	if ( vtile(x,y) ) { r = heatmap_add(hm,x,y,2); if (r != 0) return 1; }
+    if ( vtile(x,y) ) { r = heatmap_add(hm,x,y,2); if (r != 0) return 1; }
 
-	for (int i=0; i < HEATMAP_SIZE; i++) {
+    for (int i=0; i < HEATMAP_SIZE; i++) {
 
-		if (hm[i] == 2) {
+	if (hm[i] == 2) {
 
-			uint8_t y = (i / MAP_WIDTH);
-			uint8_t x = (i % MAP_WIDTH);
+	    uint8_t y = (i / MAP_WIDTH);
+	    uint8_t x = (i % MAP_WIDTH);
 
-			hm[i] = 1;
+	    hm[i] = 1;
 
-			r = spread_heatmap(map,x,y,hm); if (r != 0) return 1;
+	    r = spread_heatmap(map,x,y,hm); if (r != 0) return 1;
 
-		}
 	}
+    }
 
-	for (int i=0; i < HEATMAP_SIZE; i++) {
-		if ( hm[i] && (map->aidata.e_viewarr[i] >= 3) ) hm[i] = 0;
-	}	
-	
-	return 0;
+    for (int i=0; i < HEATMAP_SIZE; i++) {
+	if ( hm[i] && (map->aidata.e_viewarr[i] >= 3) ) hm[i] = 0;
+    }	
+
+    return 0;
 }
 
 // -- end of heatmap functions

@@ -70,10 +70,10 @@ chtype entchar(struct t_map_entity* e) {
 }
 
 int update_player_map(struct t_map* map, struct t_map_entity* player, int hl_player) {
-    return draw_map(map,player,1,dbgmode ? 1 : 0, dbgmode ? 1 : 0, hl_player);
+    return draw_map(map,player,1,dbgmode ? 0 : 1,dbgmode ? 1 : 0, 0, hl_player);
 }
 
-int draw_map(struct t_map* map, struct t_map_entity* persp, bool show_fov, bool show_targets, bool show_heatmaps, bool hl_persp) {
+int draw_map(struct t_map* map, struct t_map_entity* persp, bool show_vis, bool show_fov, bool show_targets, bool show_heatmaps, bool hl_persp) {
 
     int cs = curs_set(0);
     int x,y;
@@ -89,6 +89,7 @@ int draw_map(struct t_map* map, struct t_map_entity* persp, bool show_fov, bool 
 	    int tilevis = 1;
 
 	    tilevis = map->aidata.p_viewarr[iy * MAP_WIDTH + ix];
+	    if (!show_vis && (tilevis<1)) tilevis = 1;
 
 	    chtype tileflags = 0;
 

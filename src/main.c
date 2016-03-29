@@ -76,6 +76,7 @@ int main(int argc, char** argv) {
 
     struct t_creature player1;
     creature_init(&player1, &type_rules[ET_POLITICALACTIVIST]);   
+    creature_liberalize(&player1);
 
     squad1.squad[0] = &player1;
     //activesquad = &squad1;

@@ -195,9 +195,7 @@ uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
 	struct plotflags view = {.persp = me, .eightdir = true};
 
 	memset(me->aidata->ent_target_arr,255,sizeof(uint16_t) * MAP_WIDTH * MAP_HEIGHT);
-	me->aidata->ent_target_arr[dy * MAP_WIDTH + dx] = 0;
-
-	plot_dijkstra_map(map,NULL,me->aidata->ent_target_arr,0,&view); me->aidata->path_plotted = 1; }
+	plot_path(map,NULL,me->x, me->y, dx, dy, me->aidata->ent_target_arr,0,&view); me->aidata->path_plotted = 1; }
 
     switch(me->aidata->task) {
 
