@@ -22,6 +22,7 @@ add_executable (ltest
 		src/item.c
 		src/item_ui.c
 		src/location.c
+		src/log.c
 		src/main.c
 		src/map_actions.c
 		src/map_ai.c

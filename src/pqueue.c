@@ -2,6 +2,7 @@
 
 #include "pqueue.h"
 #include <malloc.h>
+#include <assert.h>
 #include <string.h>
 
 // this is a minheap binary tree.
@@ -44,7 +45,7 @@ else ub = mid;
     return lb;
 }
 
-/*int _pq_find_empty (struct pqueue_t* pq) {
+/*int _pq_find_empty (struct pqueue_t* pq) { //old algorithm
 
     for (int i=1; i < (pq->elcnt); i++) {
 	if (!(pq->elements[i].value)) return i;
@@ -109,7 +110,7 @@ void* pq_pop (struct pqueue_t* pq, unsigned int* o_priority) {
 
 int _pq_up_heap (struct pqueue_t* pq, int index) {
    
-    if (index == 0) return 1; //shouldn't happen!
+    if (index == 0) return 1 ;//shouldn't happen!
     if (index == 1) return 0; //already done.
     int p_ind = PARENT(index);
 
@@ -130,6 +131,9 @@ int _pq_expand (struct pqueue_t* pq) {
 
     memset (pq->elements + oldelcnt, 0, sizeof(struct pqel_t) * oldelcnt); //fill with zeroes 
     pq->elcnt = newelcnt;
+    
+    lprintf("PQ @ %p expanded to %d elements.\n",pq,newelcnt);
+
     return 0;
 
 }
@@ -141,7 +145,7 @@ int _pq_find_or_expand (struct pqueue_t* pq) {
 
     if (r >= 0) return r;
 
-    return (_pq_expand(pq) == 0) ? ((pq->elcnt) / 2) : -1;
+    return (_pq_expand(pq) == 0) ? ((pq->elcnt) / 2) : 0;
 }
 
 
@@ -163,6 +167,7 @@ int pq_size (struct pqueue_t* pq) {
 
 int pq_push (struct pqueue_t* pq, void* data, unsigned int priority) {
 
+    assert(data);
     int same = _pq_find_value(pq, data);
 
     if (same != -1) {

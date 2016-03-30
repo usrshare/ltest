@@ -70,7 +70,7 @@ chtype entchar(struct t_map_entity* e) {
 }
 
 int update_player_map(struct t_map* map, struct t_map_entity* player, int hl_player) {
-    return draw_map(map,player,1,dbgmode ? 0 : 1,dbgmode ? 1 : 0, 0, hl_player);
+    return draw_map(map,player,1,dbgmode ? 0 : 1,dbgmode ? 1 : 0, dbgmode ? 1 :0, hl_player);
 }
 
 int draw_map(struct t_map* map, struct t_map_entity* persp, bool show_vis, bool show_fov, bool show_targets, bool show_heatmaps, bool hl_persp) {
@@ -101,8 +101,16 @@ int draw_map(struct t_map* map, struct t_map_entity* persp, bool show_vis, bool 
 		default: break;
 	    }
 
-	    if (tilevis) mvwaddch(mapwindow,iy,ix, tileflags | tilech );
+	    if (tilevis) mvwaddch(mapwindow,iy,ix, tileflags | tilech ); else if (dbgmode) mvwaddch (mapwindow,iy,ix,' ');
 
+	}
+    }
+    
+    if (show_heatmaps) {
+	for (int yx=0; yx < HEATMAP_SIZE; yx++) {
+	    uint8_t y = yx / MAP_WIDTH; uint8_t x = yx % MAP_WIDTH;
+	    uint8_t m = map->aidata.e_hm[yx];
+	    if (m) mvwaddch(mapwindow,y,x,'&' | ( (m > 2) ? CP_RED : ((m == 2) ? CP_GREEN : CP_YELLOW) ) ) ;
 	}
     }
 
@@ -130,22 +138,31 @@ int draw_map(struct t_map* map, struct t_map_entity* persp, bool show_vis, bool 
 		    chtype t = mvwinch(mapwindow,vy,vx);
 		    // we strip the original character of all previous attributes,
 		    // except the "alternate charset" one.
-		    mvwaddch(mapwindow,vy,vx,(t & (A_ALTCHARSET | A_CHARTEXT)) | CP_CYAN);
+		    
+		    chtype fcol = 0;
+
+		    switch(map->ent[i].aidata->task) {
+			case AIT_WORKING: fcol = CP_BLUE; break;
+			case AIT_PATROLLING: fcol = CP_CYAN; break;
+			case AIT_CHECKING_OUT:
+			case AIT_LOOKING_FOR: fcol = CP_YELLOW; break;
+			case AIT_PLEASE_LEAVE:
+			case AIT_PURSUING:
+			case AIT_ATTACKING: fcol = CP_RED; break;
+			case AIT_FLEEING: fcol = CP_MAGENTA; break;
+			default: fcol = CP_GREEN; break;
+
+
+		    }	
+
+		    mvwaddch(mapwindow,vy,vx,(t & (A_ALTCHARSET | A_CHARTEXT)) | fcol);
 		}
 	    }
 
-	    if (show_heatmaps) {
-		for (int yx=0; yx < HEATMAP_SIZE; yx++) {
-		    uint8_t y = yx / MAP_WIDTH; uint8_t x = yx % MAP_WIDTH;
-		    uint8_t m = map->aidata.e_hm[yx];
-		    if (!m) continue;
-		    mvwaddch(mapwindow,y,x,'&' | ((m == 2) ? CP_GREEN : CP_YELLOW));
-		}
-	    }
 
 	}
     }
-
+    
     for (int i= (MAX_ENTITIES - 1); i >= 0; i--) {
 
 	if (map->ent[i].type == ET_NONE) continue;
@@ -173,7 +190,7 @@ int mapgetch() {
     getsyx(y,x);
 
     int cy,cx;
-    
+
     getyx(msgwindow,cy,cx);
     int m = wmove(msgwindow,0,COLS-1);
     if (m == ERR) beep();
@@ -189,13 +206,13 @@ int mapgetch() {
 int askgetch(bool nocr) {
 
     morecount = 0;
-	
+
     echo();
     int c = wgetch(msgwindow);
     noecho();
-    
+
     if (!nocr) waddstr(msgwindow,"\n");
-     
+
     return c;
 }
 int nc_beep(void) {
@@ -283,25 +300,25 @@ int msgaddstr(const char *string) {
     int lines=0;
     while (thisline != NULL) {
 
-    if (morecount >= LINES-24) {
-	int cy,cx;
-	getyx(msgwindow,cy,cx);
-	wmove(msgwindow,0,COLS-4);
-	wattron(msgwindow,A_REVERSE);
-	waddstr(msgwindow,">>");
-	wattroff(msgwindow,A_REVERSE);
-	wmove(msgwindow,0,COLS-1);
-	wrefresh(msgwindow);
-	askgetch(false);
-	wmove(msgwindow,cy,cx);
-	morecount = 0;
-    }
+	if (morecount >= LINES-24) {
+	    int cy,cx;
+	    getyx(msgwindow,cy,cx);
+	    wmove(msgwindow,0,COLS-4);
+	    wattron(msgwindow,A_REVERSE);
+	    waddstr(msgwindow,">>");
+	    wattroff(msgwindow,A_REVERSE);
+	    wmove(msgwindow,0,COLS-1);
+	    wrefresh(msgwindow);
+	    askgetch(false);
+	    wmove(msgwindow,cy,cx);
+	    morecount = 0;
+	}
 
-    //wclear(msgwindow);
-    waddstr(msgwindow,thisline);
+	//wclear(msgwindow);
+	waddstr(msgwindow,thisline);
 
-    thisline = strtok(NULL,"\n");
-    morecount++;
+	thisline = strtok(NULL,"\n");
+	morecount++;
     }
     if (hascr) {
 	if (LINES > 25) waddstr(msgwindow,"\n"); else wmove(msgwindow,0,0); }

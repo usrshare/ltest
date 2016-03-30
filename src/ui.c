@@ -1,3 +1,4 @@
+// vim: cin:sts=4:sw=4 
 #include "ui.h"
 #include "globals.h"
 
@@ -51,13 +52,13 @@ int g_attrset(int attrs) {
 	return 1;
 }
 
+
 char teststr[12];
 
 int ms_sleep(int ms) {
 
 	return usleep(ms * 1000);
 }
-
 
 const char* tostring(int num) {
 	snprintf(teststr,12,"%d",num);

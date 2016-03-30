@@ -124,6 +124,8 @@ int plot_path(struct t_map* map, uint8_t sx, uint8_t sy, uint8_t dx, uint8_t dy,
 
     const struct plotflags* pf = (_pf ? _pf : &plot_default);
 
+    o_patharr[dy * MAP_WIDTH + dx] = 0;
+
     struct pqueue_t* pq = pq_create();
 
     pq_push(pq, (void*)(dy * MAP_WIDTH + dx + 1),0); // create a queue, set the source area to zero.

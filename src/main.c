@@ -67,6 +67,8 @@ int main(int argc, char** argv) {
     init_memory();
     init_pairs();
 
+    log_init();
+
     struct t_squad squad1;
 
     memset(&squad1,0,sizeof squad1);
