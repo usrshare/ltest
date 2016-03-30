@@ -80,7 +80,6 @@ struct t_ent_ai_data {
     int path_plotted;
 
     uint8_t dx, dy;
-    uint8_t lx, ly; //last x and y
 
     uint8_t alert_state;
     uint8_t alertmsg_state;

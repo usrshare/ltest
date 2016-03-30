@@ -24,6 +24,7 @@ struct t_ent_ai_data aient[MAX_AI_ENTITIES];
 void map_ai_init (struct t_map* map) {
 
     heatmap_reset(map->aidata.e_hm);
+    heatmap_clear_solid(map,map->aidata.e_hm);
 }
 
 enum movedirections face_square (uint8_t sx, uint8_t sy, uint8_t dx, uint8_t dy) {
@@ -120,8 +121,8 @@ uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
 		me->aidata->alert_state = 5; me->aidata->task = AIT_CHECKING_OUT; // "?"
 		me->aidata->target = curent;
 
-		me->aidata->dx = me->aidata->lx = dx =curent->x; 
-		me->aidata->dy = me->aidata->ly = dy =curent->y; 
+		me->aidata->dx = dx = curent->x; 
+		me->aidata->dy = dy = curent->y; 
 		me->aidata->path_plotted = 0;
 
 		if (map->sitealarm == 0) {
@@ -134,21 +135,18 @@ uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
 	}
 
 	if (me->aidata->task == AIT_PATROLLING) {
-	    update_heatmap(map,map->aidata.e_hm,me->aidata->lx,me->aidata->ly);
-	    me->aidata->lx = 255; me->aidata->ly = 255;
 
-	    find_closest_on_heatmap(me->x,me->y,map->aidata.e_hm,&dx,&dy);
+	    find_closest_on_hm_with_path(map,me->x,me->y,map->aidata.e_hm,map->aidata.e_viewarr,&dx,&dy);
 	    if ((dx != me->aidata->dx) || (dy != me->aidata->dy)) {
-		me->aidata->dy = dy;
-		me->aidata->dx = dx;
+		me->aidata->dy = dy; me->aidata->dx = dx;
 		me->aidata->path_plotted = 0;}
 	} 
 
     } else {
 
+	// there is a target.
 
 	if (can_see_entity(map,me,me->aidata->target)) {
-
 
 	    // we don't need a heatmap if we can see the entity.
 	    if (map->sitealarm) {
@@ -164,14 +162,7 @@ uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
 		me->aidata->path_plotted = 0;
 	    }
 
-	    me->aidata->ly = dy;
-	    me->aidata->lx = dx;
-
-
 	} else {
-
-	    update_heatmap(map,map->aidata.e_hm,me->aidata->lx,me->aidata->ly);
-	    me->aidata->lx = 255; me->aidata->ly = 255;
 
 	    find_closest_on_heatmap(me->x,me->y,map->aidata.e_hm,&dx,&dy);
 	    if ((dx != me->aidata->dx) || (dy != me->aidata->dy)) {
@@ -187,7 +178,6 @@ uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
 
 	}
 
-	// there is a target.
     }
 
     if ( (me->aidata->path_plotted == 0) && (vtile(dx,dy)) )
@@ -195,7 +185,7 @@ uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
 	struct plotflags view = {.persp = me, .eightdir = true};
 
 	memset(me->aidata->ent_target_arr,255,sizeof(uint16_t) * MAP_WIDTH * MAP_HEIGHT);
-	plot_path(map,NULL,me->x, me->y, dx, dy, me->aidata->ent_target_arr,0,&view); me->aidata->path_plotted = 1; }
+	plot_path(map,me->x, me->y, dx, dy, NULL, me->aidata->ent_target_arr,0,&view); me->aidata->path_plotted = 1; }
 
     switch(me->aidata->task) {
 
@@ -252,13 +242,15 @@ uint16_t enemy_actFunc(struct t_map* map, struct t_map_entity* me) {
 	    break;
 
 	case AIT_PATROLLING:
-			    
-	    md = roll_downhill(me->aidata->ent_target_arr,me->x,me->y);
-	    if (md < MD_COUNT) r = trymove(map,me,movediff[md][0],movediff[md][1]); else r = 4;
-
+			
+	    if (me->aidata->path_plotted) {  
 	    if (can_see(map,me,dy,dx)) {
 	    md = face_square(me->x,me->y,dx,dy);
 	    if (md < MD_COUNT) { me->aidata->viewdir = md; r++; } }
+	    md = roll_downhill(me->aidata->ent_target_arr,me->x,me->y);
+	    if (md < MD_COUNT) r = trymove(map,me,movediff[md][0],movediff[md][1]); else r = 4;
+
+	    }
 				    
 	    break;
 
@@ -506,7 +498,7 @@ uint16_t player_actFunc(struct t_map* map, struct t_map_entity* me) {
 		  r = 1;
     }
 
-    do_fov(map,me,25,FA_FULL,map->aidata.e_viewarr,NULL,NULL);	
+    do_fov(map,me,25,FA_FULL,map->aidata.p_viewarr,NULL,NULL);	
     update_player_map(map, me,0);
 
     char printed;	
@@ -516,6 +508,8 @@ uint16_t player_actFunc(struct t_map* map, struct t_map_entity* me) {
 }
 
 int static_plot(struct t_map* map) {
+	    
+    update_heatmap(map,map->aidata.e_hm,255,255);
 
     if (map->aidata.targets_moved ) {
     struct plotflags pf = {.eightdir = 1, .no_clear_patharr = 1};
