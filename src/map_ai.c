@@ -13,6 +13,7 @@
 
 #include "stealth.h"
 
+#include <assert.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -113,11 +114,11 @@ uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
 	for (int i=0; i < entities_sz; i++) {
 
 	    struct t_map_entity* curent = visible_ent[i]; //let's check visible entities.
-	    if (curent == NULL) continue; //this shouldn't really happen, but fine.
+	    assert (curent); 
 
 	    if (is_enemy(me,curent) && (me->aidata->timer == 0)) {
 
-		if ((me->aidata->timer > 0) || (disguisecheck(map, curent->ent, me->ent, map->sitealarmtimer, (map->sq[(curent->y) * MAP_WIDTH + (curent->x)].type == TT_RESTRICTED_SPACE)) == 0)) { me->aidata->timer = 32; continue; }
+		if (disguisecheck(map, curent->ent, me->ent, map->sitealarmtimer, (map->sq[(curent->y) * MAP_WIDTH + (curent->x)].type == TT_RESTRICTED_SPACE)) == 0) { me->aidata->timer = 32; continue; }
 		me->aidata->alert_state = 5; me->aidata->task = AIT_CHECKING_OUT; // "?"
 		me->aidata->target = curent;
 
@@ -133,14 +134,6 @@ uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
 		}
 	    }
 	}
-
-	if (me->aidata->task == AIT_PATROLLING) {
-
-	    find_closest_on_hm_with_path(map,me->x,me->y,map->aidata.e_hm,map->aidata.e_viewarr,&dx,&dy);
-	    if ((dx != me->aidata->dx) || (dy != me->aidata->dy)) {
-		me->aidata->dy = dy; me->aidata->dx = dx;
-		me->aidata->path_plotted = 0;}
-	} 
 
     } else {
 
@@ -193,6 +186,11 @@ uint16_t enemy_turnFunc(struct t_map* map, struct t_map_entity* me) {
 	    break;
 
 	case AIT_PATROLLING:
+	    
+	    find_closest_on_hm_with_path(map,me->x,me->y,map->aidata.e_hm,map->aidata.e_viewarr,&dx,&dy);
+	    if ((dx != me->aidata->dx) || (dy != me->aidata->dy)) {
+		me->aidata->dy = dy; me->aidata->dx = dx;
+		me->aidata->path_plotted = 0;}
 	    break;
 
 	case AIT_PLEASE_LEAVE:

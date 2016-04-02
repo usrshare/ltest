@@ -122,8 +122,12 @@ struct t_map_entity* find_entity_ind(struct t_map* map, uint8_t x, uint8_t y, in
 }
 
 struct t_map_entity* find_entity(struct t_map* map, uint8_t x, uint8_t y) {
-
-    return find_entity_ind(map,x,y,0);
+    
+    for (int i=0; i < MAX_ENTITIES; i++) {
+	struct t_map_entity* e = &map->ent[i];
+	if ((e->x == x) && (e->y == y)) return e; 
+    }
+    return NULL;
 }
 
 bool can_attack(struct t_map* map, struct t_map_entity* a, struct t_map_entity* t, bool no_ranged, bool no_melee) {
@@ -341,7 +345,7 @@ int mapmode(struct t_squad* activesquad) {
     int loop = 1;
     map1.time = 0;
     do {
-	updheader(&map1);
+	//updheader(&map1);
 	update_status(&map1);
 	update_ui(&map1);
 
