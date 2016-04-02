@@ -1,6 +1,7 @@
 // vim: cin:sts=4:sw=4 
 
 #include "pqueue.h"
+#include "log.h"
 #include <malloc.h>
 #include <assert.h>
 #include <string.h>
@@ -34,12 +35,35 @@ int _pq_find_empty (struct pqueue_t* pq) {
 
     while (lb != ub) {
 
-    unsigned int mid = (lb + ub) / 2;
+	unsigned int mid = (lb + ub) / 2;
 
-    if (pq->elements[mid].value) lb = mid+1;
-else ub = mid;
-    
-    if (lb >= (pq->elcnt)) return -1;
+	if (pq->elements[mid].value) lb = mid+1;
+	else ub = mid;
+
+	if (lb >= (pq->elcnt)) return -1;
+    }
+
+    return lb;
+}
+
+int _pq_find_last (struct pqueue_t* pq) { //find the last non-empty element.
+
+    //this function returns either the index of the last non-empty element
+    // (which would also be the size of a proper binary heap), or
+    // zero in case all the elements are zero.
+
+    unsigned int lb = 0;
+    unsigned int ub = (pq->elcnt - 1);
+
+    while (lb != ub) {
+
+	unsigned int mid = (lb + ub + 1) / 2;
+
+	if (pq->elements[mid].value) lb = mid;
+	else ub = mid-1;
+
+	if (lb >= (pq->elcnt)) return 0;
+	if (ub == 0) return 0;
     }
 
     return lb;
@@ -47,12 +71,12 @@ else ub = mid;
 
 /*int _pq_find_empty (struct pqueue_t* pq) { //old algorithm
 
-    for (int i=1; i < (pq->elcnt); i++) {
-	if (!(pq->elements[i].value)) return i;
-    }
+  for (int i=1; i < (pq->elcnt); i++) {
+  if (!(pq->elements[i].value)) return i;
+  }
 
-    return -1;
-}*/
+  return -1;
+  }*/
 
 int _pq_swap (struct pqel_t* p1, struct pqel_t* p2) {
 
@@ -65,19 +89,19 @@ int _pq_swap (struct pqel_t* p1, struct pqel_t* p2) {
 }
 
 int _pq_down_heap (struct pqueue_t* pq, int index) {
-    
+
     int swap_index = -1;
     unsigned int swap_prio = pq->elements[index].priority;
 
     if ((pq->elements[LCHILD(index)].value) &&
-	(pq->elements[LCHILD(index)].priority < swap_prio)) {
+	    (pq->elements[LCHILD(index)].priority < swap_prio)) {
 
 	swap_index = LCHILD(index); swap_prio = pq->elements[LCHILD(index)].priority;
 
     }
-    
+
     if ((pq->elements[RCHILD(index)].value) &&
-	(pq->elements[RCHILD(index)].priority < swap_prio)) {
+	    (pq->elements[RCHILD(index)].priority < swap_prio)) {
 
 	swap_index = RCHILD(index); swap_prio = pq->elements[RCHILD(index)].priority;
 
@@ -88,7 +112,7 @@ int _pq_down_heap (struct pqueue_t* pq, int index) {
 	_pq_swap(&pq->elements[index], &pq->elements[swap_index]);
 	return _pq_down_heap(pq, swap_index);
     }
-    
+
     return 0;
 }
 
@@ -97,9 +121,11 @@ void* pq_pop (struct pqueue_t* pq, unsigned int* o_priority) {
     unsigned int r_prio = pq->elements[1].priority;
     void* r_val = pq->elements[1].value;
 
-    int index = _pq_find_empty(pq);
+    int index = _pq_find_last(pq);
 
-    memcpy( &pq->elements[1], &pq->elements[index], sizeof( struct pqel_t)); //replace root
+    if (index == 0) return NULL; //empty
+
+    if (index > 1) memcpy( &pq->elements[1], &pq->elements[index], sizeof( struct pqel_t)); //replace root
     memset( &pq->elements[index], 0, sizeof(struct pqel_t)); //zero old element
 
     _pq_down_heap(pq, 1);
@@ -109,7 +135,7 @@ void* pq_pop (struct pqueue_t* pq, unsigned int* o_priority) {
 }
 
 int _pq_up_heap (struct pqueue_t* pq, int index) {
-   
+
     if (index == 0) return 1 ;//shouldn't happen!
     if (index == 1) return 0; //already done.
     int p_ind = PARENT(index);
@@ -131,7 +157,7 @@ int _pq_expand (struct pqueue_t* pq) {
 
     memset (pq->elements + oldelcnt, 0, sizeof(struct pqel_t) * oldelcnt); //fill with zeroes 
     pq->elcnt = newelcnt;
-    
+
     lprintf("PQ @ %p expanded to %d elements.\n",pq,newelcnt);
 
     return 0;
@@ -160,10 +186,8 @@ int _pq_find_value (struct pqueue_t* pq, void* value) {
 
 int pq_size (struct pqueue_t* pq) {
 
-    int r = _pq_find_empty(pq);
-    return (r >= 0) ? r : (int)(pq->elcnt);
+    return _pq_find_last(pq);
 }
-
 
 int pq_push (struct pqueue_t* pq, void* data, unsigned int priority) {
 
@@ -171,10 +195,10 @@ int pq_push (struct pqueue_t* pq, void* data, unsigned int priority) {
     int same = _pq_find_value(pq, data);
 
     if (same != -1) {
-    
+
 	unsigned int oldpri = pq->elements[same].priority;
-	
-        //change the old element's priority to a new value.
+
+	//change the old element's priority to a new value.
 	pq->elements[same].priority = priority;
 
 	if (oldpri < priority) _pq_up_heap(pq, same); else

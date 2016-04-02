@@ -8,6 +8,7 @@
 #include <string.h>
 
 #include "cpairs.h"
+#include "log.h"
 #include "mapmode.h"
 #include "globals.h"
 #include "entity_types.h"
@@ -59,6 +60,15 @@ int main(int argc, char** argv) {
     initscr();	
     cbreak();
     noecho();
+
+    if ((COLS < 80) || (LINES < 24)) {
+
+	endwin();
+	
+	printf("%s can't run on a screen smaller than 80x24.\n",argv[0]);
+
+	return 1;
+    }
 
     refresh();
 

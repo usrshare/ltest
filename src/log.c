@@ -1,6 +1,9 @@
 // vim: cin:sts=4:sw=4 
 // vim: cin:sts=4:sw=4 
 #include "log.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdarg.h>
 
 FILE* logfile = NULL;
 
@@ -17,6 +20,8 @@ int log_init(void) {
 	if (!logfile) return 1;
 
 	fprintf(logfile, "--------\nltest started.\n");
+
+	fflush(logfile);
 
 	atexit(log_atexit);
 	return 0;

@@ -1,10 +1,11 @@
 // vim: cin:sts=4:sw=4 
 #ifndef GLOBALS_H
 #define GLOBALS_H
+#include <stdbool.h>
 
 #define gamelog NULL //TODO actual gamelog
 
-extern int dbgmode;
+extern bool dbgmode;
 
 /// temp vars
 
