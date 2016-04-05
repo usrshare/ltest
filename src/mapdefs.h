@@ -122,6 +122,8 @@ enum movedirections {
 
 extern int movediff[MD_COUNT][2];
 
+#define MD_DIAGONAL(x) ((x) % 2)
+
 #define MOVE(x) (movediff[MD_##x][0]),(movediff[MD_##x][1])
 
 struct t_map;

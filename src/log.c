@@ -33,6 +33,7 @@ int vlprintf(const char *fmt, va_list ap) {
 
 	if (!logfile) return -1;
     int r = vfprintf(logfile,fmt,ap);
+    fflush(logfile);
     return r;
 }
 
