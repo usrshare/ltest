@@ -32,6 +32,7 @@ int main(int argc, char** argv) {
     int opt = -1;
 
     dbgmode = 0;
+    unichar = 0;
 
     while ((opt = getopt(argc, argv, "duv")) != -1) {
 	switch (opt) {

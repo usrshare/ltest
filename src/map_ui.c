@@ -251,7 +251,7 @@ int msgaddstr(const char *string) {
     int lines=0;
     while (thisline != NULL) {
 
-	if (morecount >= LINES-23) {
+	if (morecount > LINES-23) {
 	    int cy,cx;
 	    getyx(msgwindow,cy,cx);
 	    wmove(msgwindow,0,COLS-4);
@@ -265,14 +265,14 @@ int msgaddstr(const char *string) {
 	    morecount = 0;
 	}
 
-	//wclear(msgwindow);
+	wscrl(msgwindow,1);
 	waddstr(msgwindow,thisline);
 
 	thisline = strtok(NULL,"\n");
 	morecount++;
     }
     if (hascr) {
-	if (LINES > 25) waddstr(msgwindow,"\n"); else wmove(msgwindow,0,0); }
+	if (LINES > 24) waddstr(msgwindow,"\n"); else wmove(msgwindow,0,0); }
     free(dblstr);
     return 0;
 }
@@ -522,7 +522,6 @@ int map_ui_init(struct t_map* map) {
 
     msgwindow = subwin(topwindow,LINES-23,COLS,0,0);
     if (msgwindow == 0) return 1;
-    //scrollok(msgwindow,1);
 
     statwindow = subwin(topwindow,3,COLS,LINES-23,0);
     if (statwindow == 0) return 1;

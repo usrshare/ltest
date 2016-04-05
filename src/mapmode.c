@@ -37,7 +37,7 @@ enum terrainflags tflags[TT_ELEMENT_COUNT] = {
     TF_SOLID | TF_BLOCKS_VISION | TF_BLOCKS_SOUND | TF_BLOCKS_ATTACKS | TF_NOSPAWN, //unknown
 };
 
-int movediff[MD_COUNT][2] = {
+int movediff[MD_COUNT][2] = { //first X, then Y
     {0,-1},
     {1,-1},
     {1,0},

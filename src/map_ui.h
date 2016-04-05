@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <stdarg.h>
 #include <unistd.h>
+#include "ui.h"
 #include "mapdefs.h"
 
 int update_player_map(struct t_map* map, struct t_map_entity* player, int hl_player);
