@@ -21,9 +21,12 @@ int morecount = 0;
 chtype mapchar[TT_ELEMENT_COUNT] = {
 	'.',',','.','.',
 	':','~','#','~',
-	'+','-','#','t',
+	'+','-','/','t',
 	'\\','!','>','?'
 };
+
+//this array can't contain ACS characters, because they're not defined as constant.
+//the ACS characters are instead assigned in map_ui_init(); 
 
 chtype entchar(struct t_map_entity* e) {
 
@@ -248,7 +251,7 @@ int msgaddstr(const char *string) {
     int lines=0;
     while (thisline != NULL) {
 
-	if (morecount >= LINES-24) {
+	if (morecount >= LINES-23) {
 	    int cy,cx;
 	    getyx(msgwindow,cy,cx);
 	    wmove(msgwindow,0,COLS-4);
@@ -373,14 +376,16 @@ enum movedirections askdir() {
 
 int askpos(uint8_t* y, uint8_t* x) {
 
-    msgprintw("Choose a location. [yuhjklbn] Move [.] Confirm [,] Cancel");
+    int ny = *y, nx = *x;
+    
     wrefresh(msgwindow);
 
-    int ny = *y, nx = *x;
     int go_on = 1;
     int res = 0;
 
     while (go_on) {
+    
+	msgprintw("(%2d,%2d) Choose a location. [yuhjklbn] Move [.] Confirm [,] Cancel",nx,ny);
 
 	wmove(mapwindow,ny,nx);
 	int c = wgetch(mapwindow);
@@ -439,16 +444,6 @@ int init_status (struct t_map* map) {
     int y = 0,x = 0;
     setsyx(y,x);
 
-    wmove(statwindow,0,0);
-    for (int i=0; i < COLS; i++)
-	if ((i > 79) || (i % 13)) waddch(statwindow,ACS_HLINE); else waddch(statwindow,ACS_TTEE);
-    wmove(statwindow,1,0);
-    for (int i=0; i < 79; i+= 13) {
-	mvwaddch(statwindow,1,i,ACS_VLINE); }
-    wmove(statwindow,2,0);
-    for (int i=0; i < COLS; i++)
-	if ((i > 79) || (i % 13)) waddch(statwindow,ACS_HLINE); else waddch(statwindow,ACS_BTEE);
-
     getsyx(y,x);
 
     return 0;
@@ -486,18 +481,18 @@ int update_status (struct t_map* map) {
 
 	    int nl = strlen(e_name);
 
-	    mvwprintw(statwindow,0, pi*13 + 1, " %s ",e_name);
+	    mvwprintw(statwindow,0, pi*13 + 1, " %.10s ",e_name);
 
 	    const char* e_weapon = w_type(e->ent->weapon)->shortname;
 	    nl = strlen(e_weapon);
-	    mvwprintw(statwindow,1, pi*13 + 13 - nl, "%s",e_weapon);
+	    mvwprintw(statwindow,1, pi*13 + 13 - nl, "%.10s",e_weapon);
 
 	    int statattr;
 	    char* e_stat = gethealthstat(e->ent, 1, &statattr);
 	    nl = strlen(e_stat);
 
 	    wattron(statwindow,statattr);
-	    mvwprintw(statwindow,2, pi*13 + 13 - nl, "%s",e_stat);
+	    mvwprintw(statwindow,2, pi*13 + 13 - nl, "%.10s",e_stat);
 	    wattroff(statwindow,statattr);
 
 	    pi++;

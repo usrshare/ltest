@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 project(ltest)
 
-set (CMAKE_C_FLAGS "-std=c99 -Wall -Wextra -D_POSIX_C_SOURCE=2 -Wno-override-init ${CMAKE_C_FLAGS}")
+set (CMAKE_C_FLAGS "-std=c99 -Wall -Wextra -D_POSIX_C_SOURCE=200809L -Wno-override-init ${CMAKE_C_FLAGS}")
 
 set_source_files_properties(tags PROPERTIES GENERATED true)
 
