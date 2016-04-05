@@ -33,12 +33,15 @@ int main(int argc, char** argv) {
 
     dbgmode = 0;
 
-    while ((opt = getopt(argc, argv, "dv")) != -1) {
+    while ((opt = getopt(argc, argv, "duv")) != -1) {
 	switch (opt) {
 	    case 'd':
 		dbgmode = 1;
 		printf("Press ENTER to start (feel free to attach a debugger to this process at this moment).\n");
 		getc(stdin);
+		break;
+	    case 'u':
+		unichar = 1;
 		break;
 	    case 'v':
 		printf("insert version info here\n");
@@ -46,9 +49,10 @@ int main(int argc, char** argv) {
 		break;
 	    case '?':
 	    default: /* '?' */
-		fprintf(stderr, "Usage: %s [-d] [-v]\n"
+		fprintf(stderr, "Usage: %s [-d] [-u] [-v]\n"
 			"\n"
 			" -d : Debug mode.\n"
+			" -u : Use Unicode characters.\n"
 			" -v : Version info.\n"
 			"\n"
 			,argv[0]);

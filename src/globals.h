@@ -6,6 +6,7 @@
 #define gamelog NULL //TODO actual gamelog
 
 extern bool dbgmode;
+extern bool unichar;
 
 /// temp vars
 

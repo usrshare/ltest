@@ -5,7 +5,7 @@
 #include "map_ui.h"
 
 #include <stdarg.h>
-#include <unistd.h>
+#include <time.h>
 
 int g_addstr (const char* str, void* log) {
 
@@ -57,7 +57,10 @@ char teststr[12];
 
 int ms_sleep(int ms) {
 
-	return usleep(ms * 1000);
+	struct timespec ts;
+	ts.tv_sec = 0; ts.tv_nsec = (ms * 100000);
+
+	return nanosleep(&ts,NULL);
 }
 
 const char* tostring(int num) {

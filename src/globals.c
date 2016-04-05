@@ -2,6 +2,7 @@
 #include "globals.h"
 
 bool dbgmode;
+bool unichar;
 
 // temporary variables.
 
