@@ -177,4 +177,8 @@ const char* wt_get_name_sub(const struct t_weapon_type* wt, unsigned subtype);
 
 int new_weapon(enum weapon_types type,struct t_item* o_item, int ammo);
 const char* hit_punctuation(const struct t_attackst* attack);
+
+struct t_creature; //forward declaration?
+
+int give_weapon(struct t_creature* cr, struct t_item weapon);
 #endif

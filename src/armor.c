@@ -104,6 +104,10 @@ enum armortype a_type_id(struct t_item* armor) {
 	return armor->itemtypeid;
 }
 
+const char* get_armor_name (struct t_item* a) {
+	return a_type(a)->name;
+}
+
 int armor_get_quality(struct t_item* armor) {
 	return (armor ? armor->a_flags & AD_QUALITY : 0);
 }

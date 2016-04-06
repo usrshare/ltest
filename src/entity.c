@@ -16,8 +16,7 @@
 
 uint32_t curcreatureid = 0;
 
-struct t_squad* activesquad;
-struct t_creature* encounter[ENCMAX];
+//struct t_creature* encounter[ENCMAX];
 
 struct t_creature* pool[POOLSIZE];
 
@@ -299,7 +298,7 @@ int temp_name_i = 0;
 const char* describe_entity_static(struct t_creature* me) {
     int r = describe_entity(me,temp_name[temp_name_i],128);
     const char* ret = (r == 0 ? temp_name[temp_name_i] : NULL);
-    temp_name_i = (temp_name_i+1 % 16);
+    temp_name_i = (temp_name_i+1) % 16;
     return ret;
 }
 
@@ -565,7 +564,7 @@ int entity_skill_cap(struct t_creature* e, enum entity_skill skill, bool use_jui
 }
 
 void entity_train(struct t_creature* e, int trainedskill, int experience) {
-    return entity_train4(e,trainedskill,experience,MAXATTRIBUTE);
+    entity_train4(e,trainedskill,experience,MAXATTRIBUTE);
 }
 void entity_train4(struct t_creature* e, int trainedskill, int experience, int upto) {
     // Do we allow animals to gain skills? Right now, yes

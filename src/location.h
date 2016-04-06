@@ -176,6 +176,6 @@ struct t_location
 
 extern struct t_location* location[LOC_COUNT]; 
 
-int sitetype;
+extern int sitetype;
 
 #endif

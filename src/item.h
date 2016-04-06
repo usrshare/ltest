@@ -1,3 +1,4 @@
+// vim: cin:sts=4:sw=4 
 #ifndef ITEM_H
 #define ITEM_H
 

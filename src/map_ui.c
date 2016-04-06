@@ -12,32 +12,22 @@
 #include "location.h"
 
 WINDOW* topwindow;
-WINDOW* headerwindow;
 WINDOW* msgwindow;
 WINDOW* statwindow;
 WINDOW* mapwindow;
 
 int morecount = 0;
 
-chtype mapchar(struct t_square* sq) {
+chtype mapchar[TT_ELEMENT_COUNT] = {
+	'.',',','.','.',
+	':','~','#','~',
+	'+','-','/','t',
+	'\\','!','>','?'
+};
 
-    switch (sq->type) {
-	case TT_OUTSIDE: return ',';
-	case TT_SPACE: return '.';
-	case TT_RESTRICTED_SPACE: return ':';
-	case TT_SPECIAL_SPACE: return '.';
-	case TT_WALL: return ACS_CKBOARD;
-	case TT_WINDOW: return '~';
-	case TT_DOOR_CLOSED: return '+';
-	case TT_DOOR_OPEN: return '-';
-	case TT_BARS: return '#';
-	case TT_TABLE: return '-';
-	case TT_LOCKER: return '\\';
-	case TT_CUSTOM: return '!';
-	case TT_STAIRS: return '>';
-	default: return 'X';
-    }
-}
+//this array can't contain ACS characters, because they're not defined as constant.
+//the ACS characters are instead assigned in map_ui_init(); 
+
 chtype entchar(struct t_map_entity* e) {
 
     switch (e->type) {
@@ -63,11 +53,17 @@ chtype entchar(struct t_map_entity* e) {
 
 
 			 return char_color | '@'; }
+	case ET_LOOT: return CP_YELLOW | '$';
 	case ET_STATIC: return '!';
 	default: return 'X';
     }
 }
-int draw_map(struct t_map* map, struct t_map_entity* persp, bool show_fov, bool show_targets, bool show_heatmaps, bool hl_persp) {
+
+int update_player_map(struct t_map* map, struct t_map_entity* player, int hl_player) {
+    return draw_map(map,player,1,!dbgmode,dbgmode,dbgmode,hl_player);
+}
+
+int draw_map(struct t_map* map, struct t_map_entity* persp, bool show_vis, bool show_fov, bool show_targets, bool show_heatmaps, bool hl_persp) {
 
     int cs = curs_set(0);
     int x,y;
@@ -78,49 +74,33 @@ int draw_map(struct t_map* map, struct t_map_entity* persp, bool show_fov, bool 
     for (int iy=0; iy< MAP_HEIGHT; iy++) {
 	for (int ix=0; ix < MAP_WIDTH; ix++) {
 
-	    int tilech = mapchar(&map->sq[iy*(MAP_WIDTH)+ix]); 
+	    chtype tilech = mapchar[map->sq[iy*(MAP_WIDTH)+ix].type]; 
 
 	    int tilevis = 1;
 
-	    if ((persp != NULL) && (persp->aidata)) tilevis = persp->aidata->viewarr[iy * MAP_WIDTH + ix];
+	    tilevis = map->aidata.p_viewarr[iy * MAP_WIDTH + ix];
+	    if (!show_vis && (tilevis<1)) tilevis = 1;
 
 	    chtype tileflags = 0;
 
 	    switch (tilevis) {
 		case 1: tileflags = CP_BLUE; break;
-		case 2: tileflags = CP_DARKGRAY; break;
-		case 3: tileflags = CP_WHITE; break;
+		case 2: tileflags = CP_LIGHTGRAY; break;
+		case 3:
 		case 4:	tileflags = CP_WHITE; break;
 		default: break;
 	    }
 
-	    if ((show_fov) && (tilevis >= 3)) {
-		chtype fovcolor = 0;
-		if ((tflags[map->sq[iy*(MAP_WIDTH)+ix].type] & TF_BLOCKS_VISION) == 0) {
+	    if (tilevis) mvwaddch(mapwindow,iy,ix, tileflags | tilech ); else if (dbgmode) mvwaddch (mapwindow,iy,ix,' ');
 
-		    for (int i=0; i < MAX_ENTITIES; i++) {
-			if (map->ent[i].type == ET_NONE) continue;
-
-			int ex = map->ent[i].x; int ey = map->ent[i].y;
-			if ((map->ent[i].type != ET_PLAYER) && (map->ent[i].aidata) && (persp->aidata->viewarr[ey * (MAP_WIDTH) + ex] >= 3) && (map->ent[i].aidata->viewarr[iy * MAP_WIDTH + ix] >= 3) ) {
-
-			    switch (map->ent[i].aidata->task) {
-				case AIT_WORKING: fovcolor = CP_GREEN; break;
-				case AIT_PATROLLING: fovcolor = CP_CYAN; break;
-				case AIT_CHECKING_OUT:
-				case AIT_PLEASE_LEAVE: fovcolor = CP_YELLOW; break;
-				case AIT_PURSUING:
-				case AIT_ATTACKING: fovcolor = CP_RED; break;
-				case AIT_FLEEING: fovcolor = CP_PURPLE; break;
-				case AIT_LOOKING_FOR: fovcolor = CP_YELLOW; break;
-			    }
-			}
-		    } }
-		if (fovcolor) tileflags = fovcolor;
-	    }
-
-	    if (tilevis) mvwaddch(mapwindow,iy,ix, tileflags | tilech );
-
+	}
+    }
+    
+    if (show_heatmaps) {
+	for (int yx=0; yx < HEATMAP_SIZE; yx++) {
+	    uint8_t y = yx / MAP_WIDTH; uint8_t x = yx % MAP_WIDTH;
+	    uint8_t m = map->aidata.e_hm[yx];
+	    if (m) mvwaddch(mapwindow,y,x,'&' | ( (m > 2) ? CP_RED : ((m == 2) ? CP_GREEN : CP_YELLOW) ) ) ;
 	}
     }
 
@@ -136,30 +116,49 @@ int draw_map(struct t_map* map, struct t_map_entity* persp, bool show_fov, bool 
 		    mvwaddch(mapwindow,map->ent[i].aidata->dy,map->ent[i].aidata->dx,'%' | CP_PURPLE);
 	    }
 
-	    if (show_heatmaps) {
-		for (int m=0; m < HEATMAP_SIZE; m++) {
-		    uint16_t yx = map->ent[i].aidata->heatmap_old[m];
-		    if (yx == 65535) continue;
-		    uint8_t y = yx / MAP_WIDTH; uint8_t x = yx % MAP_WIDTH;
-		    mvwaddch(mapwindow,y,x,'&' | CP_YELLOW);
-		}
-		for (int m=0; m < HEATMAP_SIZE; m++) {
-		    uint16_t yx = map->ent[i].aidata->heatmap_new[m];
-		    if (yx == 65535) continue;
-		    uint8_t y = yx / MAP_WIDTH; uint8_t x = yx % MAP_WIDTH;
-		    mvwaddch(mapwindow,y,x,'&' | CP_GREEN);
+	    if (show_fov && (map->aidata.p_viewarr[map->ent[i].y * MAP_WIDTH + map->ent[i].x] >= 3)) {
+
+		// if we can see the entity, that means we can see what direction it is currently looking at.
+		// the next tile in that direction will be redrawn with a cyan color.
+
+		uint8_t vx = map->ent[i].x + movediff[map->ent[i].aidata->viewdir][0];
+		uint8_t vy = map->ent[i].y + movediff[map->ent[i].aidata->viewdir][1];
+
+		if (vtile(vx,vy)) {
+		    chtype t = mvwinch(mapwindow,vy,vx);
+		    // we strip the original character of all previous attributes,
+		    // except the "alternate charset" one.
+		    
+		    chtype fcol = 0;
+
+		    switch(map->ent[i].aidata->task) {
+			case AIT_WORKING: fcol = CP_BLUE; break;
+			case AIT_PATROLLING: fcol = CP_CYAN; break;
+			case AIT_CHECKING_OUT:
+			case AIT_LOOKING_FOR: fcol = CP_YELLOW; break;
+			case AIT_PLEASE_LEAVE:
+			case AIT_PURSUING:
+			case AIT_ATTACKING: fcol = CP_RED; break;
+			case AIT_FLEEING: fcol = CP_MAGENTA; break;
+			default: fcol = CP_GREEN; break;
+
+
+		    }	
+
+		    mvwaddch(mapwindow,vy,vx,(t & (A_ALTCHARSET | A_CHARTEXT)) | fcol);
 		}
 	    }
 
+
 	}
     }
-
-    for (int i=0; i < MAX_ENTITIES; i++) {
+    
+    for (int i= (MAX_ENTITIES - 1); i >= 0; i--) {
 
 	if (map->ent[i].type == ET_NONE) continue;
 	int ex = map->ent[i].x; int ey = map->ent[i].y;
 
-	if ( (persp == NULL) || (map->ent[i].flags & EF_ALWAYSVISIBLE) || ( (persp->aidata) && (persp->aidata->viewarr[ey * (MAP_WIDTH) + ex] >= 3) ) ) {
+	if ( (persp == NULL) || (map->ent[i].flags & EF_ALWAYSVISIBLE) || ((map->aidata.p_viewarr[ey * (MAP_WIDTH) + ex] >= 3) ) ) {
 
 	    int highlight = (hl_persp) && (&map->ent[i] == persp);
 	    mvwaddch(mapwindow,ey,ex,entchar(&map->ent[i]) | (highlight ? A_REVERSE : 0) );
@@ -179,12 +178,30 @@ int mapgetch() {
     morecount = 0;
 
     getsyx(y,x);
+
+    int cy,cx;
+
+    getyx(msgwindow,cy,cx);
     int m = wmove(msgwindow,0,COLS-1);
     if (m == ERR) beep();
 
     int c = getch();
 
+    wmove(msgwindow,cy,cx);
     setsyx(y,x);
+
+    return c;
+}
+
+int askgetch(bool nocr) {
+
+    morecount = 0;
+
+    echo();
+    int c = wgetch(msgwindow);
+    noecho();
+
+    if (!nocr) waddstr(msgwindow,"\n");
 
     return c;
 }
@@ -200,96 +217,64 @@ char* alertdescriptions[AL_COUNT] = {
     "Backup Called"
 };
 
-const char* alarm_status (struct t_map* map) {
+int alarm_status (struct t_map* map) {
 
-         if(map->postalarmtimer>80)
-         {
-            switch(map->type)
-            {
-            case SITE_GOVERNMENT_ARMYBASE:
-               return("SOLDIERS AND TANKS RESPONDING");
-               break;
-            case SITE_GOVERNMENT_WHITE_HOUSE:
-               return("SECRET SERVICE RESPONDING");
-               break;
-            case SITE_GOVERNMENT_INTELLIGENCEHQ:
-               return("AGENTS RESPONDING");
-               break;
-            case SITE_CORPORATE_HEADQUARTERS:
-            case SITE_CORPORATE_HOUSE:
-               return("MERCENARIES RESPONDING");
-               break;
-            case SITE_MEDIA_AMRADIO:
-            case SITE_MEDIA_CABLENEWS:
-               return("ANGRY MOB RESPONDING");
-               break;
-            case SITE_BUSINESS_CRACKHOUSE:
-               return("GANG MEMBERS RESPONDING");
-               break;
-            case SITE_GOVERNMENT_POLICESTATION:
-            default:
-               /*if(location[cursite]->renting==RENTING_CCS)
-               {
-                  return("CCS VIGILANTIES RESPONDING");
-               }
-               else */ if(law[LAW_DEATHPENALTY]==-2&&
-                  law[LAW_POLICEBEHAVIOR]==-2)return("DEATH SQUADS RESPONDING");
-               else return("POLICE RESPONDING");
-               break;
-            }
-         }
-         else if(map->postalarmtimer>60) { return("CONSERVATIVE REINFORCEMENTS INCOMING"); }
-         else if(map->sitealienate==1) { return("ALIENATED MASSES"); }
-         else if(map->sitealienate==2) { return("ALIENATED EVERYONE"); }
-         else if(map->sitealarm) { return("CONSERVATIVES ALARMED");  }
-         else if(map->sitealarmtimer==0) { return("CONSERVATIVES SUSPICIOUS"); }
+    if(map->postalarmtimer>80)
+    {
+	switch(map->type)
+	{
+	    return CP_RED | A_REVERSE; 
+	}
+    }
+    else if(map->postalarmtimer>60) { return CP_RED | A_BOLD; }
+    else if(map->sitealienate==1) { return CP_MAGENTA; }
+    else if(map->sitealienate==2) { return CP_MAGENTA | A_REVERSE; }
+    else if(map->sitealarm) { return CP_RED; }
+    else if(map->sitealarmtimer==0) { return CP_YELLOW; }
 
-	 return "EVERYTHING QUIET";
+    return CP_GREEN;
 }
 
-int updheader(struct t_map* map) {
-    wmove(headerwindow,0,0);
-    whline(headerwindow,ACS_HLINE,COLS);
-    wattron(headerwindow, A_BOLD);
-    mvwprintw(headerwindow,0,1," insert title here. - T%5d - %s ",map->time,alarm_status(map));
-    wattroff(headerwindow, A_BOLD);
-    wrefresh(headerwindow);
-    return 0;
+int maprefresh(void) {
+
+    return wrefresh(mapwindow);
 }
 
 int msgaddstr(const char *string) {
 
-    int y,x;
+    char* dblstr = malloc(strlen(string)+1);
+    strcpy(dblstr,string);
+    char* thisline = dblstr;
 
-    /*
-    char* thisline = strtok(string,"\n");    
-
+    bool hascr = strchr(thisline,'\n');
+    thisline = strtok(dblstr,"\n");    
     int lines=0;
-
     while (thisline != NULL) {
-    */
 
-	if (morecount >= 1) {
-	    getsyx(y,x);
-	    wmove(msgwindow,0,COLS-6);
+	if (morecount > LINES-23) {
+	    int cy,cx;
+	    getyx(msgwindow,cy,cx);
+	    wmove(msgwindow,0,COLS-4);
 	    wattron(msgwindow,A_REVERSE);
-	    wprintw(msgwindow,"(more)");
+	    waddstr(msgwindow,">>");
 	    wattroff(msgwindow,A_REVERSE);
 	    wmove(msgwindow,0,COLS-1);
 	    wrefresh(msgwindow);
-	    mapgetch();
-	    setsyx(y,x);
+	    askgetch(false);
+	    wmove(msgwindow,cy,cx);
 	    morecount = 0;
 	}
 
-	wclear(msgwindow);
-	mvwaddstr(msgwindow,0,0,string);
-	wmove(msgwindow,0,0);
+	wscrl(msgwindow,1);
+	waddstr(msgwindow,thisline);
 
-	//thisline = strtok(NULL,"\n");
+	thisline = strtok(NULL,"\n");
 	morecount++;
-    /*}*/
-	return 0;
+    }
+    if (hascr) {
+	if (LINES > 24) waddstr(msgwindow,"\n"); else wmove(msgwindow,0,0); }
+    free(dblstr);
+    return 0;
 }
 
 int msgvprintw(const char *fmt, va_list ap) {
@@ -312,6 +297,13 @@ int msgprintw(const char *fmt, ...) {
     return r;
 }
 
+int mapaddch(const char *c, uint8_t y, uint8_t x) {
+
+    mvwaddstr(mapwindow,y,x,c);
+
+    return 0;
+}
+
 int msgattrset(int attrs) {
     return wattrset(msgwindow,attrs);
 }
@@ -319,7 +311,6 @@ int msgattrset(int attrs) {
 int describe_map_entity(struct t_map_entity* me, char* const restrict o_name, size_t strsize) {
     return describe_entity(me->ent,o_name,strsize);
 }
-
 
 int msgsay(struct t_map_entity* me, const char* fmt, ...) {
 
@@ -346,9 +337,7 @@ enum movedirections askdir() {
     int go_on = 1;
 
     while (go_on) {
-	echo();
-	int c = mapgetch();
-	noecho();
+	int c = askgetch(false);
 	switch(c) {
 	    case 'h':
 	    case 'H':
@@ -385,19 +374,76 @@ enum movedirections askdir() {
     return r;
 }
 
+int askpos(uint8_t* y, uint8_t* x) {
+
+    int ny = *y, nx = *x;
+    
+    wrefresh(msgwindow);
+
+    int go_on = 1;
+    int res = 0;
+
+    while (go_on) {
+    
+	msgprintw("(%2d,%2d) Choose a location. [yuhjklbn] Move [.] Confirm [,] Cancel",nx,ny);
+
+	wmove(mapwindow,ny,nx);
+	int c = wgetch(mapwindow);
+	switch(c) {
+	    case 'h':
+	    case 'H':
+		if (nx > 0) nx--; break;
+	    case 'j':
+	    case 'J':
+		if (ny < MAP_HEIGHT) ny++; break;
+	    case 'k':
+	    case 'K':
+		if (ny > 0) ny--; break;
+	    case 'l':
+	    case 'L':
+		if (nx < MAP_WIDTH) nx++; break;
+	    case 'y':
+	    case 'Y':
+		if (nx > 0) nx--;
+		if (ny > 0) ny--; break;
+	    case 'u':
+	    case 'U':
+		if (nx < MAP_WIDTH) nx++;
+		if (ny > 0) ny--; break;
+	    case 'b':
+	    case 'B':
+		if (nx > 0) nx--;
+		if (ny < MAP_HEIGHT) ny++; break;
+	    case 'n':
+	    case 'N':
+		if (nx > 0) nx--;
+		if (ny < MAP_HEIGHT) ny++; break;
+	    case '.':
+		go_on = 0;
+		res = 0;
+		break;
+	    case ',':
+		go_on = 0;
+		res = 1;
+	    default:
+		beep();
+		wrefresh(msgwindow);
+	}
+
+    }
+
+    morecount=0;
+    waddstr(msgwindow,"\n");
+
+    if (res == 0) *y = ny; *x = nx;
+    return res;
+}
+
 int init_status (struct t_map* map) {
 
-    int y,x;
+    int y = 0,x = 0;
     setsyx(y,x);
 
-    wmove(statwindow,0,0);
-    for (int i=0; i < 79; i++)
-	if (i % 13) waddch(statwindow,ACS_HLINE); else waddch(statwindow,ACS_TTEE);
-    wmove(statwindow,1,0);
-    for (int i=0; i < 79; i+= 13) {
-	mvwaddch(statwindow,1,i,ACS_VLINE);
-	mvwaddch(statwindow,2,i,ACS_VLINE); }
-    
     getsyx(y,x);
 
     return 0;
@@ -405,8 +451,24 @@ int init_status (struct t_map* map) {
 
 int update_status (struct t_map* map) {
 
-    int y,x;
+    int y=0,x=0;
     setsyx(y,x);
+
+    int border_attr = alarm_status(map);
+
+    wattron(statwindow,border_attr);
+
+    wmove(statwindow,0,0);
+    for (int i=0; i < COLS; i++)
+	if ((i > 79) || (i % 13)) waddch(statwindow,ACS_HLINE); else waddch(statwindow,ACS_TTEE);
+    wmove(statwindow,1,0);
+    for (int i=0; i < 79; i+= 13) {
+	mvwaddch(statwindow,1,i,ACS_VLINE); }
+    wmove(statwindow,2,0);
+    for (int i=0; i < COLS; i++)
+	if ((i > 79) || (i % 13)) waddch(statwindow,ACS_HLINE); else waddch(statwindow,ACS_BTEE);
+    
+    wattroff(statwindow,border_attr);
 
     int pi = 0;
     for (int i=0; i < MAX_ENTITIES; i++) {
@@ -419,18 +481,18 @@ int update_status (struct t_map* map) {
 
 	    int nl = strlen(e_name);
 
-	    mvwprintw(statwindow,0, pi*13 + 1, " %s ",e_name);
+	    mvwprintw(statwindow,0, pi*13 + 1, " %.10s ",e_name);
 
-	    char* e_weapon = w_type(e->ent->weapon)->shortname;
+	    const char* e_weapon = w_type(e->ent->weapon)->shortname;
 	    nl = strlen(e_weapon);
-	    mvwprintw(statwindow,1, pi*13 + 13 - nl, "%s",e_weapon);
+	    mvwprintw(statwindow,1, pi*13 + 13 - nl, "%.10s",e_weapon);
 
 	    int statattr;
 	    char* e_stat = gethealthstat(e->ent, 1, &statattr);
 	    nl = strlen(e_stat);
 
 	    wattron(statwindow,statattr);
-	    mvwprintw(statwindow,2, pi*13 + 13 - nl, "%s",e_stat);
+	    mvwprintw(statwindow,2, pi*13 + 13 - nl, "%.10s",e_stat);
 	    wattroff(statwindow,statattr);
 
 	    pi++;
@@ -442,8 +504,7 @@ int update_status (struct t_map* map) {
 }
 
 int update_ui (struct t_map* map) {
-    wmove(msgwindow,0,COLS-1);
-    wrefresh(headerwindow);
+    //wmove(msgwindow,0,COLS-1);
     wrefresh(statwindow);
     wrefresh(msgwindow);
     wrefresh(msgwindow);
@@ -453,23 +514,22 @@ int update_ui (struct t_map* map) {
 
 int map_ui_init(struct t_map* map) {
 
+    mapchar[TT_WALL] = ACS_CKBOARD; // rewriting with a proper character on the fly
+
     mapwindow = newwin(20,COLS,LINES-20,0);
 
     topwindow = newwin(LINES-20,COLS,0,0);
-    headerwindow = subwin(topwindow,1,COLS,LINES-21,0);
 
-    updheader(map);
-
-    msgwindow = subwin(topwindow,1,COLS,0,0);
+    msgwindow = subwin(topwindow,LINES-23,COLS,0,0);
     if (msgwindow == 0) return 1;
-    //scrollok(msgwindow,1);
 
-    statwindow = subwin(topwindow,LINES-22,COLS,1,0);
+    statwindow = subwin(topwindow,3,COLS,LINES-23,0);
     if (statwindow == 0) return 1;
 
     init_status(map);
 
     keypad(msgwindow,1);
+    scrollok(msgwindow,TRUE);
 
     wmove(msgwindow,0,0);
 
@@ -481,7 +541,6 @@ int map_ui_free(struct t_map* map) {
     delwin(mapwindow);
     delwin(msgwindow);
     delwin(statwindow);
-    delwin(headerwindow);
     delwin(topwindow);
 
     return 0;

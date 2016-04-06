@@ -1,7 +1,7 @@
 // vim: cin:sts=4:sw=4 
 #include "mapgen.h"
 #include "mapmode.h"
-#include "pqueue.h"
+#include "queue.h"
 #include "random.h"
 
 #include "globals.h"
@@ -636,9 +636,9 @@ enum growflags {
 	GF_RESTRICTED = 1,
 };
 
-int grow_room(struct t_map* map, int x, int y, enum directions growdir, enum dirflags join_to, int recurse,enum growflags flags, struct rect* outrect, struct pqel* roomqueue);
+int grow_room(struct t_map* map, int x, int y, enum directions growdir, enum dirflags join_to, int recurse,enum growflags flags, struct rect* outrect, struct cbuf* roomqueue);
 
-int recurse_grow(struct t_map* map, int x, int y, int w, int h, enum directions growdir, enum recurse_behavior recbeh, enum growflags flags, struct pqel* roomqueue) {
+int recurse_grow(struct t_map* map, int x, int y, int w, int h, enum directions growdir, enum recurse_behavior recbeh, enum growflags flags, struct cbuf* roomqueue) {
 
 	if ((w <= 0) || (h <= 0)) return 1;
 	if ((x <= 0) || (y <= 0)) return 1;
@@ -681,7 +681,7 @@ int recurse_grow(struct t_map* map, int x, int y, int w, int h, enum directions 
 	return 0;
 }
 
-int grow_room(struct t_map* map, int x, int y, enum directions growdir, enum dirflags join_to, int recurse, enum growflags flags, struct rect* outrect, struct pqel* roomqueue) {
+int grow_room(struct t_map* map, int x, int y, enum directions growdir, enum dirflags join_to, int recurse, enum growflags flags, struct rect* outrect, struct cbuf* roomqueue) {
 
 	int nx=x, ny=y, nw=1, nh=1;
 
@@ -757,10 +757,8 @@ int grow_room(struct t_map* map, int x, int y, enum directions growdir, enum dir
 		outrect->h = nh;
 	}
 	
-	struct roomparams* newroom = malloc(sizeof(struct roomparams));
-	newroom->x = nx; newroom->y = ny; newroom->w = nw; newroom->h = nh;
-	newroom->style = RS_RANDOM;
-	pq_add_element(roomqueue,ROOMQUEUE_SZ,newroom,1);
+	struct roomparams newroom = {.x = nx, .y = ny, .w = nw, .h = nh, .style = RS_RANDOM};
+	cb_write(roomqueue,&newroom, sizeof newroom);
 
 	if (recurse) recurse_grow(map,nx,ny,nw,nh, growdir, RB_RANDOM, flags, roomqueue);
 	
@@ -813,8 +811,7 @@ int make_corridor(struct t_map* map, int x, int y, int w, int h) {
 
 int generate_buildings(struct t_map* map, enum generate_modes gm) {
 
-	struct pqel roomqueue[ROOMQUEUE_SZ];
-	memset(roomqueue,0,sizeof(struct pqel) * ROOMQUEUE_SZ);
+	struct cbuf* roomqueue = cb_create( ROOMQUEUE_SZ * sizeof(struct roomparams));
 
 	if (gm == GM_RANDOM) gm = randbetween (GM_SINGLE, GM_ELEMENT_COUNT-1);
 
@@ -865,11 +862,10 @@ int generate_buildings(struct t_map* map, enum generate_modes gm) {
 
 	}
 
-	struct roomparams* nextroom = NULL;
+	struct roomparams nextroom;
 
-	while ((nextroom = pq_get_lowest(roomqueue,ROOMQUEUE_SZ)) != NULL) {
-		decorate_room(map,nextroom->x,nextroom->y,nextroom->w,nextroom->h,nextroom->style);
-		free(nextroom);
+	while ((cb_read (roomqueue, &nextroom, sizeof nextroom)) == 0) {
+		decorate_room(map,nextroom.x,nextroom.y,nextroom.w,nextroom.h,nextroom.style);
 	}
 	return 0;
 }

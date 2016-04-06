@@ -1,7 +1,8 @@
 // vim: cin:sts=4:sw=4 
 #include "globals.h"
 
-int dbgmode;
+bool dbgmode;
+bool unichar;
 
 // temporary variables.
 
@@ -11,7 +12,7 @@ enum gamemodes mode;
 //short sitealarm;
 //short sitealarmtimer;
 
-//short cursite;
+short cursite;
 
 //stats 
 
