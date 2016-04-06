@@ -5,9 +5,11 @@
 
 #include <math.h>
 #include <stdlib.h>
+#define M_PI 3.14159265358979323846264338327
 
 int los_default_cb(struct t_map* map, uint8_t x, uint8_t y, void* param) {
 
+    if (!vtile(x,y)) return 1;
     if (tflags[map->sq[y * MAP_WIDTH + x].type] & TF_SOLID) return 1;
     return 0;
 }
@@ -76,6 +78,57 @@ int vispass(struct t_map* map, uint8_t x, uint8_t y) {
 	return !(tflags[map->sq[y * MAP_WIDTH + x].type] & TF_BLOCKS_VISION);
 }
 
+uint8_t get_bearing(uint8_t sx, uint8_t sy, uint8_t tx, uint8_t ty) {
+
+    //returns the bearing from (sx,sy) to (tx,ty). map squares are are assumed
+    // to be square. 0 is north, 64 is east, 128 is south, 192 is west.
+
+    if ((tx == sx) && (ty == sy)) return 0; //avoid div0 further ahead
+
+    float dist = sqrtf( (tx-sx) * (tx-sx) + (ty-sy) * (ty-sy) );
+
+    float vsin = asinf ( (float)(ty-sy) / dist);
+    float vcos = acosf ( (float)(tx-sx) / dist);
+
+    float bearing = ((vsin) + (M_PI / 2)) * 128.0 / (M_PI);
+
+    if (tx < sx) bearing = 256.0 - bearing; 
+
+    return (uint8_t)nearbyintf(bearing);
+    
+}
+
+int aim_bearing (struct t_map* map, uint8_t* sx, uint8_t* sy, uint8_t bearing) {
+
+    uint8_t absbear = (bearing <= 128) ? bearing : (256 - bearing);
+
+    float vsin = - ( cos( absbear / 128.0 * M_PI));
+
+    float vcos = sqrtf ( 1 - powf(vsin,2.0f));
+
+    if (bearing > 128) vcos *= -1.0f;
+
+    float x = *sx, y = *sy;
+    uint8_t ix = *sx, iy = *sy;
+    
+    do {
+    
+	x += vcos;
+	y += vsin;
+    
+	ix = nearbyintf(x); iy = nearbyintf(y);
+
+	if ((ix > MAP_WIDTH) || (iy > MAP_HEIGHT)) return 1;
+    }
+    while ( ((ix == *sx) && (iy == *sy)) ||
+	    ((!(tflags[map->sq[iy * MAP_WIDTH + ix].type] & TF_BLOCKS_ATTACKS)) &&
+	     !find_entity(map,ix,iy)) ); //blocked by an entity or an obstacle.
+
+    *sx = ix; *sy = iy;    
+
+    return 0;
+}
+
 
 // the following code is shamelessly borrowed from the shadowcasting
 // code at http://www.roguebasin.com/index.php?title=C%2B%2B_shadowcasting_implementation.
@@ -104,7 +157,7 @@ static int octants[MD_COUNT][8] = {
 
 void cast_light(struct t_map* map, uint x, uint y, uint radius, uint row,
 		float start_slope, float end_slope, uint xx, uint xy, uint yx,
-		uint yy, uint8_t* mem_array, bool* flag_updated, int* visible_entities) {
+		uint yy, uint8_t* mem_array, bool* flag_updated, int* entity_c, struct t_map_entity** entity_v) {
 	if (start_slope < end_slope) {
 		return;
 	}
@@ -135,17 +188,17 @@ void cast_light(struct t_map* map, uint x, uint y, uint radius, uint row,
 			uint radius2 = radius * radius;
 			if ((uint)(dx * dx + dy * dy) < radius2) {
 				
+				if (mem_array) {
 				if (flag_updated) {
-
-				int ov = mem_array[ay * MAP_WIDTH + ax];
-				if (ov == 0) (*flag_updated) = 1; }
+				if (mem_array[ay * MAP_WIDTH + ax] == 0) (*flag_updated) = 1; }
 
 				mem_array[ay * MAP_WIDTH + ax] = 3;
+				}
 
 				struct t_map_entity* ent = find_entity(map,ax,ay);
 				if (ent) {
-					mem_array [ay * MAP_WIDTH + ax] = 4;
-					if (visible_entities) (*visible_entities)++;
+					if (mem_array) mem_array [ay * MAP_WIDTH + ax] = 4;
+					if (entity_c) { entity_v[*entity_c] = ent; (*entity_c)++; }
 				}
 			}
 
@@ -161,7 +214,7 @@ void cast_light(struct t_map* map, uint x, uint y, uint radius, uint row,
 				blocked = true;
 				next_start_slope = r_slope;
 				cast_light(map, x, y, radius, i + 1, start_slope, l_slope, xx,
-						xy, yx, yy,mem_array, flag_updated, visible_entities);
+						xy, yx, yy, mem_array, flag_updated, entity_c, entity_v);
 			}
 		}
 		if (blocked) {
@@ -170,45 +223,52 @@ void cast_light(struct t_map* map, uint x, uint y, uint radius, uint row,
 	}
 }
 
-void find_visible_entities(struct t_map* map, uint8_t* va, struct t_map_entity** o_entities, size_t sz) {
+bool can_see(struct t_map* map, struct t_map_entity* e, uint8_t x, uint8_t y) {
 
-	size_t idx=0;
-	
-	for (int j = 0; j < MAP_HEIGHT; j++) {
-		for (int i = 0; i < MAP_WIDTH; i++) {
-			if (va[j * MAP_WIDTH + i] == 4) {
-				
-				if (idx >= sz) return;
-				o_entities[idx] = find_entity(map,i,j);
-				idx++;
-
-			}
-		}
-	}
+    return !lineofsight(map,e->x,e->y,x,y,los_default_cb,NULL);
 
 }
 
+int octant(int8_t dx, int8_t dy) {
+/*
+	uint8_t oc = 0;
+
+	if (dy 	
+*/
+}
+
+/*
+int see_entities(struct t_map* map, struct t_map_entity* e, enum movedirections viewdir, int radius, enum fov_angles angle, int* visible_entities) {
+
+	//very TODO
+
+	if (e == NULL) return;
+	if (visible_entities) (*visible_entities) = 0;
+
+	for (int i=0; i < MAX_ENTITIES; i++) {
+
+	    if (ent[i].type == ET_NONE) continue;
+	    
+	    if (!can_see(map,e,ent[i].x,ent[i].y)) continue;
+	    
+	    int oc = octant(ent[i].x - e.x, ent[i].y - e.y); 
+
+
+
+	} 
+
+}
+*/
 
 /* calculate which tiles can be seen by the player */
-void do_fov(struct t_map* map, struct t_map_entity* e, int radius, enum fov_angles angle, uint8_t* mem_array, int* visible_entities) {
+void do_fov(struct t_map* map, struct t_map_entity* e, int radius, enum fov_angles angle, uint8_t* mem_array, int* entity_c, struct t_map_entity** entity_v) {
 
 	if (e == NULL) return;
 	if (e->aidata == NULL) return;
-	if (mem_array == NULL) return;
 
 	bool flag_updated = 0;
 
-	/* un-see everything */
-	//1 means "remembered", 2 means "seen".
-	for (int j = 0; j < MAP_HEIGHT; j++) {
-		for (int i = 0; i < MAP_WIDTH; i++) {
-			if (mem_array[j * MAP_WIDTH + i] >= 3) {
-				mem_array[j * MAP_WIDTH + i] = 2;
-			}
-		}
-	}
-
-	if (visible_entities) (*visible_entities) = 0;
+	if (entity_c) (*entity_c) = 0;
 	
 	mem_array[(e->y) * MAP_WIDTH + (e->x)] = 3;
 
@@ -222,11 +282,24 @@ void do_fov(struct t_map* map, struct t_map_entity* e, int radius, enum fov_angl
 
 	for (int i=0; i < oc; i++) {
 		int co = octants[e->aidata->viewdir][i];
-		cast_light(map, e->x, e->y, radius, 1, 1.0, 0.0, multipliers[0][co], multipliers[1][co], multipliers[2][co], multipliers[3][co], mem_array, &flag_updated, visible_entities);
+		cast_light(map, e->x, e->y, radius, 1, 1.0, 0.0, multipliers[0][co], multipliers[1][co], multipliers[2][co], multipliers[3][co], mem_array, &flag_updated, entity_c, entity_v);
 	}
 
 	if (flag_updated) e->aidata->viewarr_updated = 1;
 	
+}
+
+void obsolete_fov(uint8_t* mem_array) {
+	
+    /* un-see everything */
+	//1 means "remembered", 2 means "seen".
+	for (int j = 0; j < MAP_HEIGHT; j++) {
+		for (int i = 0; i < MAP_WIDTH; i++) {
+			if (mem_array[j * MAP_WIDTH + i] >= 3) {
+				mem_array[j * MAP_WIDTH + i] = 2;
+			}
+		}
+	}
 }
 
 // end of shamelessly borrowed code.

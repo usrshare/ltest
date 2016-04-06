@@ -361,20 +361,6 @@ struct t_creature_generate_rules {
 
 };
 
-#define SQUAD_NAMELEN 40
-#define SQUAD_MAXITEMS 60
-
-struct t_squad {
-    char name [SQUAD_NAMELEN];
-    struct t_creature *squad[6];
-    //struct t_activity activity;
-    int id;
-    //vector <Item*> loot;
-
-    char stance;
-};
-
-extern struct t_squad* activesquad;
 extern struct t_creature* encounter[ENCMAX];
 
 #define POOLSIZE 1024

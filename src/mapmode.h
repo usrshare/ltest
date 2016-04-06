@@ -8,9 +8,38 @@
 #include "mapdefs.h"
 #include "map_ai.h"
 
-struct t_map* curmap;
+struct t_map {
+
+	char map_title[40];
+
+	struct t_square sq[MAP_WIDTH*MAP_HEIGHT];
+	
+	uint8_t width;
+	uint8_t height;
+
+	short type;
+
+	uint32_t time;
+	bool sitealarm;
+	int16_t sitealarmtimer;
+	int16_t postalarmtimer;
+	int16_t sitealienate;
+
+	struct t_map_ai_data aidata;
+
+	struct coords spawn_points[SQUAD_MAX];
+
+	struct t_map_entity ent[MAX_ENTITIES];
+	struct t_creature creat[MAX_ENTITIES]; //this stores a list of temporary entities for this map.
+						//these entities are either forgotten forever, or stored
+						//into a more permanent list (which doesn't exist yet)
+	struct t_item inventory[MAX_LOOTS * INVENTORY_SIZE];
+};
+
+extern struct t_map* curmap;
 
 int space_taken(struct t_map* map, uint8_t x, uint8_t y);
+struct t_map_entity* find_entity_ind(struct t_map* map, uint8_t x, uint8_t y, int ind);
 struct t_map_entity* find_entity(struct t_map* map, uint8_t x, uint8_t y);
 int vtile(uint8_t x, uint8_t y);
 

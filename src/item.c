@@ -1,3 +1,4 @@
+// vim: cin:sts=4:sw=4 
 #include "item.h"
 #include <stdlib.h>
 
@@ -21,7 +22,7 @@ struct t_item* inv_find_empty(struct t_item* inv) {
 struct t_item* inv_find_stack(struct t_item* inv, struct t_item* toadd) {
 	
 	for (int i=0; i < INVENTORY_SIZE; i++)
-		if ((inv[i].type == toadd->type) || (inv[i].itemtypeid == toadd->itemtypeid)) return &inv[i];
+		if ((inv[i].type == toadd->type) && (inv[i].itemtypeid == toadd->itemtypeid)) return &inv[i];
 	return NULL;
 }
 
@@ -64,7 +65,8 @@ struct t_item* inv_find_used(struct t_item* inv) {
 int new_money(struct t_item* inv, int value) {
 
 	struct t_item newmoney = {.type = IT_MONEY, .itemtypeid = 0, .value = value};
-	return inv_add(inv,&newmoney);
+	inv_add(inv,&newmoney);
+	return 0;
 }
 
 int inv_join(struct t_item* inv_to, struct t_item* inv_from) {

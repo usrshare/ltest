@@ -11,6 +11,8 @@ int g_addint (int val, void* log);
 int g_getkey();
 int g_attrset(int attrs);
 
+int ms_sleep(int ms);
+
 const char* tostring(int num); //uses a static non-thread-safe string
 
 #endif

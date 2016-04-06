@@ -6,6 +6,7 @@
 #include "entity_types.h"
 #include "mapgen.h"
 #include "map_fov.h"
+#include "squad.h"
 
 #include "random.h"
 #include "map_ui.h"
@@ -36,7 +37,7 @@ enum terrainflags tflags[TT_ELEMENT_COUNT] = {
     TF_SOLID | TF_BLOCKS_VISION | TF_BLOCKS_SOUND | TF_BLOCKS_ATTACKS | TF_NOSPAWN, //unknown
 };
 
-int movediff[MD_COUNT][2] = {
+int movediff[MD_COUNT][2] = { //first X, then Y
     {0,-1},
     {1,-1},
     {1,0},
@@ -69,7 +70,7 @@ struct t_creature* next_empty_temp_entity(struct t_map* map) {
     return NULL;
 }
 
-struct t_map_ai_data* next_empty_ai_data(void) {
+struct t_ent_ai_data* next_empty_ai_data(void) {
     for (int i=0; i < MAX_AI_ENTITIES; i++)
 	if (aient[i].usedby == NULL) return &(aient[i]);
 
@@ -110,11 +111,21 @@ int check_conditions(struct t_map* map) {
     return 1;
 }
 
-struct t_map_entity* find_entity(struct t_map* map, uint8_t x, uint8_t y) {
+struct t_map_entity* find_entity_ind(struct t_map* map, uint8_t x, uint8_t y, int ind) {
 
+    int n = 0;
     for (int i=0; i < MAX_ENTITIES; i++) {
 	struct t_map_entity* e = &map->ent[i];
-	if ((e->x == x) && (e->y == y)) return e;
+	if ((e->x == x) && (e->y == y)) { n++; if (n > ind) return e; }
+    }
+    return NULL;
+}
+
+struct t_map_entity* find_entity(struct t_map* map, uint8_t x, uint8_t y) {
+    
+    for (int i=0; i < MAX_ENTITIES; i++) {
+	struct t_map_entity* e = &map->ent[i];
+	if ((e->x == x) && (e->y == y)) return e; 
     }
     return NULL;
 }
@@ -146,7 +157,7 @@ int space_taken(struct t_map* map, uint8_t x, uint8_t y) {
 
     for (int i=0; i < MAX_ENTITIES; i++) {
 	struct t_map_entity* e = &map->ent[i];
-	if ((e->type != ET_NONE) && (e->x == x) && (e->y == y)) return 1;
+	if ((e->type != ET_NONE) && (e->type != ET_LOOT) && (e->x == x) && (e->y == y)) return 1;
     }
 
     return 0;
@@ -163,16 +174,14 @@ struct t_map_entity* spawn_entity(struct t_map* map, enum entitytypes type, stru
     }
 
     if (needs_ai[type]) {
-	struct t_map_ai_data* newai = next_empty_ai_data();
+	struct t_ent_ai_data* newai = next_empty_ai_data();
 	if (newai == NULL) return NULL;
 
 	newent->aidata = newai;
 	newai->dx = 255;
 	newai->dy = 255;
-	heatmap_clear(newai->heatmap_old);
-	heatmap_clear(newai->heatmap_new);
 	newai->usedby = newent;
-    }
+    } else newent->aidata = NULL;
 
     newent->type = type;
 
@@ -247,51 +256,54 @@ int kill_entity(struct t_map_entity* ent) {
 
     ent->type = ET_NONE;
 
-    struct t_map_ai_data* ai = ent->aidata;
+    struct t_ent_ai_data* ai = ent->aidata;
     ent->turn = ent->act = NULL;
-    if (ai) memset(ai,0,sizeof(struct t_map_ai_data));
+    if (ai) memset(ai,0,sizeof(struct t_ent_ai_data));
     ent->aidata = NULL;
     return 0;
 }
 
-int mapmode() {
+int mapmode(struct t_squad* activesquad) {
 
     struct t_map map1;
 
     memset(&(map1.sq), 0, sizeof(struct t_square) * MAP_WIDTH * MAP_HEIGHT); 
     memset(&(map1.ent), 0, sizeof(struct t_map_entity) * MAX_ENTITIES); 
     memset(&(map1.creat), 0, sizeof(struct t_creature) * MAX_ENTITIES); 
-    memset(aient, 0, sizeof(struct t_map_ai_data) * MAX_AI_ENTITIES); 
+    memset(aient, 0, sizeof(struct t_ent_ai_data) * MAX_AI_ENTITIES); 
 
     map1.sitealarm = 0; map1.sitealarmtimer = -1;
 
     generate_buildings(&map1,GM_SINGLE);
 
-#define PLAYERS_COUNT 1
+#define MAX_PLAYERS_COUNT 6
 
-    struct t_map_entity* players[PLAYERS_COUNT];
+    struct t_map_entity* players[MAX_PLAYERS_COUNT];
 
-    for (int i=0; i < PLAYERS_COUNT; i++) {
+    for (int i=0; i < MAX_PLAYERS_COUNT; i++) 
+    if (activesquad->squad[i]) {
 	players[i] = spawn_entity(&map1,ET_PLAYER,(struct spawnflags){
-		.gen_creature = true,
-		.genrules = &type_rules[ET_HIPPIE],
+		.gen_creature = false,
 		.position = SF_DEFAULT,
 		.tf = player_turnFunc,
 		.af = player_actFunc}); //temporary entity
 	if (players[i]) {
+	    players[i]->ent = activesquad->squad[i];
 	    players[i]->flags |= EF_ALWAYSVISIBLE;
 	    players[i]->e_id = i;
 	    players[i]->aidata->wideview = 1;
-	    memset(players[i]->aidata->viewarr,0,sizeof(uint8_t) * MAP_WIDTH * MAP_HEIGHT);
 
 	    struct t_item clothes;
 	    new_armor(ARMOR_CLOTHES,&clothes);
 	    give_armor(players[i]->ent,clothes);
-
+	    
 	    struct t_item knife;
 	    new_weapon(WT_COMBATKNIFE,&knife,0);
 	    give_weapon(players[i]->ent,knife);
-	    
+	   
+	    struct t_item ak47;
+	    new_weapon(WT_AUTORIFLE_AK47,&ak47,1000);
+	    give_weapon(players[i]->ent,ak47);
 	}
     }
 
@@ -309,25 +321,42 @@ int mapmode() {
 	if (enemies[i]) {enemies[i]->aidata->task = AIT_PATROLLING;}
     }
 
-    for (int i=0; i < PLAYERS_COUNT; i++) {
-	memset(players[i]->aidata->viewarr,1,sizeof(uint8_t) * MAP_WIDTH * MAP_HEIGHT);
-	do_fov(&map1,players[i],25,FA_FULL,players[i]->aidata->viewarr,NULL);
-	draw_map(&map1,players[i],1,dbgmode ? 1 : 0, dbgmode ? 1 : 0,0);
+#define LOOT_COUNT 40
+    
+    struct t_map_entity* loots[LOOT_COUNT];
+   
+    for (int i=0; i < LOOT_COUNT; i++) {
+	loots[i] = spawn_entity(&map1,ET_LOOT,(struct spawnflags){
+		.position = SF_RANDOM_RESTRICTED,});
+	if (loots[i]) { new_money(loots[i]->loot, randval(100)+1);
+		/* TODO assign items and money */}
+    }
+
+    for (int i=0; i < MAX_PLAYERS_COUNT; i++) {
+	if (players[i]) {
+	do_fov(&map1,players[i],25,FA_FULL,map1.aidata.p_viewarr,NULL,NULL);
+	update_player_map(&map1, players[i], 0);
+    }
     }
 
     map_ui_init(&map1);
+    map_ai_init(&map1);
 
     int loop = 1;
     map1.time = 0;
     do {
-	updheader(&map1);
+	//updheader(&map1);
 	update_status(&map1);
 	update_ui(&map1);
+
+	obsolete_fov(map1.aidata.p_viewarr);
+	obsolete_fov(map1.aidata.e_viewarr);
+
 	make_turn(&map1);
 	loop = check_conditions(&map1);
 	map1.time++;
 
-
+	static_plot(&map1);
 
 	if (map1.sitealarmtimer > 0) { 
 	    map1.sitealarmtimer--;

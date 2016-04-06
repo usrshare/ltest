@@ -34,15 +34,18 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA   02111-1307   USA     
 
 #include "globals.h"
 #include "ui.h"
+
 #include "entity.h"
 #include "entity_types.h"
 #include "location.h"
 #include "mapmode.h"
+#include "squad.h"
 
 #include "item.h"
 #include "armor.h"
 #include "weapon.h"
 
+#include <math.h>
 #include <stdbool.h>
 #include <string.h>
 
@@ -61,7 +64,7 @@ void freehostage(struct t_creature* cr,char situation);
 bool goodguyattack = false;
 
 /* attack handling for an individual creature and its target */
-void attack(struct t_map* map, struct t_creature* a,struct t_creature* t,char mistake,char* actual,bool force_melee)
+void attack(struct t_map* map, struct t_creature* a,struct t_creature* t,char mistake,char* actual,bool force_melee, int distance_sq)
 {
     *actual=0;
 
@@ -140,7 +143,7 @@ void attack(struct t_map* map, struct t_creature* a,struct t_creature* t,char mi
 	}
 	//move(16,1);
 	g_addstr(str, gamelog);
-	//g_addstr("\n",NULL);
+	g_addstr("\n",NULL);
 
 	printparty();
 	if(mode==GM_CHASECAR
@@ -165,6 +168,8 @@ void attack(struct t_map* map, struct t_creature* a,struct t_creature* t,char mi
     bool melee=true;
     if(attack_used->ranged) melee=false;
     bool sneak_attack=false;
+
+    if (melee && (distance_sq > 2)) return; //melee attacks can only hit nearby
 
     strcpy(str,describe_entity_static(a));
     strcat(str," ");
@@ -214,7 +219,7 @@ void attack(struct t_map* map, struct t_creature* a,struct t_creature* t,char mi
 
 	if(!sneak_attack)
 	{
-	    strcat(str,attack_used->attack_description);
+	    strcat(str,attack_used->attack_description ? attack_used->attack_description : "finds a bug in");
 	    map->sitealarm=1;
 	}
     }
@@ -232,7 +237,7 @@ void attack(struct t_map* map, struct t_creature* a,struct t_creature* t,char mi
     }
     strcat(str,"!");
     g_addstr(str, gamelog);
-    //g_addstr("\n",NULL);
+    g_addstr("\n",NULL);
 
     //g_getkey();
 
@@ -252,6 +257,8 @@ void attack(struct t_map* map, struct t_creature* a,struct t_creature* t,char mi
 
     // Basic roll
     int aroll=entity_skill_roll(a,wsk);
+
+    if (distance_sq > 4) aroll /= (sqrt(distance_sq) / 2);
     // In a car chase, the driver provides the defence roll instead of the victim.
     int droll= 0;
     if (mode!=GM_CHASECAR)
@@ -481,7 +488,7 @@ void attack(struct t_map* map, struct t_creature* a,struct t_creature* t,char mi
 	    strcat(str,", ");
 	    if(!a->weapon) //Move into WEAPON_NONE? -XML
 		strcat(str,"striking");
-	    else strcat(str,attack_used->hit_description);
+	    else strcat(str,attack_used->hit_description ? attack_used->hit_description : "hitting");
 
 	    switch(bursthits)
 	    {
@@ -509,7 +516,7 @@ void attack(struct t_map* map, struct t_creature* a,struct t_creature* t,char mi
 
 	char damagearmor=0;
 	char armorpiercing=0;
-	int extraarmor=0;
+	//int extraarmor=0;
 
 	if (!a->weapon)
 	{
@@ -577,8 +584,9 @@ void attack(struct t_map* map, struct t_creature* a,struct t_creature* t,char mi
 	// Coarse combat lethality reduction.
 	//damamount/=2;
 
-	if(t->squadid!=-1&&t->hireid==NOHIREID) // Plot Armor: if the founder is hit, inflict
-	    damamount/=2;                // 1/2 damage, because founders are cool
+	//if(t->squadid!=-1&&t->hireid==NOHIREID) // Plot Armor: if the founder is hit, inflict
+	//    damamount/=2;                // 1/2 damage, because founders are cool
+	// invalid code, relies on squadid.
 
 	int mod=0;
 
@@ -652,46 +660,7 @@ void attack(struct t_map* map, struct t_creature* a,struct t_creature* t,char mi
 	}
 	if(damamount>0)
 	{
-	    struct t_creature *target=0;
-
-	    if(t->squadid!=-1&&t->hireid==NOHIREID&& //if the founder is hit...
-		    (damamount>t->blood||damamount>=10)&& //and lethal or potentially crippling damage is done...
-		    (w==EB_HEAD||w==EB_BODY)) //to a critical bodypart...
-	    {
-		//Oh Noes!!!! Find a liberal to jump in front of the bullet!!!
-		for(int i=0;i<6;i++)
-		{
-		    if(activesquad->squad[i]==NULL) break;
-		    if(activesquad->squad[i]==t) break;
-		    if(entity_get_attribute(activesquad->squad[i],EA_HRT,true)>8&&
-			    entity_get_attribute(activesquad->squad[i],EA_AGI,true)>4)
-		    {
-			target=activesquad->squad[i];
-
-			//clearmessagearea();
-			g_attrset(CP_GREEN);
-
-			char msg[128]; msg[0] = 0;
-			//move(16,1);
-			strcat(msg,describe_entity_static(target));
-			if(!t->alive) strcat(msg," misguidedly");
-			else strcat(msg," heroically");
-			strcat(msg," shields ");
-			strcat(msg,describe_entity_static(t));
-			if(!t->alive) strcat(msg,"'s corpse");
-			strcat(msg,"!");
-			//g_addstr("\n",NULL);
-			g_addstr(msg,gamelog);
-
-			addjuice(target,10,1000);//Instant juice!! Way to take the bullet!!
-
-			////g_getkey();
-
-			break;
-		    }
-		}
-	    }
-	    if(!target) target=t;//If nobody jumps in front of the attack,
+	    struct t_creature *target=t;
 
 	    target->wound[w]|=damtype;
 
@@ -789,7 +758,7 @@ void attack(struct t_map* map, struct t_creature* a,struct t_creature* t,char mi
 		if(goodguyattack) g_attrset(CP_GREEN);
 		else g_attrset(CP_RED);
 		g_addstr(str, gamelog);
-		//g_addstr("\n",NULL);
+		g_addstr("\n",NULL);
 
 		////g_getkey();
 
@@ -817,7 +786,7 @@ void attack(struct t_map* map, struct t_creature* a,struct t_creature* t,char mi
 		//move(17,1);
 		//set_color(COLOR_WHITE,COLOR_BLACK,1);
 		g_addstr(str, gamelog);
-		//g_addstr("\n",NULL);
+		g_addstr("\n",NULL);
 
 		//printparty();
 		/*
@@ -872,7 +841,7 @@ void attack(struct t_map* map, struct t_creature* a,struct t_creature* t,char mi
 				    else if(damtype & WOUND_TORN)g_addstr("'s face is torn off!", gamelog);
 				    else if(damtype & WOUND_CUT)g_addstr("'s face is cut away!", gamelog);
 				    else g_addstr("'s face is removed!", gamelog);
-				    //g_addstr("\n",NULL);
+				    g_addstr("\n",NULL);
 
 				    ////g_getkey();
 
@@ -916,7 +885,7 @@ void attack(struct t_map* map, struct t_creature* a,struct t_creature* t,char mi
 				    else if(damtype & WOUND_TORN)g_addstr("gouged out!", gamelog);
 				    else if(damtype & WOUND_CUT)g_addstr("cut out!", gamelog);
 				    else g_addstr("knocked out!", gamelog);
-				    //g_addstr("\n",NULL);
+				    g_addstr("\n",NULL);
 
 				    ////g_getkey();
 
@@ -933,7 +902,7 @@ void attack(struct t_map* map, struct t_creature* a,struct t_creature* t,char mi
 				    else if(damtype & WOUND_TORN)g_addstr("'s right eye is torn out!", gamelog);
 				    else if(damtype & WOUND_CUT)g_addstr("'s right eye is poked out!", gamelog);
 				    else g_addstr("'s right eye is removed!", gamelog);
-				    //g_addstr("\n",NULL);
+				    g_addstr("\n",NULL);
 
 				    ////g_getkey();
 
@@ -951,7 +920,7 @@ void attack(struct t_map* map, struct t_creature* a,struct t_creature* t,char mi
 				    else if(damtype & WOUND_TORN)g_addstr("'s left eye is torn out!", gamelog);
 				    else if(damtype & WOUND_CUT)g_addstr("'s left eye is poked out!", gamelog);
 				    else g_addstr("'s left eye is removed!", gamelog);
-				    //g_addstr("\n",NULL);
+				    g_addstr("\n",NULL);
 
 				    ////g_getkey();
 
@@ -969,7 +938,7 @@ void attack(struct t_map* map, struct t_creature* a,struct t_creature* t,char mi
 				    else if(damtype & WOUND_TORN)g_addstr("'s tongue is torn out!", gamelog);
 				    else if(damtype & WOUND_CUT)g_addstr("'s tongue is cut off!", gamelog);
 				    else g_addstr("'s tongue is removed!", gamelog);
-				    //g_addstr("\n",NULL);
+				    g_addstr("\n",NULL);
 
 				    ////g_getkey();
 
@@ -987,7 +956,7 @@ void attack(struct t_map* map, struct t_creature* a,struct t_creature* t,char mi
 				    else if(damtype & WOUND_TORN)g_addstr("'s nose is torn off!", gamelog);
 				    else if(damtype & WOUND_CUT)g_addstr("'s nose is cut off!", gamelog);
 				    else g_addstr("'s nose is removed!", gamelog);
-				    //g_addstr("\n",NULL);
+				    g_addstr("\n",NULL);
 
 				    ////g_getkey();
 
@@ -1002,7 +971,7 @@ void attack(struct t_map* map, struct t_creature* a,struct t_creature* t,char mi
 				    g_addstr(describe_entity_static(target), gamelog);
 				    if(damtype & WOUND_SHOT)g_addstr("'s neck bones are shattered!", gamelog);
 				    else g_addstr("'s neck is broken!", gamelog);
-				    //g_addstr("\n",NULL);
+				    g_addstr("\n",NULL);
 
 				    ////g_getkey();
 
@@ -1028,7 +997,7 @@ void attack(struct t_map* map, struct t_creature* a,struct t_creature* t,char mi
 				    g_addstr(describe_entity_static(target), gamelog);
 				    if(damtype & WOUND_SHOT) g_addstr("'s upper spine is shattered!", gamelog);
 				    else g_addstr("'s upper spine is broken!", gamelog);
-				    //g_addstr("\n",NULL);
+				    g_addstr("\n",NULL);
 
 				    ////g_getkey();
 
@@ -1043,7 +1012,7 @@ void attack(struct t_map* map, struct t_creature* a,struct t_creature* t,char mi
 				    g_addstr(describe_entity_static(target), gamelog);
 				    if(damtype & WOUND_SHOT)g_addstr("'s lower spine is shattered!", gamelog);
 				    else g_addstr("'s lower spine is broken!", gamelog);
-				    //g_addstr("\n",NULL);
+				    g_addstr("\n",NULL);
 
 				    ////g_getkey();
 
@@ -1059,7 +1028,7 @@ void attack(struct t_map* map, struct t_creature* a,struct t_creature* t,char mi
 				    if(damtype & WOUND_SHOT)g_addstr("'s right lung is blasted!", gamelog);
 				    else if(damtype & WOUND_TORN)g_addstr("'s right lung is torn!", gamelog);
 				    else g_addstr("'s right lung is punctured!", gamelog);
-				    //g_addstr("\n",NULL);
+				    g_addstr("\n",NULL);
 
 				    ////g_getkey();
 
@@ -1075,7 +1044,7 @@ void attack(struct t_map* map, struct t_creature* a,struct t_creature* t,char mi
 				    if(damtype & WOUND_SHOT)g_addstr("'s left lung is blasted!", gamelog);
 				    else if(damtype & WOUND_TORN)g_addstr("'s left lung is torn!", gamelog);
 				    else g_addstr("'s left lung is punctured!", gamelog);
-				    //g_addstr("\n",NULL);
+				    g_addstr("\n",NULL);
 
 				    ////g_getkey();
 
@@ -1091,7 +1060,7 @@ void attack(struct t_map* map, struct t_creature* a,struct t_creature* t,char mi
 				    if(damtype & WOUND_SHOT)g_addstr("'s heart is blasted!", gamelog);
 				    else if(damtype & WOUND_TORN)g_addstr("'s heart is torn!", gamelog);
 				    else g_addstr("'s heart is punctured!", gamelog);
-				    //g_addstr("\n",NULL);
+				    g_addstr("\n",NULL);
 
 				    ////g_getkey();
 
@@ -1107,7 +1076,7 @@ void attack(struct t_map* map, struct t_creature* a,struct t_creature* t,char mi
 				    if(damtype & WOUND_SHOT)g_addstr("'s liver is blasted!", gamelog);
 				    else if(damtype & WOUND_TORN)g_addstr("'s liver is torn!", gamelog);
 				    else g_addstr("'s liver is punctured!", gamelog);
-				    //g_addstr("\n",NULL);
+				    g_addstr("\n",NULL);
 
 				    ////g_getkey();
 
@@ -1123,7 +1092,7 @@ void attack(struct t_map* map, struct t_creature* a,struct t_creature* t,char mi
 				    if(damtype & WOUND_SHOT)g_addstr("'s stomach is blasted!", gamelog);
 				    else if(damtype & WOUND_TORN)g_addstr("'s stomach is torn!", gamelog);
 				    else g_addstr("'s stomach is punctured!", gamelog);
-				    //g_addstr("\n",NULL);
+				    g_addstr("\n",NULL);
 
 				    ////g_getkey();
 
@@ -1139,7 +1108,7 @@ void attack(struct t_map* map, struct t_creature* a,struct t_creature* t,char mi
 				    if(damtype & WOUND_SHOT)g_addstr("'s right kidney is blasted!", gamelog);
 				    else if(damtype & WOUND_TORN)g_addstr("'s right kidney is torn!", gamelog);
 				    else g_addstr("'s right kidney is punctured!", gamelog);
-				    //g_addstr("\n",NULL);
+				    g_addstr("\n",NULL);
 
 				    ////g_getkey();
 
@@ -1155,7 +1124,7 @@ void attack(struct t_map* map, struct t_creature* a,struct t_creature* t,char mi
 				    if(damtype & WOUND_SHOT)g_addstr("'s left kidney is blasted!", gamelog);
 				    else if(damtype & WOUND_TORN)g_addstr("'s left kidney is torn!", gamelog);
 				    else g_addstr("'s left kidney is punctured!", gamelog);
-				    //g_addstr("\n",NULL);
+				    g_addstr("\n",NULL);
 
 				    //g_getkey();
 
@@ -1171,7 +1140,7 @@ void attack(struct t_map* map, struct t_creature* a,struct t_creature* t,char mi
 				    if(damtype & WOUND_SHOT)g_addstr("'s spleen is blasted!", gamelog);
 				    else if(damtype & WOUND_TORN)g_addstr("'s spleen is torn!", gamelog);
 				    else g_addstr("'s spleen is punctured!", gamelog);
-				    //g_addstr("\n",NULL);
+				    g_addstr("\n",NULL);
 
 				    //g_getkey();
 
@@ -1209,7 +1178,7 @@ void attack(struct t_map* map, struct t_creature* a,struct t_creature* t,char mi
 
 				    if(damtype & WOUND_SHOT)g_addstr("shot apart!", gamelog);
 				    else g_addstr("broken!", gamelog);
-				    //g_addstr("\n",NULL);
+				    g_addstr("\n",NULL);
 
 				    //g_getkey();
 
@@ -1231,7 +1200,7 @@ void attack(struct t_map* map, struct t_creature* a,struct t_creature* t,char mi
 	    strcat(str," to no effect.");
 	    //move(17,1);
 	    g_addstr(str, gamelog);
-	    //g_addstr("\n",NULL);
+	    g_addstr("\n",NULL);
 
 	    /*printparty();
 	    if(mode==GM_CHASECAR||
@@ -1253,13 +1222,13 @@ void attack(struct t_map* map, struct t_creature* a,struct t_creature* t,char mi
 	    strcat(str," knocks the blow aside and counters!");
 	    //move(17,1);
 	    g_addstr(str, gamelog);
-	    //g_addstr("\n",NULL);
+	    g_addstr("\n",NULL);
 
 	    //g_getkey();
 
 	    goodguyattack = !goodguyattack;
 	    char actual_dummy;
-	    attack(map,t,a,0,&actual_dummy,true);
+	    attack(map,t,a,0,&actual_dummy,true,distance_sq);
 	    goodguyattack = !goodguyattack;
 	}//TODO if missed person, but vehicle is large, it might damage the car. 
 	else
@@ -1331,7 +1300,7 @@ void attack(struct t_map* map, struct t_creature* a,struct t_creature* t,char mi
 	    }
 	    //move(17,1);
 	    g_addstr(str, gamelog);
-	    //g_addstr("\n",NULL);
+	    g_addstr("\n",NULL);
 	    /*printparty();
 	    if(mode==GM_CHASECAR||
 		    mode==GM_CHASEFOOT) printchaseencounter();
@@ -1683,7 +1652,7 @@ void specialattack(struct t_creature* a, struct t_creature* t, char *actual)
 
     //move(16,1);
     g_addstr(str, gamelog);
-    //g_addstr("\n",NULL);
+    g_addstr("\n",NULL);
 
     if((t->animalgloss==ANIMALGLOSS_TANK||(t->animalgloss==ANIMALGLOSS_ANIMAL&&law[LAW_ANIMALRESEARCH]!=2))
 	    ||(enemy(a) && t->flag & CREATUREFLAG_BRAINWASHED))
@@ -1761,6 +1730,7 @@ void specialattack(struct t_creature* a, struct t_creature* t, char *actual)
 		g_addstr(str,gamelog);
 		}
 
+		/*
 		for(int e=0;e<ENCMAX;e++)
 		{
 		    if(encounter[e]->exists==0)
@@ -1787,6 +1757,7 @@ void specialattack(struct t_creature* a, struct t_creature* t, char *actual)
 		    if(flipstart&&p<5) activesquad->squad[p]=activesquad->squad[p+1];
 		}
 		if(flipstart) activesquad->squad[5]=NULL;
+		*/
 	    }
 	}
 	else
@@ -1835,7 +1806,7 @@ void specialattack(struct t_creature* a, struct t_creature* t, char *actual)
 	g_addstr(str,gamelog);
     }
 
-    //g_addstr("\n",NULL);
+    g_addstr("\n",NULL);
 
     /*printparty();
     if(mode==GM_CHASECAR||
@@ -1870,7 +1841,7 @@ void severloot(struct t_creature* cr,struct t_item* loot)
 	//move(17,1);
 	g_addstr(describe_entity_static(cr), gamelog);
 	g_addstr("'s grasp.", gamelog);
-	//g_addstr("\n",NULL);
+	g_addstr("\n",NULL);
 
 	//g_getkey();
 
@@ -1891,7 +1862,7 @@ void severloot(struct t_creature* cr,struct t_item* loot)
 	g_addstr("'s ", gamelog);
 	g_addstr(a_type(cr->armor)->name, gamelog);
 	g_addstr(" has been destroyed.", gamelog);
-	//g_addstr("\n",NULL);
+	g_addstr("\n",NULL);
 
 	//g_getkey();
 
@@ -1932,6 +1903,7 @@ void bloodblast(struct t_item* armor)
     //levelmap[locx][locy][locz].flag|=SITEBLOCK_BLOODY2;
 
     //HIT EVERYTHING
+    /*
     for(int p=0;p<6;p++)
     {
 	if(activesquad->squad[p]==NULL) continue;
@@ -1945,6 +1917,7 @@ void bloodblast(struct t_item* armor)
 	if(!randval(2))
 	    encounter[e]->armor->a_flags |= AD_BLOODY;
     }
+    */
 
     //REFRESH THE SCREEN
     //printsitemap(locx,locy,locz);
@@ -2044,7 +2017,7 @@ char incapacitated(struct t_creature *a,char noncombat,char* printed)
 		    case 2: strcat(msg," burns..."); break;
 		}
 
-		//g_addstr("\n",NULL);
+		g_addstr("\n",NULL);
 
 		g_addstr(msg,gamelog);
 
@@ -2075,7 +2048,7 @@ char incapacitated(struct t_creature *a,char noncombat,char* printed)
 		    case 2: g_addstr(" yowls pitifully...", gamelog); break;
 		}
 
-		//g_addstr("\n",NULL);
+		g_addstr("\n",NULL);
 
 		g_addstr(msg,gamelog);
 		*printed=1;
@@ -2204,7 +2177,7 @@ char incapacitated(struct t_creature *a,char noncombat,char* printed)
 		case 10: strcat(msg," tears up."); break;
 	    }
 
-	    //g_addstr("\n",NULL);
+	    g_addstr("\n",NULL);
 
 		g_addstr(msg,gamelog);
 	    *printed=1;
@@ -2230,7 +2203,7 @@ char incapacitated(struct t_creature *a,char noncombat,char* printed)
 		case 4: strcat(msg," considers the situation."); break;
 	    }
 
-	    //g_addstr("\n",NULL);
+	    g_addstr("\n",NULL);
 
 	    g_addstr(msg,gamelog);
 	    *printed=1;
@@ -2388,7 +2361,7 @@ void adddeathmessage(struct t_creature* cr)
 		break;
 	}
     }
-    //g_addstr("\n",NULL);
+    g_addstr("\n",NULL);
 }
 
 
@@ -2452,7 +2425,7 @@ void freehostage(struct t_creature* cr,char situation)
             if(cr->prisoner->flag & CREATUREFLAG_JUSTESCAPED) g_addstr(" is recaptured", gamelog);
             else g_addstr(" is captured", gamelog);
          }
-         //g_addstr("\n",NULL); //New line.
+         g_addstr("\n",NULL); //New line.
       }
       else if(situation==1)
       {
@@ -2464,7 +2437,7 @@ void freehostage(struct t_creature* cr,char situation)
             if(cr->prisoner->flag & CREATUREFLAG_JUSTESCAPED) g_addstr(" is recaptured.", gamelog);
             else g_addstr(" is captured.", gamelog);
          }
-         //g_addstr("\n",NULL); //New line.
+         g_addstr("\n",NULL); //New line.
       }
       else if(situation==2)
       {
@@ -2473,7 +2446,8 @@ void freehostage(struct t_creature* cr,char situation)
 
       if(cr->prisoner->squadid==-1)
       {
-         for(int e=0;e<ENCMAX;e++)
+         /*
+	  for(int e=0;e<ENCMAX;e++)
          {
             if(encounter[e]->exists==0)
             {
@@ -2483,6 +2457,8 @@ void freehostage(struct t_creature* cr,char situation)
                break;
             }
          }
+	 // TODO spawn prisoner nearby
+	 */
          free(cr->prisoner);
       }
       else capturecreature(cr->prisoner);

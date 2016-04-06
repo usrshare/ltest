@@ -15,7 +15,12 @@ typedef int (*los_cb)(struct t_map* map, uint8_t x, uint8_t y, void* param);
 int los_default_cb(struct t_map* map, uint8_t x, uint8_t y, void* param);
 int lineofsight(struct t_map* map, uint8_t sx, uint8_t sy, uint8_t tx, uint8_t ty, los_cb cb, void* cbparam);
 
+uint8_t get_bearing(uint8_t sx, uint8_t sy, uint8_t tx, uint8_t ty);
+int aim_bearing (struct t_map* map, uint8_t* sx, uint8_t* sy, uint8_t bearing);
+
 void find_visible_entities(struct t_map* map, uint8_t* va, struct t_map_entity** o_entities, size_t sz);
-void do_fov(struct t_map* map, struct t_map_entity* e, int radius, enum fov_angles angle, uint8_t* mem_array, int* visible_entities);
+void do_fov(struct t_map* map, struct t_map_entity* e, int radius, enum fov_angles angle, uint8_t* mem_array, int* entity_c, struct t_map_entity** entity_v);
+bool can_see(struct t_map* map, struct t_map_entity* e, uint8_t x, uint8_t y);
+void obsolete_fov(uint8_t* mem_array);
 #endif
 	

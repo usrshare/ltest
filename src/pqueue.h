@@ -1,22 +1,17 @@
 // vim: cin:sts=4:sw=4 
 #ifndef PQUEUE_H
 #define PQUEUE_H
-#include <unistd.h>
-// an insane idea for a statically-allocated priority queue.
 
-struct pqel {
-	int p;
-	void* v;
-};
+#include <stdio.h>
 
-int pq_add_element(struct pqel* array, size_t sz, void* ptr, int priority);
+struct pqueue_t;
 
-void* pq_get_lowest (struct pqel* array, size_t sz);
+struct pqueue_t* pq_create (void);
+int pq_destroy(struct pqueue_t* pq);
 
-int pq_decrease_priority (struct pqel* array, size_t sz, void* ptr, int newpriority);
+int pq_size (struct pqueue_t* pq);
 
-int pq_decrease_or_add (struct pqel* array, size_t sz, void* ptr, int priority);
+int pq_push (struct pqueue_t* pq, void* data, unsigned int priority);
+void* pq_pop (struct pqueue_t* pq, unsigned int* o_priority);
 
-int pq_empty (struct pqel* array, size_t sz);
-
-#endif
+#endif /* PQUEUE_H */

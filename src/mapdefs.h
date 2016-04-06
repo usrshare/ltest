@@ -13,6 +13,8 @@
 #define MAP_WIDTH 80
 #define MAP_HEIGHT 20
 
+#define MAP_SIZE (MAP_WIDTH*MAP_HEIGHT)
+
 struct coords {
 	uint8_t x;
 	uint8_t y;
@@ -120,6 +122,8 @@ enum movedirections {
 
 extern int movediff[MD_COUNT][2];
 
+#define MD_DIAGONAL(x) ((x) % 2)
+
 #define MOVE(x) (movediff[MD_##x][0]),(movediff[MD_##x][1])
 
 struct t_map;
@@ -135,11 +139,12 @@ struct t_map_entity {
 	enum entitytypes type;
 	enum entityflags flags;
 	struct t_creature* ent;
+	bool didntmove;
 	uint8_t e_id;
 	uint16_t x;
 	uint16_t y;
 	uint16_t twait; ///< turns left to wait
-	struct t_map_ai_data* aidata;
+	struct t_ent_ai_data* aidata;
 	struct t_item* loot;	
 	turnFunc turn; //this function is called every turn
 	actFunc act; //this function is only called when twait is 0.
@@ -154,30 +159,5 @@ enum t_alertlevel {
 	AL_COUNT, 
 };
 
-struct t_map {
-
-	char map_title[40];
-
-	struct t_square sq[MAP_WIDTH*MAP_HEIGHT];
-	
-	uint8_t width;
-	uint8_t height;
-
-	short type;
-
-	uint32_t time;
-	bool sitealarm;
-	int16_t sitealarmtimer;
-	int16_t postalarmtimer;
-	int16_t sitealienate;
-
-	struct coords spawn_points[SQUAD_MAX];
-
-	struct t_map_entity ent[MAX_ENTITIES];
-	struct t_creature creat[MAX_ENTITIES]; //this stores a list of temporary entities for this map.
-						//these entities are either forgotten forever, or stored
-						//into a more permanent list (which doesn't exist yet)
-	struct t_item inventory[MAX_LOOTS * INVENTORY_SIZE];
-};
 
 #endif
