@@ -1,15 +1,17 @@
 cmake_minimum_required(VERSION 2.8)
 project(ltest)
 
+if ("${CMAKE_C_COMPILER_ID}" STREQUAL "GCC")
+
 set (CMAKE_C_FLAGS "-std=c99 -Wall -Wextra -D_POSIX_C_SOURCE=200809L -Wno-override-init ${CMAKE_C_FLAGS}")
+
+endif()
 
 set_source_files_properties(tags PROPERTIES GENERATED true)
 
 add_custom_target(tags
         COMMAND ctags -R .
 	        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
-
-include_directories (${CMAKE_SOURCE_DIR}/inc)
 
 add_executable (ltest
 		src/armor.c
@@ -46,7 +48,7 @@ pkg_check_modules(NCURSESW "ncursesw" REQUIRED)
 
 include_directories(${NCURSESW_INCLUDE_DIRS})
 
-target_link_libraries(ltest ncursesw menu m)
+target_link_libraries(ltest ncursesw m)
 
 install(TARGETS ltest
 	RUNTIME DESTINATION bin

@@ -12,7 +12,7 @@ enum gamemodes mode;
 //short sitealarm;
 //short sitealarmtimer;
 
-//short cursite;
+short cursite;
 
 //stats 
 

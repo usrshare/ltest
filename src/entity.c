@@ -564,7 +564,7 @@ int entity_skill_cap(struct t_creature* e, enum entity_skill skill, bool use_jui
 }
 
 void entity_train(struct t_creature* e, int trainedskill, int experience) {
-    return entity_train4(e,trainedskill,experience,MAXATTRIBUTE);
+    entity_train4(e,trainedskill,experience,MAXATTRIBUTE);
 }
 void entity_train4(struct t_creature* e, int trainedskill, int experience, int upto) {
     // Do we allow animals to gain skills? Right now, yes

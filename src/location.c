@@ -12,4 +12,6 @@ const struct siegest siegest_def = {
 	.timeuntilfiremen = -1,
 };
 
+int sitetype;
+
 struct t_location* location[LOC_COUNT];

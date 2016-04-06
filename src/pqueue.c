@@ -93,14 +93,14 @@ int _pq_down_heap (struct pqueue_t* pq, int index) {
     int swap_index = -1;
     unsigned int swap_prio = pq->elements[index].priority;
 
-    if ((pq->elements[LCHILD(index)].value) &&
+    if ((LCHILD(index) < pq->elcnt) && (pq->elements[LCHILD(index)].value) &&
 	    (pq->elements[LCHILD(index)].priority < swap_prio)) {
 
 	swap_index = LCHILD(index); swap_prio = pq->elements[LCHILD(index)].priority;
 
     }
 
-    if ((pq->elements[RCHILD(index)].value) &&
+    if ((RCHILD(index) < pq->elcnt) && (pq->elements[RCHILD(index)].value) &&
 	    (pq->elements[RCHILD(index)].priority < swap_prio)) {
 
 	swap_index = RCHILD(index); swap_prio = pq->elements[RCHILD(index)].priority;
