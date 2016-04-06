@@ -3,7 +3,7 @@ project(ltest)
 
 #test
 
-if ("${CMAKE_C_COMPILER_ID}" STREQUAL "GCC")
+if ("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
 
 set (CMAKE_C_FLAGS "-std=c99 -Wall -Wextra -D_POSIX_C_SOURCE=200809L -Wno-override-init ${CMAKE_C_FLAGS}")
 
