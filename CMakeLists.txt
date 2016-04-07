@@ -7,6 +7,10 @@ if ("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
 
 set (CMAKE_C_FLAGS "-std=c99 -Wall -Wextra -D_POSIX_C_SOURCE=200809L -Wno-override-init ${CMAKE_C_FLAGS}")
 
+elseif ("${CMAKE_C_COMPILER_ID}" STREQUAL "TinyCC")
+
+set (CMAKE_C_FLAGS "-Wall -D_POSIX_C_SOURCE=200809L ${CMAKE_C_FLAGS}")
+
 endif()
 
 set_source_files_properties(tags PROPERTIES GENERATED true)
