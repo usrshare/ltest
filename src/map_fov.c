@@ -5,7 +5,10 @@
 
 #include <math.h>
 #include <stdlib.h>
+
+#ifndef M_PI
 #define M_PI 3.14159265358979323846264338327
+#endif
 
 int los_default_cb(struct t_map* map, uint8_t x, uint8_t y, void* param) {
 

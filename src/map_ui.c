@@ -192,6 +192,13 @@ int mapgetch() {
 
     return c;
 }
+int askgetch_n(bool nocr) {
+
+    morecount = 0;
+    int c = wgetch(msgwindow);
+    if (!nocr) msgaddstr("\n");
+    return c;
+}
 
 int askgetch(bool nocr) {
 
@@ -201,7 +208,7 @@ int askgetch(bool nocr) {
     int c = wgetch(msgwindow);
     noecho();
 
-    if (!nocr) waddstr(msgwindow,"\n");
+    if (!nocr) msgaddstr("\n");
 
     return c;
 }
@@ -246,34 +253,39 @@ int msgaddstr(const char *string) {
     strcpy(dblstr,string);
     char* thisline = dblstr;
 
-    bool hascr = strchr(thisline,'\n');
+    int endx = 0, endy = 0;
+
+    bool endscr = ( string[strlen(string)-1] == '\n');
     thisline = strtok(dblstr,"\n");    
     int lines=0;
     while (thisline != NULL) {
 
-	if (morecount > LINES-23) {
+	if (morecount >= LINES-23) {
 	    int cy,cx;
+	    scrollok(msgwindow,false);
 	    getyx(msgwindow,cy,cx);
-	    wmove(msgwindow,0,COLS-4);
-	    wattron(msgwindow,A_REVERSE);
-	    waddstr(msgwindow,">>");
-	    wattroff(msgwindow,A_REVERSE);
-	    wmove(msgwindow,0,COLS-1);
-	    wrefresh(msgwindow);
-	    askgetch(false);
+	    wmove(msgwindow,0,COLS-2); //safe enough position
+	    waddch(msgwindow,ACS_DARROW | CP_RED | A_BOLD | A_BLINK); //a "more" indicator
+	    wrefresh(msgwindow); 
+	    wgetch(msgwindow);
+	    wmove(msgwindow,0,COLS-2);
+	    waddch(msgwindow,' '); //erase that character.
 	    wmove(msgwindow,cy,cx);
+	    scrollok(msgwindow,true);
 	    morecount = 0;
 	}
 
-	wscrl(msgwindow,1);
+	//waddstr(msgwindow,"\n");
 	waddstr(msgwindow,thisline);
+	getyx(msgwindow,endy,endx);	
 
 	thisline = strtok(NULL,"\n");
 	morecount++;
     }
-    if (hascr) {
-	if (LINES > 24) waddstr(msgwindow,"\n"); else wmove(msgwindow,0,0); }
+    if (endscr) {
+	if (LINES > 24) {waddstr(msgwindow,"\n"); morecount++;} else wclrtoeol(msgwindow); wmove(msgwindow,0,0); }
     free(dblstr);
+    wrefresh(msgwindow);
     return 0;
 }
 
@@ -337,7 +349,7 @@ enum movedirections askdir() {
     int go_on = 1;
 
     while (go_on) {
-	int c = askgetch(false);
+	int c = askgetch(true);
 	switch(c) {
 	    case 'h':
 	    case 'H':
@@ -385,9 +397,10 @@ int askpos(uint8_t* y, uint8_t* x) {
 
     while (go_on) {
     
-	msgprintw("(%2d,%2d) Choose a location. [yuhjklbn] Move [.] Confirm [,] Cancel",nx,ny);
-
+	msgprintw("(%2d,%2d) Choose a location. [yuhjklbn] Move [.] Confirm [,] Cancel\n",nx,ny);
 	wmove(mapwindow,ny,nx);
+	morecount = 0;
+	//refresh();
 	int c = wgetch(mapwindow);
 	switch(c) {
 	    case 'h':
@@ -395,29 +408,29 @@ int askpos(uint8_t* y, uint8_t* x) {
 		if (nx > 0) nx--; break;
 	    case 'j':
 	    case 'J':
-		if (ny < MAP_HEIGHT) ny++; break;
+		if (ny < MAP_HEIGHT-1) ny++; break;
 	    case 'k':
 	    case 'K':
 		if (ny > 0) ny--; break;
 	    case 'l':
 	    case 'L':
-		if (nx < MAP_WIDTH) nx++; break;
+		if (nx < MAP_WIDTH-1) nx++; break;
 	    case 'y':
 	    case 'Y':
 		if (nx > 0) nx--;
 		if (ny > 0) ny--; break;
 	    case 'u':
 	    case 'U':
-		if (nx < MAP_WIDTH) nx++;
+		if (nx < MAP_WIDTH-1) nx++;
 		if (ny > 0) ny--; break;
 	    case 'b':
 	    case 'B':
 		if (nx > 0) nx--;
-		if (ny < MAP_HEIGHT) ny++; break;
+		if (ny < MAP_HEIGHT-1) ny++; break;
 	    case 'n':
 	    case 'N':
-		if (nx > 0) nx--;
-		if (ny < MAP_HEIGHT) ny++; break;
+		if (nx < MAP_WIDTH-1) nx++;
+		if (ny < MAP_HEIGHT-1) ny++; break;
 	    case '.':
 		go_on = 0;
 		res = 0;

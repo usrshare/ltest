@@ -14,6 +14,7 @@ int mapgetch();
 int askpos(uint8_t* y, uint8_t* x);
 int nc_beep(void);
 int updheader();
+int askgetch_n(bool nocr);
 
 int msgaddstr(const char *string);
 int msgprintw(const char *fmt, ...);
