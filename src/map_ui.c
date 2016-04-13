@@ -253,8 +253,6 @@ int msgaddstr(const char *string) {
     strcpy(dblstr,string);
     char* thisline = dblstr;
 
-    int endx = 0, endy = 0;
-
     bool endscr = ( string[strlen(string)-1] == '\n');
     thisline = strtok(dblstr,"\n");    
     int lines=0;
@@ -277,8 +275,6 @@ int msgaddstr(const char *string) {
 
 	//waddstr(msgwindow,"\n");
 	waddstr(msgwindow,thisline);
-	getyx(msgwindow,endy,endx);	
-
 	thisline = strtok(NULL,"\n");
 	morecount++;
     }
@@ -494,18 +490,18 @@ int update_status (struct t_map* map) {
 
 	    int nl = strlen(e_name);
 
-	    mvwprintw(statwindow,0, pi*13 + 1, " %.10s ",e_name);
+	    mvwprintw(statwindow,0, pi*13 + 2, "%-10.10s",e_name);
 
 	    const char* e_weapon = w_type(e->ent->weapon)->shortname;
 	    nl = strlen(e_weapon);
-	    mvwprintw(statwindow,1, pi*13 + 13 - nl, "%.10s",e_weapon);
+	    mvwprintw(statwindow,1, pi*13 + 2, "%10.10s",e_weapon);
 
 	    int statattr;
 	    char* e_stat = gethealthstat(e->ent, 1, &statattr);
 	    nl = strlen(e_stat);
 
 	    wattron(statwindow,statattr);
-	    mvwprintw(statwindow,2, pi*13 + 13 - nl, "%.10s",e_stat);
+	    mvwprintw(statwindow,2, pi*13 + 2, "%10.10s",e_stat);
 	    wattroff(statwindow,statattr);
 
 	    pi++;
