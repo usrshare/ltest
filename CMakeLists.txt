@@ -21,6 +21,7 @@ add_custom_target(tags
 
 add_executable (ltest
 		src/armor.c
+		src/basemode.c
 		src/cpairs.c
 		src/entity.c
 		src/entity_name.c
