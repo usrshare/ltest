@@ -869,3 +869,21 @@ int generate_buildings(struct t_map* map, enum generate_modes gm) {
 	}
 	return 0;
 }
+
+int generate_map_exits(struct t_map* map) {
+
+    for (int x=0; x < MAP_WIDTH; x++) {
+	map->sq[ (0 * MAP_WIDTH)  + x ].type = TT_WALL;
+	map->sq[ ((MAP_HEIGHT-1) * MAP_WIDTH)  + x ].type = TT_WALL;
+    }
+    
+    for (int y=1; y < (MAP_HEIGHT-1); y++) {
+	map->sq[ (y * MAP_WIDTH) + 1 ].type = TT_WALL;
+	map->sq[ (y * MAP_WIDTH) + (MAP_WIDTH-1)].type = TT_WALL;
+    }
+
+    for (int x=0; x < 5; x++)
+	map->sq[((MAP_HEIGHT-1) * MAP_WIDTH) + (MAP_WIDTH-5)/2 + x ].type = TT_SPACE;
+
+    return 0;
+}

@@ -88,7 +88,7 @@ int _pq_swap (struct pqel_t* p1, struct pqel_t* p2) {
     return 0;
 }
 
-int _pq_down_heap (struct pqueue_t* pq, int index) {
+int _pq_down_heap (struct pqueue_t* pq, size_t index) {
 
     int swap_index = -1;
     unsigned int swap_prio = pq->elements[index].priority;
@@ -134,7 +134,7 @@ void* pq_pop (struct pqueue_t* pq, unsigned int* o_priority) {
     return r_val;
 }
 
-int _pq_up_heap (struct pqueue_t* pq, int index) {
+int _pq_up_heap (struct pqueue_t* pq, size_t index) {
 
     if (index == 0) return 1 ;//shouldn't happen!
     if (index == 1) return 0; //already done.

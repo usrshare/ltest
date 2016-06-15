@@ -11,10 +11,10 @@
 #include "mapmode.h"
 #include "location.h"
 
-WINDOW* topwindow;
-WINDOW* msgwindow;
-WINDOW* statwindow;
-WINDOW* mapwindow;
+WINDOW* topwindow = NULL;
+WINDOW* msgwindow = NULL;
+WINDOW* statwindow = NULL;
+WINDOW* mapwindow = NULL;
 
 int morecount = 0;
 
@@ -525,14 +525,14 @@ int map_ui_init(struct t_map* map) {
 
     mapchar[TT_WALL] = ACS_CKBOARD; // rewriting with a proper character on the fly
 
-    mapwindow = newwin(20,COLS,LINES-20,0);
+    if (!mapwindow) mapwindow = newwin(20,COLS,LINES-20,0);
 
-    topwindow = newwin(LINES-20,COLS,0,0);
+    if (!topwindow) topwindow = newwin(LINES-20,COLS,0,0);
 
-    msgwindow = subwin(topwindow,LINES-23,COLS,0,0);
+    if (!msgwindow) msgwindow = subwin(topwindow,LINES-23,COLS,0,0);
     if (msgwindow == 0) return 1;
 
-    statwindow = subwin(topwindow,3,COLS,LINES-23,0);
+    if (!statwindow) statwindow = subwin(topwindow,3,COLS,LINES-23,0);
     if (statwindow == 0) return 1;
 
     init_status(map);
@@ -547,10 +547,10 @@ int map_ui_init(struct t_map* map) {
 
 int map_ui_free(struct t_map* map) {
 
-    delwin(mapwindow);
-    delwin(msgwindow);
-    delwin(statwindow);
-    delwin(topwindow);
+    delwin(mapwindow); mapwindow = NULL;
+    delwin(msgwindow); msgwindow = NULL;
+    delwin(statwindow); statwindow = NULL;
+    delwin(topwindow); topwindow = NULL;
 
     return 0;
 }

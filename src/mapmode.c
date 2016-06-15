@@ -103,8 +103,7 @@ int check_conditions(struct t_map* map) {
 	struct t_map_entity* e = &map->ent[i];
 	if (e->type == ET_PLAYER) living_players++;
 
-
-	if ((e->ent) && (!e->ent->alive)) kill_entity(e);
+	if ((e->ent) && (!e->ent->alive)) remove_map_entity(e);
     }
 
     if (living_players == 0) return 0;
@@ -250,7 +249,7 @@ struct t_map_entity* spawn_entity(struct t_map* map, enum entitytypes type, stru
     return newent;
 }
 
-int kill_entity(struct t_map_entity* ent) {
+int remove_map_entity(struct t_map_entity* ent) {
 
     //this removes the entity and all references to it.
 
@@ -274,6 +273,7 @@ int mapmode(struct t_squad* activesquad) {
 
     map1.sitealarm = 0; map1.sitealarmtimer = -1;
 
+    generate_map_exits(&map1);
     generate_buildings(&map1,GM_SINGLE);
 
 #define MAX_PLAYERS_COUNT 6
@@ -281,14 +281,14 @@ int mapmode(struct t_squad* activesquad) {
     struct t_map_entity* players[MAX_PLAYERS_COUNT];
 
     for (int i=0; i < MAX_PLAYERS_COUNT; i++) 
-    if (activesquad->squad[i]) {
+    if (activesquad->member[i]) {
 	players[i] = spawn_entity(&map1,ET_PLAYER,(struct spawnflags){
 		.gen_creature = false,
 		.position = SF_DEFAULT,
 		.tf = player_turnFunc,
 		.af = player_actFunc}); //temporary entity
 	if (players[i]) {
-	    players[i]->ent = activesquad->squad[i];
+	    players[i]->ent = activesquad->member[i];
 	    players[i]->flags |= EF_ALWAYSVISIBLE;
 	    players[i]->e_id = i;
 	    players[i]->aidata->wideview = 1;
@@ -368,7 +368,6 @@ int mapmode(struct t_squad* activesquad) {
 	    if ((map1.ent[i].type != ET_NONE) && (map1.ent[i].aidata) && (map1.ent[i].aidata->timer > 0)) map1.ent[i].aidata->timer--; }
     } while (loop);
 
-    msgprintw("Your entire squad has been eliminated. Game over, I guess.");
     update_status(&map1);
     update_ui(&map1);
     mapgetch();

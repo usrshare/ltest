@@ -1,0 +1,10 @@
+*.o
+.*.swp
+tags
+CMakeCache.txt
+CMakeFiles/
+Makefile
+cmake_install.cmake
+core
+ltest
+ltest.log

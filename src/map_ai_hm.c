@@ -60,13 +60,13 @@ int find_closest_on_hm_with_path(struct t_map* map, uint8_t sx, uint8_t sy, uint
 
     struct pqueue_t* pq = pq_create();
 
-    pq_push(pq, (void*)(sy * MAP_WIDTH + sx + 1),0); // create a queue, set the source area to zero.
+    pq_push(pq, (void*)((size_t)sy * MAP_WIDTH + sx + 1),0); // create a queue, set the source area to zero.
 
     //assumes the rest is already filled with 0xFFFF
 
     while (pq_size(pq)) { // while not empty
 
-	int yx = (int)(pq_pop(pq,NULL)) - 1;
+	int yx = (int)(size_t)(pq_pop(pq,NULL)) - 1;
 	int x = (yx % MAP_WIDTH);
 	int y = (yx / MAP_WIDTH);
 

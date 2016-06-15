@@ -1,3 +1,4 @@
+// vim: cin:sts=4:sw=4 
 #ifndef UI_H
 #define UI_H
 

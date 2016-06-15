@@ -193,5 +193,7 @@ extern short fieldskillrate;
 int min(int a, int b);
 int max(int a, int b);
 
+#define ONE_DAY 3600*24
+#define ONE_HOUR 3600 
 
 #endif

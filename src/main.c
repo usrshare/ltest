@@ -9,7 +9,7 @@
 
 #include "cpairs.h"
 #include "log.h"
-#include "mapmode.h"
+#include "basemode.h"
 #include "globals.h"
 #include "entity_types.h"
 #include "squad.h"
@@ -94,15 +94,12 @@ int main(int argc, char** argv) {
     struct t_creature player1;
     creature_init(&player1, &type_rules[ET_POLITICALACTIVIST]);   
     creature_liberalize(&player1);
+    player1.name_known = true;
 
-    squad1.squad[0] = &player1;
+    squad1.member[0] = &player1;
     //activesquad = &squad1;
 
-    while (squad_alive(&squad1)) {
-
-    mapmode(&squad1);
-
-    }
+    basemode(&squad1);
 
     endwin();
 

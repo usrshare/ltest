@@ -13,7 +13,7 @@
 
 struct t_squad {
     char name [SQUAD_NAMELEN];
-    struct t_creature *squad[SQUAD_MAXSIZE];
+    struct t_creature *member[SQUAD_MAXSIZE];
     //struct t_activity activity;
     int id;
     //vector <Item*> loot;
