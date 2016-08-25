@@ -515,7 +515,7 @@ uint16_t enemy_actFunc(struct t_map* map, struct t_map_entity* me) {
 				  if (!(e->loot)) { msgprintw("ERROR: this loot item has no actual loot.\n"); return 0; }
 				  msgprintw("Picked up %s (%d)\n", describe_item(e->loot),e->loot->itemcount);
 				  inv_join(me->ent->inventory, e->loot);
-				  kill_entity(e); 
+				  remove_map_entity(e); 
 				  return 16;
 			      }
 			      i++;
